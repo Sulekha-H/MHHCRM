@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Plus, Search, HandCoins, CheckCircle, PlusCircle, Download } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import BenefitLogForm_Supabase from "../components/benefits/BenefitLogForm";
-import BenefitLogDetailModal from "../components/benefits/BenefitLogDetailModal";
+import BenefitLogForm_Supabase from "../components/Benefits/BenefitLogForm";
+import BenefitLogDetailModal from "../components/Benefits/BenefitLogDetailModal";
 import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter } from "date-fns";
 
 // Helper function to normalize Supabase data to snake_case for the modal/form

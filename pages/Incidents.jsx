@@ -9,7 +9,7 @@ import { Plus, Search, Shield, Download } from "lucide-react";
 import { format } from "date-fns";
 import IncidentForm from "../components/Incidents/IncidentForm";
 import IncidentCard from "../components/Incidents/IncidentCard";
-import IncidentDetailModal from "../components/incidents/IncidentDetailModal";
+import IncidentDetailModal from "../components/Incidents/IncidentDetailModal";
 
 export default function IncidentsSupabase() {
   const [incidents, setIncidents] = useState([]);

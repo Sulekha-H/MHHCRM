@@ -8,8 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Building, Phone, Mail, MapPin, Calendar, FileText, Eye, Download, User as UserIcon } from "lucide-react";
 import { format, isValid } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import PropertyOnboardingForm_Supabase from "../components/landlord/PropertyOnboardingForm";
-import PropertyOnboardingDetailModal from "../components/landlord/PropertyOnboardingDetailModal";
+import PropertyOnboardingForm_Supabase from "../components/landlord/PropertyOnBoardingForm";
+import PropertyOnboardingDetailModal from "../components/landlord/PropertyOnBoardingDetailModal";
 
 // Helper to normalize Supabase data - handles both PascalCase and snake_case
 const normalizeCase = (case_) => {
