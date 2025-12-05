@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AccommodationDetailModal from "../components/accommodations/AccommodationDetailModal";
 
-export default function Accommodations() {
+export default function Accommodations_Supabase() {
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -32,9 +32,9 @@ export default function Accommodations() {
       console.log("🔄 [SUPABASE] Loading accommodations data...");
       
       const [accommodationsRes, propertiesRes, residentsRes] = await Promise.all([
-        supabase.from('accommodations').select('*').order('Created Date', { ascending: false }),
-        supabase.from('properties').select('*'),
-        supabase.from('residents').select('*')
+        supabase.from('accommodations').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false }),
+        supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'),
+        supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false')
       ]);
 
       if (accommodationsRes.error) throw accommodationsRes.error;

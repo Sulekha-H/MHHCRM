@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Download, FolderOpen, Settings, Eye, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import CustomSectionForm_Supabase from "../components/custom-sections/csform";
+import CustomSectionForm_Supabase from "../components/custom-sections/csForm";
 
 export default function CustomSections() {
   const [sections, setSections] = useState([]);
@@ -42,13 +42,19 @@ export default function CustomSections() {
       const { data: sectionsData, error } = await supabase
         .from('custom_sections')
         .select('*')
-        .order('Created Date', { ascending: false });
+        .order('"Created Date"', { ascending: false });
       
       if (error) throw error;
       
-      console.log(`✅ Loaded ${sectionsData?.length || 0} custom sections`);
-      setSections(sectionsData || []);
-      setFilteredSections(sectionsData || []);
+      // Filter out deleted sections
+      const activeSections = (sectionsData || []).filter(s => {
+        const isDeleted = s.Deleted || s.deleted || s["Deleted"];
+        return !isDeleted;
+      });
+      
+      console.log(`✅ Loaded ${activeSections.length} active custom sections`);
+      setSections(activeSections);
+      setFilteredSections(activeSections);
     } catch (error) {
       console.error("❌ Error loading custom sections:", error);
       setSections([]);
@@ -341,7 +347,7 @@ export default function CustomSections() {
                   </div>
                 )}
                 <div className="flex gap-2 pt-2">
-                  <a href={`/customSectionDetail?id=${section.ID}`} className="flex-1">
+                  <a href={`/CustomSectionDetail?id=${section.ID}`} className="flex-1">
                     <Button variant="outline" size="sm" className="w-full">
                       <Eye className="w-4 h-4 mr-2" />
                       View Data

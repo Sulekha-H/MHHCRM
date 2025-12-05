@@ -33,7 +33,7 @@ const normalizeData = (data) => {
   return normalized;
 };
 
-export default function SupportPlans() {
+export default function SupportPlans_Supabase() {
   const [supportPlans, setSupportPlans] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -62,6 +62,9 @@ export default function SupportPlans() {
     let filtered = supportPlans.filter(plan => {
       if (!plan || plan.deleted) return false;
       
+      // Check plan type first
+      if (plan.plan_type !== activeTab && activeTab !== "archive") return false;
+      
       // For archive tab, only show plans from moved_on residents
       if (activeTab === "archive") {
         const resident = residents.find(r => r.id === plan.resident_id);
@@ -71,10 +74,10 @@ export default function SupportPlans() {
       
       // For other tabs, only show plans from active residents
       const resident = residents.find(r => r.id === plan.resident_id);
-      const residentStatus = (resident?.status || resident?.Status || '').toLowerCase();
-      if (residentStatus !== 'active') return false;
+      if (!resident) return true; // Show plans even if resident not found for debugging
       
-      return plan.plan_type === activeTab;
+      const residentStatus = (resident?.status || resident?.Status || '').toLowerCase();
+      return residentStatus === 'active';
     });
 
     if (searchTerm) {
@@ -113,8 +116,8 @@ export default function SupportPlans() {
       setCurrentUser(user);
 
       const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
-        supabase.from('support_notes').select('*').order('"Created Date"', { ascending: false }),
-        supabase.from('quarterly_reviews').select('*').order('"Created Date"', { ascending: false }),
+        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
         supabase.from('residents').select('*').eq('Deleted', false),
         supabase.from('properties').select('*').eq('Deleted', false),
         supabase.from('accommodations').select('*').eq('Deleted', false),
@@ -138,9 +141,23 @@ export default function SupportPlans() {
       if (usersResult.error) console.error('❌ Users error:', usersResult.error);
 
       // Combine support notes and quarterly reviews, adding plan_type field and normalizing
+      // Helper function to normalize boolean values from database
+      const normalizeBool = (value) => {
+        if (value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1') return true;
+        if (value === false || value === 'false' || value === 'FALSE' || value === 0 || value === '0') return false;
+        return false; // Default to false for null/undefined
+      };
+
       const supportNotesWithType = (supportNotesResult.data || [])
         .filter(note => note.Deleted !== true && note.Deleted !== 'true')
         .map(note => {
+        // Normalize status from database format to snake_case
+        const normalizeStatus = (status) => {
+          if (!status) return 'document_combined_uploaded';
+          const statusLower = status.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
+          return statusLower;
+        };
+        
         const mapped = {
           id: note.ID,
           resident_id: note['Resident ID'],
@@ -150,13 +167,13 @@ export default function SupportPlans() {
           log_date: note['Log Date'],
           date_logged_by_office: note['Date Logged by Office'],
           key_worker: note['Key Worker'],
-          status: note.Status?.toLowerCase() || 'completed',
+          status: normalizeStatus(note.Status),
           file_url: note['File URL'],
-          attended_in_person: note['Attended In Person'] === true || note['Attended In Person'] === 'true',
-          attended_telephone: note['Attended Telephone'] === true || note['Attended Telephone'] === 'true',
-          did_not_attend: note['Did Not Attend'] === true || note['Did Not Attend'] === 'true',
-          authorised_absence: note['Authorised Absence'] === true || note['Authorised Absence'] === 'true',
-          signature_page_missing: note['Signature Page Missing'] === true || note['Signature Page Missing'] === 'true',
+          attended_in_person: normalizeBool(note['Attended In Person']),
+          attended_telephone: normalizeBool(note['Attended Telephone']),
+          did_not_attend: normalizeBool(note['Did Not Attend']),
+          authorised_absence: normalizeBool(note['Authorised Absence']),
+          signature_page_missing: normalizeBool(note['Signature Page Missing']),
           signature_page_missing_comments: note['Signature Page Missing Comments'],
           support_hours: note['Support Hours'],
           deleted: note.Deleted,
@@ -241,7 +258,7 @@ export default function SupportPlans() {
     try {
       console.log('📝 Received planData from form:', planData);
       
-      const tableName = planData.Plan_Type === 'quarterly_reviews' ? 'quarterly_reviews' : 'support_notes';
+      const tableName = planData["Plan Type"] === 'quarterly_reviews' ? 'quarterly_reviews' : 'support_notes';
       console.log('🗃️ Using table:', tableName);
       console.log('✏️ Edit mode:', !!editingPlan, editingPlan?.id);
       
@@ -768,11 +785,7 @@ export default function SupportPlans() {
               )}
               {!loading && properties.length > 0 && (
                 properties.map(property => {
-                  const residentsInThisProperty = residents.filter(r => {
-                    if (!r.accommodation_id) return false;
-                    const accommodation = accommodations.find(a => a.id === r.accommodation_id);
-                    return accommodation?.property_id === property.id;
-                  });
+                  const residentsInThisProperty = residents.filter(r => r.property_id === property.id);
                   
                   let residentsToDisplayForProperty = [];
 
@@ -896,6 +909,7 @@ export default function SupportPlans() {
                                   let iconToShow;
                                   if (planForWeek) {
                                     // Priority order: status flags first, then attendance flags
+                                    // Values are now normalized to proper booleans in loadData
                                     if (planForWeek.status === 'document_missing') {
                                       iconToShow = <XCircle className="w-5 h-5 text-red-500" />;
                                     } else if (planForWeek.status === 'signature_missing' || planForWeek.signature_page_missing === true) {

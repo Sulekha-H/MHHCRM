@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, FileText, Calendar } from "lucide-react";
 import { format } from 'date-fns';
 
-export default function SupportPlanForm({ plan, residents, users, currentUser, activePlanType, onSubmit, onCancel }) {
+export default function SupportPlanForm_Supabase({ plan, residents, users, currentUser, activePlanType, onSubmit, onCancel }) {
   const getInitialDateTime = () => {
     const now = new Date();
     const year = now.getFullYear();
@@ -24,6 +24,21 @@ export default function SupportPlanForm({ plan, residents, users, currentUser, a
   };
 
   const isQuarterlyReview = activePlanType === "quarterly_reviews";
+
+  // Helper to normalize status from database format to form format
+  const normalizeStatus = (status) => {
+    if (!status) return null;
+    const reverseMap = {
+      'Up To Date': 'up_to_date',
+      'Due': 'due',
+      'Overdue': 'overdue',
+      'No Review': 'no_review',
+      'Document Missing': 'document_missing',
+      'Document Combined/Uploaded': 'document_combined_uploaded',
+      'Signature Missing': 'signature_missing'
+    };
+    return reverseMap[status] || status.toLowerCase().replace(/ /g, '_');
+  };
 
   const [formData, setFormData] = useState(plan ? {
     ...plan,
@@ -46,7 +61,7 @@ export default function SupportPlanForm({ plan, residents, users, currentUser, a
     title: plan.Title || plan.title || "",
     description: plan.Description || plan.description || "",
     key_worker: plan.Key_Worker || plan.key_worker || currentUser?.full_name || "",
-    status: plan.Status || plan.status || (activePlanType === "support_notes" ? "document_combined_uploaded" : "up_to_date"),
+    status: normalizeStatus(plan.Status || plan.status) || (activePlanType === "support_notes" ? "document_combined_uploaded" : "up_to_date"),
     file_url: plan.File_Url || plan.file_url || "",
     attended_in_person: plan.Attended_In_Person !== null && plan.Attended_In_Person !== undefined ? plan.Attended_In_Person : (plan.attended_in_person || false),
     attended_telephone: plan.Attended_Telephone !== null && plan.Attended_Telephone !== undefined ? plan.Attended_Telephone : (plan.attended_telephone || false),
@@ -258,13 +273,12 @@ export default function SupportPlanForm({ plan, residents, users, currentUser, a
               {isQuarterlyReview && (
                 <>
                   <div>
-                    <Label htmlFor="review_completed_date">Date quarterly review was completed *</Label>
+                    <Label htmlFor="review_completed_date">Date quarterly review was completed</Label>
                     <Input
                       id="review_completed_date"
                       type="date"
                       value={formData.review_completed_date || ""}
                       onChange={e => handleChange("review_completed_date", e.target.value)}
-                      required
                     />
                   </div>
                   <div>

@@ -89,8 +89,7 @@ export default function LandlordPortalSupabase() {
         supabase
           .from('landlord_portal')
           .select('*')
-          .eq('Deleted', false)
-          .order('Log Date', { ascending: false }),
+          .order('"Log Date"', { ascending: false }),
         supabase.from('residents').select('*')
       ]);
       
@@ -140,15 +139,31 @@ export default function LandlordPortalSupabase() {
 
   const handleSubmit = async (logData) => {
     try {
+      console.log("📤 Submitting log data:", logData);
+      
       if (!logData["Logged By"] && currentUser) {
         logData["Logged By"] = currentUser["Full Name"];
       }
       
-      // Ensure ID exists for new records
+      // Ensure required fields
       if (!logData.ID) {
         logData.ID = crypto.randomUUID();
+      }
+      if (!logData["Created By"] && currentUser) {
+        logData["Created By"] = currentUser.Email;
+      }
+      if (!logData["Created Date"]) {
         logData["Created Date"] = new Date().toISOString();
       }
+      if (!logData["Updated Date"]) {
+        logData["Updated Date"] = new Date().toISOString();
+      }
+      // Remove Deleted field - table has constraint preventing it
+      delete logData["Deleted"];
+      delete logData["Deleted Date"];
+      delete logData["Deleted By"];
+      
+      console.log("📤 Final log data to save:", logData);
       
       if (editingLog && editingLog.ID) {
         const { error } = await supabase
@@ -176,7 +191,7 @@ export default function LandlordPortalSupabase() {
       setShowForm(false);
       setEditingLog(null);
       setViewingLog(null);
-      loadData();
+      await loadData();
     } catch (error) {
       console.error("❌ Error saving benefit log:", error);
       alert("Error saving log: " + error.message);
@@ -209,6 +224,7 @@ export default function LandlordPortalSupabase() {
     if (logToDelete) {
       try {
         const logId = logToDelete.ID || logToDelete.id;
+        // Permanent delete - table has constraint on Deleted column
         const { error } = await supabase
           .from('landlord_portal')
           .delete()
@@ -216,13 +232,13 @@ export default function LandlordPortalSupabase() {
         
         if (error) throw error;
         
-        console.log(`✅ Benefit log ${logId} deleted successfully from landlord_portal table.`);
+        console.log(`✅ Landlord portal entry ${logId} permanently deleted.`);
         setLogToDelete(null);
         setViewingLog(null);
         loadData();
       } catch (error) {
-        console.error("❌ Error deleting benefit log:", error);
-        alert("Error deleting benefit log: " + error.message);
+        console.error("❌ Error deleting landlord portal entry:", error);
+        alert("Error deleting entry: " + error.message);
       }
     }
   };
@@ -546,7 +562,7 @@ export default function LandlordPortalSupabase() {
                               if (logForDay) {
                                 handleViewDetails(logForDay);
                               } else {
-                                // Create a new log template
+                                // Create a new log template with pre-filled date
                                 const newLogTemplate = {
                                   "Benefit Type": 'landlord_portal',
                                   "Log Type": 'portal_check',
@@ -556,11 +572,8 @@ export default function LandlordPortalSupabase() {
                                   Title: `Portal Check - ${format(day, 'dd/MM/yyyy')}`,
                                   Description: ""
                                 };
-                                setEditingLog(null); 
+                                setEditingLog(newLogTemplate);
                                 setShowForm(true);
-                                setTimeout(() => {
-                                  setEditingLog(newLogTemplate);
-                                }, 10);
                               }
                             }}
                           >

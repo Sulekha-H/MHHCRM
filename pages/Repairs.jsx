@@ -99,6 +99,7 @@ export default function Repairs() { // Component name changed
       const { data: repairsData, error: repairsError } = await supabase
         .from('repairs')
         .select('*')
+        .eq('"Deleted"', false)
         .order('"Reported Date"', { ascending: false });
 
       if (repairsError) throw repairsError;

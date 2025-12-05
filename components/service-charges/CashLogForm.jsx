@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Save, PoundSterling } from "lucide-react";
+import { X, Save, PoundSterling, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
-export default function CashLogFormSupabase({ cashLog, residents, properties, currentUser, onSubmit, onCancel }) {
+export default function CashLogFormSupabase({ cashLog, residents, properties, currentUser, onSubmit, onCancel, onDelete }) {
   const [formData, setFormData] = useState(() => {
     if (cashLog && cashLog.id) {
       // Extract YYYY-MM from Service Charge Month date
@@ -265,13 +265,28 @@ export default function CashLogFormSupabase({ cashLog, residents, properties, cu
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onCancel} className="flex items-center gap-2">
-              <X className="w-4 h-4" /> Cancel
-            </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-              <Save className="w-4 h-4" /> {cashLog && (cashLog.id || cashLog.ID) ? "Update Entry" : "Add Entry"}
-            </Button>
+          <div className="flex justify-between pt-4 border-t">
+            <div>
+              {cashLog && (cashLog.id || cashLog.ID) && onDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onDelete(cashLog)}
+                  className="text-red-600 border-red-200 hover:border-red-300 hover:text-red-700 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={onCancel} className="flex items-center gap-2">
+                <X className="w-4 h-4" /> Cancel
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
+                <Save className="w-4 h-4" /> {cashLog && (cashLog.id || cashLog.ID) ? "Update Entry" : "Add Entry"}
+              </Button>
+            </div>
           </div>
         </form>
       </CardContent>

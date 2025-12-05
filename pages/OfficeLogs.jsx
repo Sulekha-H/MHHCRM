@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import OfficeLogForm from "../components/office-logs/OfficeLogForm";
 import OfficeLogCard from "../components/office-logs/OfficeLogCard";
 
-export default function OfficeLogs() {
+export default function OfficeLogsSupabase() {
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,10 +103,11 @@ export default function OfficeLogs() {
         setUser(isTestUser ? null : userData);
       }
 
-      // Load office logs - using PostgreSQL column names with spaces
+      // Load office logs - using PostgreSQL column names with spaces, filter out deleted
       const { data: logsData, error: logsError } = await supabase
         .from('office_logs')
         .select('*')
+        .or('Deleted.is.null,Deleted.eq.false')
         .order('"Date Time"', { ascending: false });
 
       if (logsError) throw logsError;
@@ -251,6 +252,30 @@ export default function OfficeLogs() {
     
     setEditingLog(formattedLog);
     setShowForm(true);
+  };
+
+  const handleDelete = async (log) => {
+    const logTitle = log["Title"] || log.title;
+    if (window.confirm(`Are you sure you want to delete "${logTitle}"?`)) {
+      try {
+        const { error } = await supabase
+          .from('office_logs')
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.email || user?.Email || "Unknown"
+          })
+          .eq('"ID"', log["ID"] || log.id);
+
+        if (error) throw error;
+        
+        console.log(`Office log ${log["ID"] || log.id} soft deleted successfully.`);
+        await loadData();
+      } catch (error) {
+        console.error("Error deleting office log:", error);
+        alert("Error deleting office log: " + error.message);
+      }
+    }
   };
 
   const exportToCSV = () => {
@@ -653,6 +678,7 @@ export default function OfficeLogs() {
                         key={log["ID"] || log.id}
                         log={log}
                         onEdit={handleEdit}
+                        onDelete={handleDelete}
                         getPriorityColor={getPriorityColor}
                         getStatusColor={getStatusColor}
                       />
@@ -699,6 +725,7 @@ export default function OfficeLogs() {
                     key={log["ID"] || log.id}
                     log={log}
                     onEdit={handleEdit}
+                    onDelete={handleDelete}
                     getPriorityColor={getPriorityColor}
                     getStatusColor={getStatusColor}
                   />

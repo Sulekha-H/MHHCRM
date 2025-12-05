@@ -8,9 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, HandCoins, Edit, Building2, Users, Download, Calendar, User as UserIcon, FileText, Banknote } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import BenefitLogForm_Supabase from "../components/benefits/BenefitLogForm";
-import BenefitLogCard from "../components/benefits/BenefitLogCard";
-import BenefitLogDetailModal from "../components/benefits/BenefitLogDetailModal";
+import BenefitLogForm_Supabase from "../components/Benefits/BenefitLogForm";
+import BenefitLogCard from "../components/Benefits/BenefitLogCard";
+import BenefitLogDetailModal from "../components/Benefits/BenefitLogDetailModal";
 import { format } from "date-fns";
 
 // Helper function to normalize column names from Supabase
@@ -69,10 +69,10 @@ export default function Benefits() {
         console.log('📊 Sample resident:', residentsData[0]);
       }
 
-      // Load both HB and UC logs
+      // Load both HB and UC logs - exclude deleted (or where deleted is null)
       const [hbResponse, ucResponse] = await Promise.all([
-        supabase.from('housing_benefit_logs').select('*'),
-        supabase.from('universal_credit_logs').select('*')
+        supabase.from('housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
+        supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
       ]);
 
       if (hbResponse.error) console.error('❌ HB Logs error:', hbResponse.error);
@@ -294,23 +294,41 @@ export default function Benefits() {
 
   const confirmDelete = async () => {
     if (logToDelete) {
-      // FIXED: Landlord portal logs are in housing_benefit_logs table
-      // This logic means if benefit_type is 'universal_credit', use universal_credit_logs,
-      // otherwise (e.g., 'housing_benefit', 'landlord_portal_log'), use housing_benefit_logs.
-      const targetTable = logToDelete.benefit_type === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+      // Normalize benefit_type for table determination (handle both "Universal Credit" and "universal_credit")
+      const normalizedBenefitType = logToDelete.benefit_type?.toLowerCase().replace(/\s+/g, '_');
+      const targetTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+      
       try {
-        await supabase.from(targetTable).update({
-          deleted: true,
-          deleted_date: new Date().toISOString(),
-          deleted_by: currentUser?.email || "Unknown User"
-        }).eq('id', logToDelete.id);
+        console.log('🗑️ Deleting log:', { 
+          table: targetTable, 
+          id: logToDelete.id, 
+          benefit_type: logToDelete.benefit_type,
+          normalized: normalizedBenefitType 
+        });
+        
+        const { data, error } = await supabase
+          .from(targetTable)
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": currentUser?.email || "Unknown User"
+          })
+          .eq('"ID"', logToDelete.id)
+          .select();
+        
+        if (error) {
+          console.error('❌ Delete error:', error);
+          throw error;
+        }
+        
+        console.log('✅ Delete response:', data);
         
         setLogToDelete(null);
         setViewingLog(null);
-        loadData();
+        await loadData();
         console.log(`✅ Log soft-deleted from ${targetTable}:`, logToDelete.id);
       } catch (error) {
-        console.error("Error deleting benefit log:", error);
+        console.error("❌ Error deleting benefit log:", error);
         alert("Error deleting benefit log: " + error.message);
       }
     }

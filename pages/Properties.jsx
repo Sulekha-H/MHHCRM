@@ -256,14 +256,19 @@ export default function Properties() {
   const confirmDelete = async (property) => {
     if (property) {
       try {
+        // Soft delete - mark as deleted instead of removing from database
         const { error } = await supabase
           .from('properties')
-          .delete()
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": currentUser?.email || currentUser?.Email || "Unknown"
+          })
           .eq('ID', property["ID"] || property.id);
 
         if (error) throw error;
         
-        console.log(`Property ${property["ID"] || property.id} deleted successfully.`);
+        console.log(`Property ${property["ID"] || property.id} soft deleted successfully.`);
         setPropertyToDelete(null);
         setViewingProperty(null);
         window.location.reload();

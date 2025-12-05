@@ -30,6 +30,7 @@ const DetailItem = ({ icon, label, children }) => (
 );
 
 export default function CashLogDetailModal({
+  cashLog,
   log,
   getResidentName,
   getPropertyName,
@@ -37,25 +38,27 @@ export default function CashLogDetailModal({
   onEdit,
   onDelete
 }) {
+  // Support both 'log' and 'cashLog' prop names
+  const actualLog = cashLog || log;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  if (!log) return null;
+  if (!actualLog) return null;
 
   // Handle both snake_case (Base44) and Title Case (Supabase) field names
-  const residentId = log.resident_id || log["Resident ID"];
-  const propertyId = log.property_id || log["Property ID"];
+  const residentId = actualLog.resident_id || actualLog["Resident ID"];
+  const propertyId = actualLog.property_id || actualLog["Property ID"];
   const residentName = getResidentName(residentId);
   const propertyName = getPropertyName(propertyId);
-  const amountGiven = log.amount_given || log["Amount Given"];
-  const serviceChargeMonth = log.service_charge_month || log["Service Charge Month"];
-  const dateTenantCashGiven = log.date_tenant_cash_given || log["Date Tenant Cash Given"];
-  const dateHandedToOffice = log.date_handed_to_office || log["Date Handed to Office"];
-  const givenToPutWhere = log.given_to_put_where || log["Given To/Put Where"];
-  const loggedBy = log.logged_by || log["Logged By"];
-  const notes = log.notes || log.Notes;
+  const amountGiven = actualLog.amount_given || actualLog["Amount Given"];
+  const serviceChargeMonth = actualLog.service_charge_month || actualLog["Service Charge Month"];
+  const dateTenantCashGiven = actualLog.date_tenant_cash_given || actualLog["Date Tenant Cash Given"];
+  const dateHandedToOffice = actualLog.date_handed_to_office || actualLog["Date Handed to Office"];
+  const givenToPutWhere = actualLog.given_to_put_where || actualLog["Given To/Put Where"];
+  const loggedBy = actualLog.logged_by || actualLog["Logged By"];
+  const notes = actualLog.notes || actualLog.Notes;
 
   const handleDelete = () => {
-    onDelete(log);
+    onDelete(actualLog);
     setShowDeleteDialog(false);
     onClose();
   };
@@ -90,7 +93,7 @@ export default function CashLogDetailModal({
                 <DetailItem icon={<MapPin />} label="Property">{propertyName}</DetailItem>
                 <DetailItem icon={<PoundSterling />} label="Amount Given">£{amountGiven?.toFixed(2)}</DetailItem>
                 <DetailItem icon={<Calendar />} label="Service Charge Month">
-                  {serviceChargeMonth ? format(new Date(serviceChargeMonth + '-01'), 'MMMM yyyy') : null}
+                  {serviceChargeMonth ? format(new Date(serviceChargeMonth.length === 7 ? serviceChargeMonth + '-01' : serviceChargeMonth), 'MMMM yyyy') : null}
                 </DetailItem>
                 <DetailItem icon={<Calendar />} label="Date Tenant Gave Cash">
                   {dateTenantCashGiven ? format(new Date(dateTenantCashGiven), 'dd MMMM yyyy') : null}
@@ -117,17 +120,19 @@ export default function CashLogDetailModal({
               )}
 
               <DialogFooter className="mt-8 flex justify-between">
-                <Button 
-                  variant="destructive" 
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Record
-                </Button>
+                {onDelete && (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Record
+                  </Button>
+                )}
                 <Button onClick={() => {
                   onClose();
-                  onEdit(log);
+                  onEdit(actualLog);
                 }} className="bg-green-600 hover:bg-green-700">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Log

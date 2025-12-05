@@ -67,7 +67,7 @@ const normalizeCase = (case_) => {
   };
 };
 
-export default function PropertyOnboarding() {
+export default function PropertyOnboardingSupabase() {
   const [onboardingCases, setOnboardingCases] = useState([]);
   const [filteredCases, setFilteredCases] = useState([]);
   const [loading, setLoading] = useState(true);

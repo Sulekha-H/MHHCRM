@@ -88,23 +88,23 @@ export default function ResidentCard({ resident, onEdit, onViewDetails, onDelete
                   </span>
                 )}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-slate-900 text-lg truncate" title={`${firstName} ${lastName}`}>
                   {firstName} {lastName}
                 </h3>
                 {claimRef && (
-                  <p className="text-sm text-slate-500 truncate" title={claimRef}>
-                    Claim Ref: {claimRef}
+                  <p className="text-sm text-slate-500 break-words" title={`Claim Ref: ${claimRef}`}>
+                    <span className="font-medium">Claim Ref:</span> {claimRef}
                   </p>
                 )}
                 {submissionRef && (
-                  <p className="text-sm text-slate-500 truncate" title={submissionRef}>
-                    Submission Ref: {submissionRef}
+                  <p className="text-sm text-slate-500 break-words" title={`Submission Ref: ${submissionRef}`}>
+                    <span className="font-medium">Submission Ref:</span> {submissionRef}
                   </p>
                 )}
                 {niNumber && (
-                  <p className="text-sm text-slate-500 truncate" title={niNumber}>
-                    NI No: {niNumber}
+                  <p className="text-sm text-slate-500 break-words" title={`NI No: ${niNumber}`}>
+                    <span className="font-medium">NI No:</span> {niNumber}
                   </p>
                 )}
                 {keyWorker && (

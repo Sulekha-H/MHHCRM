@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Residents() {
+export default function Residents_Supabase() {
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -67,7 +67,10 @@ export default function Residents() {
         .order('Created Date', { ascending: false });
 
       if (residentsError) throw residentsError;
-      console.log("✅ Loaded residents:", residentsData?.length);
+      
+      // Filter out soft-deleted residents
+      const activeResidents = (residentsData || []).filter(r => !r.Deleted && !r["Deleted"]);
+      console.log("✅ Loaded residents:", activeResidents.length, `(filtered out ${(residentsData?.length || 0) - activeResidents.length} deleted)`);
 
       const { data: accommodationsData, error: accommodationsError } = await supabase
         .from('accommodations')
@@ -92,7 +95,7 @@ export default function Residents() {
         return nameA?.localeCompare(nameB) || 0;
       });
 
-      setResidents(residentsData || []);
+      setResidents(activeResidents);
       setAccommodations(accommodationsData || []);
       setProperties(propertiesData);
       setExpandedProperties(new Set(propertiesData.map(p => p.ID).concat('unassigned')));
@@ -146,6 +149,27 @@ export default function Residents() {
       if (!editingResident && (!cleanedData.ID || cleanedData.ID === '')) {
         delete cleanedData.ID;
       }
+
+      // Comprehensive foreign key cleaning - converts empty strings to null
+      const cleanForeignKeys = (obj) => {
+        if (Array.isArray(obj)) {
+          obj.forEach(item => cleanForeignKeys(item));
+        } else if (obj && typeof obj === 'object') {
+          Object.keys(obj).forEach(key => {
+            if (typeof obj[key] === 'string' && obj[key] === '' && 
+                (key === 'Property ID' || key === 'Accommodation ID' || 
+                 key === 'property_id' || key === 'accommodation_id' ||
+                 key === 'from_property_id' || key === 'to_property_id' ||
+                 key === 'from_accommodation_id' || key === 'to_accommodation_id')) {
+              obj[key] = null;
+            } else if (typeof obj[key] === 'object') {
+              cleanForeignKeys(obj[key]);
+            }
+          });
+        }
+      };
+      
+      cleanForeignKeys(cleanedData);
       
       let savedResident;
 
@@ -371,14 +395,21 @@ export default function Residents() {
   };
 
   const handleDelete = async (resident) => {
-    if (window.confirm(`Are you sure you want to delete ${resident["First Name"]} ${resident["Last Name"]}? This action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to delete ${resident["First Name"]} ${resident["Last Name"]}? It will be moved to deleted entries.`)) {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
         const { error } = await supabase
           .from('residents')
-          .delete()
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.email || 'unknown'
+          })
           .eq('ID', resident.ID);
 
         if (error) throw error;
+        console.log(`✅ Soft deleted resident ${resident.ID}`);
         await loadData();
       } catch (error) {
         console.error("Error deleting resident:", error);

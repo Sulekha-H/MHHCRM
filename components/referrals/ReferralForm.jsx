@@ -87,7 +87,6 @@ export default function ReferralForm({ referral, users, currentUser, onSubmit, o
     { id: "leticia", name: "Leticia" },
     { id: "burton", name: "Burton" },
     { id: "sulekha", name: "Sulekha" },
-    { id: "michele", name: "Michele" },
     { id: "shaila", name: "Shaila" }
   ];
 

@@ -178,6 +178,28 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
         submissionData["Property Address"] = selectedProperty.Address;
       }
 
+      // Recursively convert empty strings to null for ALL foreign key fields
+      const cleanForeignKeys = (obj) => {
+        if (Array.isArray(obj)) {
+          obj.forEach(item => cleanForeignKeys(item));
+        } else if (obj && typeof obj === 'object') {
+          Object.keys(obj).forEach(key => {
+            const isForeignKey = key === 'Property ID' || key === 'Accommodation ID' || 
+                                 key === 'property_id' || key === 'accommodation_id' ||
+                                 key === 'from_property_id' || key === 'to_property_id' ||
+                                 key === 'from_accommodation_id' || key === 'to_accommodation_id';
+            
+            if (isForeignKey && (obj[key] === '' || obj[key] === undefined)) {
+              obj[key] = null;
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+              cleanForeignKeys(obj[key]);
+            }
+          });
+        }
+      };
+      
+      cleanForeignKeys(submissionData);
+
       const hasNewRoomTransfer = resident && 
         submissionData["Room Transfers"].length > (resident["Room Transfers"] || []).length;
 

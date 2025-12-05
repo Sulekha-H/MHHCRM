@@ -9,7 +9,7 @@ import { Search, RotateCcw, Trash2, Calendar, User as UserIcon, Download } from 
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-export default function DeletedEntries() {
+export default function DeletedEntries_Supabase() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("residents");
@@ -26,6 +26,7 @@ export default function DeletedEntries() {
   const [deletedSupportPlans, setDeletedSupportPlans] = useState([]);
   const [deletedOfficeLogs, setDeletedOfficeLogs] = useState([]);
   const [deletedServiceCharges, setDeletedServiceCharges] = useState([]);
+  const [deletedCashLogs, setDeletedCashLogs] = useState([]);
   const [deletedReferrals, setDeletedReferrals] = useState([]);
   const [deletedDocuments, setDeletedDocuments] = useState([]);
   const [deletedWarranties, setDeletedWarranties] = useState([]);
@@ -60,17 +61,16 @@ export default function DeletedEntries() {
         { name: 'residents', setter: setDeletedResidents },
         { name: 'properties', setter: setDeletedProperties },
         { name: 'accommodations', setter: setDeletedAccommodations },
-        { name: 'benefit_logs', setter: setDeletedBenefits },
         { name: 'incidents', setter: setDeletedIncidents },
         { name: 'tasks', setter: setDeletedTasks },
         { name: 'repairs', setter: setDeletedRepairs },
-        { name: 'support_plans', setter: setDeletedSupportPlans },
+        { name: 'support_notes', setter: setDeletedSupportPlans },
         { name: 'office_logs', setter: setDeletedOfficeLogs },
         { name: 'service_charges', setter: setDeletedServiceCharges },
-        { name: 'referrals', setter: setDeletedReferrals },
+        { name: 'cash_logs', setter: setDeletedCashLogs },
         { name: 'documents', setter: setDeletedDocuments },
         { name: 'warranties', setter: setDeletedWarranties },
-        { name: 'insurance', setter: setDeletedInsurances },
+        { name: 'insurances', setter: setDeletedInsurances },
         { name: 'appliances', setter: setDeletedAppliances },
         { name: 'weekly_sw_doc_logs', setter: setDeletedWeeklySWDocs },
         { name: 'compliance_logs', setter: setDeletedCompliance },
@@ -78,6 +78,7 @@ export default function DeletedEntries() {
         { name: 'landlord_enquiries', setter: setDeletedLandlordEnquiries },
         { name: 'custom_sections', setter: setDeletedCustomSections },
         { name: 'custom_section_data', setter: setDeletedCustomSectionData },
+        { name: 'landlord_portal', setter: setDeletedLandlordPortal },
       ];
 
       for (const table of tables) {
@@ -85,31 +86,72 @@ export default function DeletedEntries() {
           const { data, error } = await supabase
             .from(table.name)
             .select('*')
-            .eq('Deleted', true)
-            .order('Deleted Date', { ascending: false });
+            .eq('"Deleted"', true)
+            .order('"Deleted Date"', { ascending: false });
 
-          if (error) throw error;
+          if (error) {
+            console.error(`❌ Error loading ${table.name}:`, error);
+            throw error;
+          }
+          
+          console.log(`✅ Loaded ${data?.length || 0} deleted records from ${table.name}`);
           table.setter(data ? data.map(normalizeData) : []);
         } catch (err) {
-          console.error(`Error loading ${table.name}:`, err);
+          console.error(`❌ Error loading ${table.name}:`, err);
           table.setter([]);
         }
       }
 
-      // Landlord Portal - filter benefit_logs where benefit_type is landlord_portal
+      // Load deleted HB and UC logs
       try {
-        const { data, error } = await supabase
-          .from('benefit_logs')
-          .select('*')
-          .eq('Deleted', true)
-          .eq('Benefit Type', 'Landlord Portal')
-          .order('Deleted Date', { ascending: false });
+        const [hbResponse, ucResponse] = await Promise.all([
+          supabase.from('housing_benefit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false }),
+          supabase.from('universal_credit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false })
+        ]);
 
-        if (error) throw error;
-        setDeletedLandlordPortal(data ? data.map(normalizeData) : []);
+        if (hbResponse.error) throw hbResponse.error;
+        if (ucResponse.error) throw ucResponse.error;
+
+        const hbLogs = hbResponse.data || [];
+        const ucLogs = ucResponse.data || [];
+        
+        // Combine and filter out landlord portal logs
+        const allBenefitLogs = [
+          ...hbLogs.map(log => ({ ...normalizeData(log), benefit_type: 'housing_benefit' })),
+          ...ucLogs.map(log => ({ ...normalizeData(log), benefit_type: 'universal_credit' }))
+        ].filter(log => log.benefit_type !== 'landlord_portal');
+
+        setDeletedBenefits(allBenefitLogs);
       } catch (err) {
-        console.error('Error loading landlord portal:', err);
-        setDeletedLandlordPortal([]);
+        console.error('Error loading benefit logs:', err);
+        setDeletedBenefits([]);
+      }
+
+      // Load deleted referrals from both organisation_referrals and self_referrals tables
+      try {
+        const [orgResponse, selfResponse] = await Promise.all([
+          supabase.from('organisation_referrals').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false }),
+          supabase.from('self_referrals').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false })
+        ]);
+
+        if (orgResponse.error) throw orgResponse.error;
+        if (selfResponse.error) throw selfResponse.error;
+
+        const orgReferrals = (orgResponse.data || []).map(ref => ({
+          ...normalizeData(ref),
+          referral_type: 'organisation'
+        }));
+        
+        const selfReferrals = (selfResponse.data || []).map(ref => ({
+          ...normalizeData(ref),
+          referral_type: 'self-referral'
+        }));
+
+        const allReferrals = [...orgReferrals, ...selfReferrals];
+        setDeletedReferrals(allReferrals);
+      } catch (err) {
+        console.error('Error loading deleted referrals:', err);
+        setDeletedReferrals([]);
       }
     } catch (error) {
       console.error("Error loading deleted data:", error);
@@ -123,14 +165,30 @@ export default function DeletedEntries() {
   const confirmRestore = async () => {
     if (restoreItem) {
       try {
+        // Determine correct table for benefits and insurances
+        let actualTable = restoreItem.tableName;
+        if (restoreItem.tableName === 'benefit_logs') {
+          const normalizedBenefitType = restoreItem.item.benefit_type?.toLowerCase().replace(/\s+/g, '_');
+          actualTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+        } else if (restoreItem.tableName === 'referrals') {
+          // Determine correct referrals table
+          actualTable = restoreItem.item.referral_type === 'organisation' ? 'organisation_referrals' : 'self_referrals';
+        } else if (restoreItem.tableName === 'insurance') {
+          actualTable = 'insurances';
+        } else if (restoreItem.tableName === 'cash_logs') {
+          actualTable = 'cash_logs';
+        } else if (restoreItem.tableName === 'landlord_portal') {
+          actualTable = 'landlord_portal';
+        }
+
         const { error } = await supabase
-          .from(restoreItem.tableName)
+          .from(actualTable)
           .update({
-            'Deleted': false,
-            'Deleted Date': null,
-            'Deleted By': null
+            '"Deleted"': false,
+            '"Deleted Date"': null,
+            '"Deleted By"': null
           })
-          .eq('ID', restoreItem.item.id);
+          .eq('"ID"', restoreItem.item.id);
 
         if (error) throw error;
         
@@ -150,10 +208,26 @@ export default function DeletedEntries() {
   const confirmPermanentDelete = async () => {
     if (permanentDeleteItem) {
       try {
+        // Determine correct table for benefits and insurances
+        let actualTable = permanentDeleteItem.tableName;
+        if (permanentDeleteItem.tableName === 'benefit_logs') {
+          const normalizedBenefitType = permanentDeleteItem.item.benefit_type?.toLowerCase().replace(/\s+/g, '_');
+          actualTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+        } else if (permanentDeleteItem.tableName === 'referrals') {
+          // Determine correct referrals table
+          actualTable = permanentDeleteItem.item.referral_type === 'organisation' ? 'organisation_referrals' : 'self_referrals';
+        } else if (permanentDeleteItem.tableName === 'insurance') {
+          actualTable = 'insurances';
+        } else if (permanentDeleteItem.tableName === 'cash_logs') {
+          actualTable = 'cash_logs';
+        } else if (permanentDeleteItem.tableName === 'landlord_portal') {
+          actualTable = 'landlord_portal';
+        }
+
         const { error } = await supabase
-          .from(permanentDeleteItem.tableName)
+          .from(actualTable)
           .delete()
-          .eq('ID', permanentDeleteItem.item.id);
+          .eq('"ID"', permanentDeleteItem.item.id);
 
         if (error) throw error;
 
@@ -283,6 +357,7 @@ export default function DeletedEntries() {
       { data: deletedSupportPlans, name: 'Support Plans', baseFileName: 'support_plans.csv' },
       { data: deletedOfficeLogs, name: 'Office Logs', baseFileName: 'office_logs.csv' },
       { data: deletedServiceCharges, name: 'Service Charges', baseFileName: 'service_charges.csv' },
+      { data: deletedCashLogs, name: 'Cash Logs', baseFileName: 'cash_logs.csv' },
       { data: deletedReferrals, name: 'Referrals', baseFileName: 'referrals.csv' },
       { data: deletedDocuments, name: 'Documents', baseFileName: 'documents.csv' },
       { data: deletedWarranties, name: 'Warranties', baseFileName: 'warranties.csv' },
@@ -441,9 +516,9 @@ export default function DeletedEntries() {
 
   const totalDeletedCount = deletedResidents.length + deletedProperties.length + deletedAccommodations.length + 
     deletedBenefits.length + deletedIncidents.length + deletedTasks.length + deletedRepairs.length + 
-    deletedSupportPlans.length + deletedOfficeLogs.length + deletedServiceCharges.length + deletedReferrals.length + 
-    deletedDocuments.length + deletedWarranties.length + deletedInsurances.length + deletedAppliances.length + 
-    deletedWeeklySWDocs.length + deletedCompliance.length + deletedPropertyOnboarding.length + 
+    deletedSupportPlans.length + deletedOfficeLogs.length + deletedServiceCharges.length + deletedCashLogs.length + 
+    deletedReferrals.length + deletedDocuments.length + deletedWarranties.length + deletedInsurances.length + 
+    deletedAppliances.length + deletedWeeklySWDocs.length + deletedCompliance.length + deletedPropertyOnboarding.length + 
     deletedLandlordEnquiries.length + deletedCustomSections.length + deletedCustomSectionData.length + deletedLandlordPortal.length;
 
   return (
@@ -510,6 +585,9 @@ export default function DeletedEntries() {
             </TabsTrigger>
             <TabsTrigger value="service_charges" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Service Charges ({deletedServiceCharges.length})
+            </TabsTrigger>
+            <TabsTrigger value="cash_logs" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Cash Logs ({deletedCashLogs.length})
             </TabsTrigger>
             <TabsTrigger value="referrals" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Referrals ({deletedReferrals.length})
@@ -680,6 +758,19 @@ export default function DeletedEntries() {
           )}
         </TabsContent>
 
+        <TabsContent value="cash_logs" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedCashLogs).map(item => renderDeletedItem(item, 'cash_logs', 'Cash Log'))}
+          </div>
+          {filterItems(deletedCashLogs).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted cash logs found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         <TabsContent value="referrals" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filterItems(deletedReferrals).map(item => renderDeletedItem(item, 'referrals', 'Referral'))}
@@ -825,7 +916,7 @@ export default function DeletedEntries() {
 
         <TabsContent value="landlord_portal" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {filterItems(deletedLandlordPortal).map(item => renderDeletedItem(item, 'benefit_logs', 'Landlord Portal Check'))}
+            {filterItems(deletedLandlordPortal).map(item => renderDeletedItem(item, 'landlord_portal', 'Landlord Portal Check'))}
           </div>
           {filterItems(deletedLandlordPortal).length === 0 && (
             <Card>

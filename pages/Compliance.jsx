@@ -33,7 +33,7 @@ const normalizeData = (data) => {
   return normalized;
 };
 
-export default function Compliance() {
+export default function Compliance_Supabase() {
   const [complianceLogs, setComplianceLogs] = useState([]);
   const [properties, setProperties] = useState([]);
   const [users, setUsers] = useState([]);
@@ -176,9 +176,9 @@ export default function Compliance() {
 
   const handleSubmit = async (logData) => {
     try {
-      if (!logData.Logged_By && currentUser?.email) {
+      if (!logData["Logged By"] && currentUser?.email) {
         const userRecord = users.find(u => u.email === currentUser.email);
-        logData.Logged_By = userRecord?.full_name || currentUser.email;
+        logData["Logged By"] = userRecord?.full_name || currentUser.email;
       }
 
       if (editingLog && editingLog.id) {
@@ -212,10 +212,10 @@ export default function Compliance() {
     if (window.confirm(`Are you sure you want to delete this compliance record for ${getPropertyName(log.property_id)} (${log.certificate_name})? This action cannot be undone.`)) {
       try {
         const { error } = await supabase.from('compliance_logs').update({
-          Deleted: true,
-          Deleted_Date: new Date().toISOString(),
-          Deleted_By: currentUser?.email || "Unknown User"
-        }).eq('ID', log.id);
+          'Deleted': true,
+          'Deleted Date': new Date().toISOString(),
+          'Deleted By': currentUser?.email || "Unknown User"
+        }).eq('"ID"', log.id);
         
         if (error) throw error;
         

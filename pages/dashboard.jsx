@@ -124,7 +124,7 @@ export default function Dashboard() {
           tasksResult,
           complianceLogsResult,
           accommodationsResult,
-          supportPlansResult,
+          quarterlyReviewsResult,
           serviceChargesResult,
           repairsResult,
           benefitLogsResult,
@@ -137,10 +137,10 @@ export default function Dashboard() {
           retryApiCall(() => supabase.from('tasks').select('*').eq('"Deleted"', false).order('"Due Date"', { ascending: false })),
           retryApiCall(() => supabase.from('compliance_logs').select('*').eq('"Deleted"', false)),
           retryApiCall(() => supabase.from('accommodations').select('*').eq('"Deleted"', false)),
-          retryApiCall(() => supabase.from('support_plans').select('*').eq('"Deleted"', false)),
+          retryApiCall(() => supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false)),
           retryApiCall(() => supabase.from('service_charges').select('*').eq('"Deleted"', false)),
           retryApiCall(() => supabase.from('repairs').select('*').order('"Reported Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('benefit_logs').select('*').eq('"Deleted"', false).order('"Log Date"', { ascending: false })),
+          retryApiCall(() => supabase.from('housing_benefit_logs').select('*').eq('"Deleted"', false).order('"Log Date"', { ascending: false })),
           retryApiCall(() => supabase.from('referrals').select('*').order('"Referral Date"', { ascending: false })),
           retryApiCall(() => supabase.from('properties').select('*').eq('"Deleted"', false))
         ]);
@@ -153,7 +153,7 @@ export default function Dashboard() {
         const tasks = tasksResult.data || [];
         const complianceLogs = complianceLogsResult.data || [];
         const allAccommodations = accommodationsResult.data || [];
-        const supportPlansData = supportPlansResult.data || [];
+        const quarterlyReviewsData = quarterlyReviewsResult.data || [];
         const serviceCharges = serviceChargesResult.data || [];
         const repairs = repairsResult.data || [];
         const benefitLogs = benefitLogsResult.data || [];
@@ -420,6 +420,9 @@ export default function Dashboard() {
         fourWeeksAgoHB.setDate(fourWeeksAgoHB.getDate() - 28);
         fourWeeksAgoHB.setHours(0, 0, 0, 0);
 
+        console.log('📊 Total benefit logs:', benefitLogs.length);
+        console.log('📊 Sample benefit log:', benefitLogs[0]);
+
         const recentHBLogs = benefitLogs.filter(log => {
           const deleted = log.Deleted || log.deleted || false;
           if (deleted) return false;
@@ -428,6 +431,9 @@ export default function Dashboard() {
           const logDate = new Date(log["Log Date"]);
           return logDate >= fourWeeksAgoHB;
         });
+
+        console.log('📊 Recent HB logs:', recentHBLogs.length);
+        console.log('📊 Sample HB log:', recentHBLogs[0]);
 
         const requestedSupportNotes = recentHBLogs.filter(log => {
           const logType = (log["Log Type"] || '').toLowerCase().replace(/ /g, '_');
@@ -482,16 +488,12 @@ export default function Dashboard() {
         });
 
         // Quarterly Review Summary
-        const quarterlyReviews = supportPlansData.filter(plan => {
-          const planType = plan["Plan Type"];
-          return planType === 'quarterly_reviews';
-        });
-        const overdueReviews = quarterlyReviews.filter(r => {
+        const overdueReviews = quarterlyReviewsData.filter(r => {
           const status = (r.Status || '').toLowerCase();
           const nextReviewDate = r["Next Review Date"];
           return status === 'overdue' || (nextReviewDate && new Date(nextReviewDate) < now);
         });
-        const dueSoonReviews = quarterlyReviews.filter(r => {
+        const dueSoonReviews = quarterlyReviewsData.filter(r => {
           const nextReviewDate = r["Next Review Date"];
           return nextReviewDate && 
                  new Date(nextReviewDate) >= now && 
@@ -564,7 +566,7 @@ export default function Dashboard() {
             </Card>
           </a>
 
-          <a href={createPageUrl("Referrals")}>
+          <a href={createPageUrl("Referral")}>
             <Card className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
                 <FileUp className="w-6 h-6 mx-auto mb-2" />
@@ -916,7 +918,7 @@ export default function Dashboard() {
                   <ArrowRightLeft className="w-5 h-5" />
                   Referrals
                 </CardTitle>
-                <a href={createPageUrl("Referrals")}>
+                <a href={createPageUrl("Referral")}>
                   <Button variant="ghost" size="sm" className="text-indigo-700 hover:text-indigo-800">
                     <ArrowRight className="w-4 h-4" />
                   </Button>
@@ -951,7 +953,7 @@ export default function Dashboard() {
                   ) : (
                     <p className="text-sm text-indigo-700 text-center py-4">No referrals under assessment</p>
                   )}
-                  <a href={createPageUrl("Referrals")}>
+                  <a href={createPageUrl("Referral")}>
                     <Button variant="link" className="w-full mt-3 text-indigo-700 hover:text-indigo-800">
                       View All Referrals <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>

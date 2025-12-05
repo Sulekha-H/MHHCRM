@@ -208,6 +208,33 @@ export default function Referrals() {
     setViewingReferral(referral);
   };
 
+  const handleDelete = async (referral) => {
+    if (!window.confirm(`Are you sure you want to delete the referral for "${referral.applicant_name}"?`)) {
+      return;
+    }
+
+    try {
+      const tableName = referral.referral_type === 'Organisation' ? 'organisation_referrals' : 'self_referrals';
+      
+      const { error } = await supabase
+        .from(tableName)
+        .update({
+          'Deleted': true,
+          'Deleted Date': new Date().toISOString(),
+          'Deleted By': currentUser?.email || "Unknown User"
+        })
+        .eq('"ID"', referral.id);
+
+      if (error) throw error;
+
+      setViewingReferral(null);
+      loadData();
+    } catch (error) {
+      console.error("Error deleting referral:", error);
+      alert("Error deleting referral: " + error.message);
+    }
+  };
+
   const getStatusColor = (status) => {
     const statusLower = status?.toLowerCase().replace(/ /g, '_');
     const colors = {
@@ -342,6 +369,7 @@ export default function Referrals() {
           getLoggedByName={getLoggedByName}
           onClose={() => setViewingReferral(null)}
           onEdit={(ref) => handleEdit(ref)}
+          onDelete={(ref) => handleDelete(ref)}
         />
       )}
 

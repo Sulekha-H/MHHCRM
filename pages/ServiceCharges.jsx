@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default function ServiceCharges() {
+export default function ServiceChargesSupabase() {
   const [serviceCharges, setServiceCharges] = useState([]);
   const [cashLogs, setCashLogs] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -499,6 +499,32 @@ export default function ServiceCharges() {
 
   const handleViewCashLogDetails = (cashLog) => {
     setViewingCashLog(cashLog);
+  };
+
+  const handleCashLogDelete = async (cashLog) => {
+    const cashLogResidentId = cashLog.resident_id || cashLog["Resident ID"];
+    if (window.confirm(`Are you sure you want to delete this cash log entry for ${getResidentName(cashLogResidentId)}?`)) {
+      try {
+        const { error } = await supabase
+          .from('cash_logs')
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": currentUser?.email || "Unknown"
+          })
+          .eq('"ID"', cashLog.id || cashLog.ID);
+        
+        if (error) throw error;
+        
+        setViewingCashLog(null);
+        setShowCashForm(false);
+        setEditingCashLog(null);
+        loadData();
+      } catch (error) {
+        console.error("Error deleting cash log:", error);
+        alert("Error deleting cash log: " + error.message);
+      }
+    }
   };
 
   const handleDelete = async (charge) => {
@@ -983,6 +1009,7 @@ export default function ServiceCharges() {
                 currentUser={currentUser}
                 onSubmit={handleCashLogSubmit}
                 onCancel={() => { setShowCashForm(false); setEditingCashLog(null); }}
+                onDelete={handleCashLogDelete}
               />
             </div>
           )}
@@ -994,24 +1021,7 @@ export default function ServiceCharges() {
               getPropertyName={getPropertyName}
               onClose={() => setViewingCashLog(null)}
               onEdit={handleCashLogEdit}
-              onDelete={async (cashLog) => {
-                if (window.confirm(`Are you sure you want to delete this cash log entry?`)) {
-                  try {
-                    const { error } = await supabase
-                      .from('cash_logs')
-                      .delete()
-                      .eq('"ID"', cashLog.id);
-                    
-                    if (error) throw error;
-                    
-                    setViewingCashLog(null);
-                    loadData();
-                  } catch (error) {
-                    console.error("Error deleting cash log:", error);
-                    alert("Error deleting cash log: " + error.message);
-                  }
-                }
-              }}
+              onDelete={handleCashLogDelete}
             />
           )}
 

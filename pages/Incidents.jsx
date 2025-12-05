@@ -7,11 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Shield, Download } from "lucide-react";
 import { format } from "date-fns";
-import IncidentForm from "../components/incidents/IncidentForm";
-import IncidentCard from "../components/incidents/IncidentCard";
+import IncidentForm from "../components/Incidents/IncidentForm";
+import IncidentCard from "../components/Incidents/IncidentCard";
 import IncidentDetailModal from "../components/incidents/IncidentDetailModal";
 
-export default function Incidents() {
+export default function IncidentsSupabase() {
   const [incidents, setIncidents] = useState([]);
   const [residents, setResidents] = useState([]);
   const [users, setUsers] = useState([]);
@@ -78,7 +78,7 @@ export default function Incidents() {
 
   const loadData = async () => {
     setLoading(true);
-    console.log("Starting to load incidents from Supabase...");
+    console.log("🔵 Starting to load incidents from Supabase...");
 
     try {
       // Load current user
@@ -90,17 +90,31 @@ export default function Incidents() {
           .eq('email', authUser.email)
           .single();
         setCurrentUser(userData);
-        console.log("Current user:", userData?.email);
+        console.log("👤 Current user:", userData?.email);
       }
 
       // Load incidents with direct Supabase query
+      console.log("📊 Fetching incidents from Supabase...");
       const { data: incidentsData, error: incidentsError } = await supabase
         .from('incidents')
         .select('*')
-        .order('Incident Date', { ascending: false });
+        .order('"Incident Date"', { ascending: false });
 
-      if (incidentsError) throw incidentsError;
-      console.log(`✅ Loaded ${incidentsData?.length || 0} incidents`);
+      console.log("📊 Raw incidents data:", incidentsData);
+      console.log("❌ Incidents error:", incidentsError);
+
+      if (incidentsError) {
+        console.error("❌ Error loading incidents:", incidentsError);
+        throw incidentsError;
+      }
+      
+      // Filter out soft-deleted incidents (only exclude if explicitly marked as deleted)
+      const activeIncidents = (incidentsData || []).filter(i => {
+        const isDeleted = i.Deleted || i["Deleted"];
+        console.log(`Checking incident ${i.ID || i.id}: Deleted=${isDeleted}`);
+        return isDeleted !== true;
+      });
+      console.log(`✅ Loaded ${activeIncidents.length} incidents (filtered out ${(incidentsData?.length || 0) - activeIncidents.length} deleted)`);
 
       // Load residents
       const { data: residentsData, error: residentsError } = await supabase
@@ -136,13 +150,14 @@ export default function Incidents() {
       });
       console.log(`✅ Loaded ${activeUsers.length} active users`);
 
-      setIncidents(incidentsData || []);
+      setIncidents(activeIncidents);
       setResidents(residentsData || []);
       setProperties(propertiesData || []);
       setUsers(activeUsers);
 
     } catch (error) {
-      console.error("Critical error loading data:", error);
+      console.error("❌ Critical error loading data:", error);
+      alert("Error loading incidents: " + error.message + "\nCheck browser console for details.");
       setIncidents([]);
       setResidents([]);
       setProperties([]);
@@ -190,6 +205,31 @@ export default function Incidents() {
 
   const handleViewDetails = (incident) => {
     setViewingIncident(incident);
+  };
+
+  const handleDelete = async (incident) => {
+    if (window.confirm(`Are you sure you want to delete this incident? It will be moved to deleted entries.`)) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        const { error } = await supabase
+          .from('incidents')
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.email || 'unknown'
+          })
+          .eq('ID', incident.ID || incident.id);
+
+        if (error) throw error;
+        console.log(`✅ Soft deleted incident ${incident.ID || incident.id}`);
+        setViewingIncident(null);
+        await loadData();
+      } catch (error) {
+        console.error("Error deleting incident:", error);
+        alert("Error deleting incident: " + error.message);
+      }
+    }
   };
 
   const exportToCSV = () => {
@@ -439,6 +479,7 @@ export default function Incidents() {
             setViewingIncident(null);
             handleEdit(incident);
           }}
+          onDelete={handleDelete}
         />
       )}
 

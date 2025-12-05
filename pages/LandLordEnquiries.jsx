@@ -262,9 +262,12 @@ export default function LandlordEnquiries() {
       const { data: enquiriesData, error: enquiriesError } = await supabase
         .from('landlord_enquiries')
         .select('*')
-        .order('Enquiry Date', { ascending: false }); // Changed to PascalCase
+        .order('"Enquiry Date"', { ascending: false });
 
-      if (enquiriesError) throw enquiriesError;
+      if (enquiriesError) {
+        console.error("❌ Error loading enquiries:", enquiriesError);
+        throw enquiriesError;
+      }
 
       console.log(`✅ Loaded ${enquiriesData?.length || 0} enquiries`);
       if (enquiriesData && enquiriesData.length > 0) {
@@ -277,8 +280,15 @@ export default function LandlordEnquiries() {
 
       if (usersError) throw usersError;
       
-      // Normalize all enquiries
-      const normalizedEnquiries = enquiriesData ? enquiriesData.map(normalizeEnquiry) : [];
+      // Filter out deleted records and normalize
+      const activeEnquiries = (enquiriesData || []).filter(e => {
+        const isDeleted = e.Deleted || e.deleted || e["Deleted"];
+        return !isDeleted;
+      });
+      
+      console.log(`📊 Active enquiries after filter: ${activeEnquiries.length}`);
+      
+      const normalizedEnquiries = activeEnquiries.map(normalizeEnquiry);
       console.log("📊 Sample normalized enquiry:", normalizedEnquiries[0]);
       
       setEnquiries(normalizedEnquiries);
@@ -357,14 +367,20 @@ export default function LandlordEnquiries() {
   const confirmDelete = async () => {
     if (enquiryToDelete) {
       try {
+        const deleteData = {
+          "Deleted": true,
+          "Deleted Date": new Date().toISOString(),
+          "Deleted By": currentUser?.email || currentUser?.user_metadata?.full_name || 'unknown'
+        };
+
         const { error } = await supabase
           .from('landlord_enquiries')
-          .delete()
-          .eq('ID', enquiryToDelete.id); // Changed to 'ID'
+          .update(deleteData)
+          .eq('"ID"', enquiryToDelete.id);
         
         if (error) throw error;
         
-        console.log(`Landlord enquiry ${enquiryToDelete.id} deleted successfully.`);
+        console.log(`✅ Soft deleted landlord enquiry ${enquiryToDelete.id}`);
         setEnquiryToDelete(null);
         setViewingEnquiry(null);
         await loadData();
@@ -830,7 +846,7 @@ export default function LandlordEnquiries() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Landlord Enquiry</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the enquiry from "{enquiryToDelete?.landlord_name}"? This action cannot be undone and will permanently remove all data associated with this enquiry.
+              Are you sure you want to delete the enquiry from "{enquiryToDelete?.landlord_name}"? It will be moved to deleted entries.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

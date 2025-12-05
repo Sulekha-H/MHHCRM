@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function Documents() {
+export default function DocumentsSupabase() {
   const [activeTab, setActiveTab] = useState("documents");
   const [documents, setDocuments] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -44,19 +44,6 @@ export default function Documents() {
   const [residentFilter, setResidentFilter] = useState("all");
   const [selectedTags, setSelectedTags] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [hasDeletePermission, setHasDeletePermission] = useState(false);
-
-  const checkDeletePermission = (user) => {
-    if (!user?.email) return false;
-    const authorizedUsers = [
-      'amaani@myhopehousing.org.uk',
-      'burton@myhopehousing.org.uk',
-      'leticia@myhopehousing.org.uk'
-    ].map(email => email.toLowerCase());
-    
-    const userEmail = user.email.toLowerCase().trim();
-    return authorizedUsers.includes(userEmail);
-  };
 
   useEffect(() => {
     loadData();
@@ -130,9 +117,6 @@ export default function Documents() {
         const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
         userData = data;
         setCurrentUser(userData);
-        const hasPermission = checkDeletePermission(userData);
-        setHasDeletePermission(hasPermission);
-        console.log("✅ Delete permission:", hasPermission);
       }
 
       const [
@@ -145,10 +129,10 @@ export default function Documents() {
         { data: accommodationsData, error: accommodationsError },
         { data: usersData, error: usersError }
       ] = await Promise.all([
-        supabase.from('documents').select('*').order('Created Date', { ascending: false }),
-        supabase.from('warranties').select('*').order('Created Date', { ascending: false }),
-        supabase.from('insurances').select('*').order('Created Date', { ascending: false }),
-        supabase.from('appliances').select('*').order('Created Date', { ascending: false }),
+        supabase.from('documents').select('*').order('"Created Date"', { ascending: false }),
+        supabase.from('warranties').select('*').order('"Created Date"', { ascending: false }),
+        supabase.from('insurances').select('*').order('"Created Date"', { ascending: false }),
+        supabase.from('appliances').select('*').order('"Created Date"', { ascending: false }),
         supabase.from('residents').select('*'),
         supabase.from('properties').select('*'),
         supabase.from('accommodations').select('*'),
@@ -164,10 +148,22 @@ export default function Documents() {
       if (accommodationsError) console.error('❌ Error loading accommodations:', accommodationsError);
       if (usersError) console.error('❌ Error loading users:', usersError);
 
-      const activeDocuments = (docsData || []).filter(d => !d.deleted && !d.Deleted);
-      const activeWarranties = (warrantyData || []).filter(w => !w.deleted && !w.Deleted);
-      const activeInsurances = (insuranceData || []).filter(i => !i.deleted && !i.Deleted);
-      const activeAppliances = (applianceData || []).filter(a => !a.deleted && !a.Deleted);
+      const activeDocuments = (docsData || []).filter(d => {
+        const isDeleted = d.deleted || d.Deleted || d["Deleted"];
+        return !isDeleted;
+      });
+      const activeWarranties = (warrantyData || []).filter(w => {
+        const isDeleted = w.deleted || w.Deleted || w["Deleted"];
+        return !isDeleted;
+      });
+      const activeInsurances = (insuranceData || []).filter(i => {
+        const isDeleted = i.deleted || i.Deleted || i["Deleted"];
+        return !isDeleted;
+      });
+      const activeAppliances = (applianceData || []).filter(a => {
+        const isDeleted = a.deleted || a.Deleted || a["Deleted"];
+        return !isDeleted;
+      });
 
       console.log('📊 Data loaded:');
       console.log('  - Documents:', activeDocuments.length, '(filtered out', (docsData?.length || 0) - activeDocuments.length, 'deleted)');
@@ -282,36 +278,26 @@ export default function Documents() {
   const handleDelete = async (recordId) => {
     console.log("🗑️ handleDelete called with recordId:", recordId);
     console.log("👤 Current user:", currentUser?.email);
-    console.log("🔐 Has delete permission:", hasDeletePermission);
-
-    if (!hasDeletePermission) {
-      alert("You do not have permission to delete records. Only Amaani, Burton, and Leticia can delete.");
-      console.log("❌ Delete permission denied for user:", currentUser?.email);
-      return;
-    }
 
     if (window.confirm("Are you sure you want to delete this record? It will be moved to deleted entries.")) {
       console.log("✅ Delete confirmed by:", currentUser?.email);
       
       try {
         const deleteData = {
-          deleted: true,
-          Deleted: true,
-          deleted_date: new Date().toISOString(),
+          "Deleted": true,
           "Deleted Date": new Date().toISOString(),
-          deleted_by: currentUser?.email || currentUser?.full_name || 'unknown',
           "Deleted By": currentUser?.email || currentUser?.full_name || 'unknown'
         };
 
         let error;
         if (activeTab === "documents") {
-          ({ error } = await supabase.from('documents').update(deleteData).eq('id', recordId));
+          ({ error } = await supabase.from('documents').update(deleteData).eq('"ID"', recordId));
         } else if (activeTab === "warranties") {
-          ({ error } = await supabase.from('warranties').update(deleteData).eq('id', recordId));
+          ({ error } = await supabase.from('warranties').update(deleteData).eq('"ID"', recordId));
         } else if (activeTab === "insurances") {
-          ({ error } = await supabase.from('insurances').update(deleteData).eq('id', recordId));
+          ({ error } = await supabase.from('insurances').update(deleteData).eq('"ID"', recordId));
         } else if (activeTab === "appliances") {
-          ({ error } = await supabase.from('appliances').update(deleteData).eq('id', recordId));
+          ({ error } = await supabase.from('appliances').update(deleteData).eq('"ID"', recordId));
         }
         
         if (error) throw error;
@@ -732,34 +718,34 @@ export default function Documents() {
 
   const getConfidentialityColor = (level) => {
     const colors = {
-      public: "bg-green-100 text-green-800",
-      internal: "bg-blue-100 text-blue-800",
-      confidential: "bg-yellow-100 text-yellow-800",
-      restricted: "bg-red-100 text-red-800",
+      public: "bg-green-500/90 text-white font-semibold",
+      internal: "bg-blue-500/90 text-white font-semibold",
+      confidential: "bg-yellow-500/90 text-white font-semibold",
+      restricted: "bg-red-500/90 text-white font-semibold",
     };
-    return colors[level] || "bg-gray-100";
+    return colors[level] || "bg-gray-500/90 text-white font-semibold";
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      active: "bg-green-100 text-green-800",
-      expired: "bg-red-100 text-red-800",
-      claimed: "bg-yellow-100 text-yellow-800",
-      cancelled: "bg-red-100 text-red-800",
-      pending_renewal: "bg-yellow-100 text-yellow-800",
+      active: "bg-green-500/90 text-white font-semibold",
+      expired: "bg-red-500/90 text-white font-semibold",
+      claimed: "bg-yellow-500/90 text-white font-semibold",
+      cancelled: "bg-red-500/90 text-white font-semibold",
+      pending_renewal: "bg-yellow-500/90 text-white font-semibold",
     };
-    return colors[status] || "bg-gray-100";
+    return colors[status] || "bg-gray-500/90 text-white font-semibold";
   };
 
   const getConditionColor = (condition) => {
     const colors = {
-      new: "bg-green-100 text-green-800",
-      good: "bg-blue-100 text-blue-800",
-      fair: "bg-yellow-100 text-yellow-800",
-      needs_repair: "bg-orange-100 text-orange-800",
-      out_of_order: "bg-red-100 text-red-800",
+      new: "bg-green-500/90 text-white font-semibold",
+      good: "bg-blue-500/90 text-white font-semibold",
+      fair: "bg-yellow-500/90 text-white font-semibold",
+      needs_repair: "bg-orange-500/90 text-white font-semibold",
+      out_of_order: "bg-red-500/90 text-white font-semibold",
     };
-    return colors[condition] || "bg-gray-100";
+    return colors[condition] || "bg-gray-500/90 text-white font-semibold";
   };
 
   const getAllTags = () => {
@@ -848,8 +834,7 @@ export default function Documents() {
             getLoggedByName={getLoggedByName}
             onClose={() => setViewingRecord(null)}
             onEdit={handleEdit}
-            onDelete={hasDeletePermission ? handleDelete : null}
-            hasDeletePermission={hasDeletePermission}
+            onDelete={handleDelete}
           />
         );
       case "warranties":
@@ -862,8 +847,7 @@ export default function Documents() {
             getLoggedByName={getLoggedByName}
             onClose={() => setViewingRecord(null)}
             onEdit={handleEdit}
-            onDelete={hasDeletePermission ? handleDelete : null}
-            hasDeletePermission={hasDeletePermission}
+            onDelete={handleDelete}
           />
         );
       case "insurances":
@@ -874,8 +858,7 @@ export default function Documents() {
             getStatusColor={getStatusColor}
             onClose={() => setViewingRecord(null)}
             onEdit={handleEdit}
-            onDelete={hasDeletePermission ? handleDelete : null}
-            hasDeletePermission={hasDeletePermission}
+            onDelete={handleDelete}
           />
         );
       case "appliances":
@@ -887,8 +870,7 @@ export default function Documents() {
             getConditionColor={getConditionColor}
             onClose={() => setViewingRecord(null)}
             onEdit={handleEdit}
-            onDelete={hasDeletePermission ? handleDelete : null}
-            hasDeletePermission={hasDeletePermission}
+            onDelete={handleDelete}
           />
         );
       default:
@@ -916,10 +898,7 @@ export default function Documents() {
             💾 Active records: {documents.length} docs, {warranties.length} warranties, {insurances.length} insurance, {appliances.length} appliances
           </p>
           <p className="text-xs text-slate-500">
-            👤 Logged in as: <span className="font-semibold">{currentUser?.full_name || currentUser?.email || 'Unknown'}</span> | 
-            🔐 Delete permission: <span className={hasDeletePermission ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-              {hasDeletePermission ? "YES" : "NO"}
-            </span>
+            👤 Logged in as: <span className="font-semibold">{currentUser?.full_name || currentUser?.email || 'Unknown'}</span>
           </p>
         </div>
         <div className="flex gap-3">
@@ -1111,14 +1090,12 @@ export default function Documents() {
                                 }} title="Edit Document">
                                   <Edit className="w-4 h-4 text-slate-600" />
                                 </Button>
-                                {hasDeletePermission && (
-                                  <Button variant="ghost" size="icon" onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(docId);
-                                  }} title="Delete Document">
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </Button>
-                                )}
+                                <Button variant="ghost" size="icon" onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(docId);
+                                }} title="Delete Document">
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
@@ -1193,14 +1170,12 @@ export default function Documents() {
                                 }}>
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                {hasDeletePermission && (
-                                  <Button variant="ghost" size="icon" onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(wId);
-                                  }}>
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </Button>
-                                )}
+                                <Button variant="ghost" size="icon" onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(wId);
+                                }}>
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
@@ -1273,14 +1248,12 @@ export default function Documents() {
                                 }}>
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                {hasDeletePermission && (
-                                  <Button variant="ghost" size="icon" onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(iId);
-                                  }}>
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </Button>
-                                )}
+                                <Button variant="ghost" size="icon" onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(iId);
+                                }}>
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
@@ -1353,14 +1326,12 @@ export default function Documents() {
                                 }}>
                                   <Edit className="w-4 h-4" />
                                 </Button>
-                                {hasDeletePermission && (
-                                  <Button variant="ghost" size="icon" onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(aId);
-                                  }}>
-                                    <Trash2 className="w-4 h-4 text-red-600" />
-                                  </Button>
-                                )}
+                                <Button variant="ghost" size="icon" onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(aId);
+                                }}>
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
