@@ -21,7 +21,8 @@ import {
   X,
   FileStack,
   Settings,
-  Trash2
+  Trash2,
+  Lock
 } from 'lucide-react';
 
 export default function AppLayout({ children }) {
@@ -30,11 +31,26 @@ export default function AppLayout({ children }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) {
+          setAuthError(error.message);
+        } else if (!user) {
+          setAuthError('Please log in to access this application');
+        } else {
+          setUser(user);
+          setAuthError(null);
+        }
+      } catch (error) {
+        setAuthError('Authentication failed');
+      } finally {
+        setLoading(false);
+      }
     };
     getUser();
   }, []);
@@ -68,19 +84,62 @@ export default function AppLayout({ children }) {
 
   // Property/Landlord section
   const propertyLandlordNav = [
-    { name: "Landlord Enquiries", href: "/LandLordEnquiries", icon: Users },
-    { name: "Property Onboarding", href: "/PropertyOnBoarding", icon: Building }
+    { name: "Landlord Enquiries", href: "/LandlordEnquiries", icon: Users },
+    { name: "Property Onboarding", href: "/PropertyOnboarding", icon: Building }
   ];
 
   // Administration section
   const adminNav = [
     { name: "Custom Sections", href: "/CustomSections", icon: Settings },
-    { name: "Landlord Portal", href: "/LandLordPortal", icon: Settings },
+    { name: "Landlord Portal", href: "/LandlordPortal", icon: Settings },
     { name: "Settings", href: "/Settings", icon: Settings },
     { name: "Deleted Entries", href: "/DeletedEntries", icon: Trash2 }
   ];
 
   const isActive = (href) => router.pathname === href;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication error and login button
+  if (authError || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-6">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">
+            {authError || 'Please log in to access this application'}
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
