@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -332,17 +332,85 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
 
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-8 mt-2">Note Details</h3>
-            <div>
-              <Label htmlFor="title">
-                {isQuarterlyReview ? "Review Title *" : "Note Title *"}
-              </Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={e => handleChange("title", e.target.value)}
-                placeholder={isQuarterlyReview ? "e.g., Q1 2024 Support Review" : "e.g., Weekly check-in meeting"}
-                required
-              />
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">
+                  {isQuarterlyReview ? "Review Title *" : "Note Title *"}
+                </Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={e => handleChange("title", e.target.value)}
+                  placeholder={isQuarterlyReview ? "e.g., Q1 2024 Support Review" : "e.g., Weekly check-in meeting"}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">
+                  {isQuarterlyReview ? "Review Description" : "Note Description"}
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={e => handleChange("description", e.target.value)}
+                  placeholder={isQuarterlyReview ? "Describe what was discussed in this quarterly review..." : "Describe what was discussed or observed during this support session..."}
+                  rows={4}
+                />
+              </div>
+
+              {!isQuarterlyReview && (
+                <div>
+                  <Label htmlFor="support_hours">Support Hours (optional)</Label>
+                  <Input
+                    id="support_hours"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={formData.support_hours !== null && formData.support_hours !== undefined ? formData.support_hours : ""}
+                    onChange={e => handleChange("support_hours", e.target.value === "" ? null : parseFloat(e.target.value))}
+                    placeholder="e.g., 1.5"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Number of hours spent on this support session</p>
+                </div>
+              )}
+
+              {isQuarterlyReview && (
+                <>
+                  <div>
+                    <Label htmlFor="goals_discussed">Goals Discussed</Label>
+                    <Textarea
+                      id="goals_discussed"
+                      value={formData.goals_discussed}
+                      onChange={e => handleChange("goals_discussed", e.target.value)}
+                      placeholder="What goals were discussed with the resident..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="action_points">Action Points</Label>
+                    <Textarea
+                      id="action_points"
+                      value={formData.action_points}
+                      onChange={e => handleChange("action_points", e.target.value)}
+                      placeholder="What actions need to be taken..."
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="resident_feedback">Resident Feedback</Label>
+                    <Textarea
+                      id="resident_feedback"
+                      value={formData.resident_feedback}
+                      onChange={e => handleChange("resident_feedback", e.target.value)}
+                      placeholder="Any feedback from the resident..."
+                      rows={3}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
