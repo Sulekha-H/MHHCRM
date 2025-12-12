@@ -41,7 +41,8 @@ import {
 export default function Layout({ children, currentPageName }) {
   const router = useRouter();
   const publicPages = ['/set-password', '/login', '/privacypolicy', '/termsofservice'];
-  const isPublicPage = publicPages.includes(router.pathname);
+  const isPublicPage = router.asPath.startsWith('/set-password') || publicPages.includes(router.pathname);
+
 
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(!isPublicPage);
