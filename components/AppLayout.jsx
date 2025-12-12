@@ -44,12 +44,17 @@ export default function Layout({ children, currentPageName }) {
   const [loading, setLoading] = React.useState(true);
   const [authError, setAuthError] = React.useState(null);
 
-  // Pages that don't require authentication
-  const publicPages = ['PrivacyPolicy', 'TermsOfService', 'set-password', 'login'];
-  const isPublicPage = publicPages.includes(currentPageName);
+  // Check if this is a public page that doesn't need authentication
+  const isPublicPage = React.useMemo(() => {
+    const publicPages = ['PrivacyPolicy', 'TermsOfService', 'SetPassword', 'Login'];
+    const pathname = window.location.pathname.toLowerCase();
+    
+    return publicPages.some(page => currentPageName === page) || 
+           pathname.includes('set-password') || 
+           pathname.includes('/login');
+  }, [currentPageName]);
 
   React.useEffect(() => {
-    // Skip auth check for public pages
     if (isPublicPage) {
       setLoading(false);
       return;
@@ -63,9 +68,6 @@ export default function Layout({ children, currentPageName }) {
       } catch (error) {
         console.error("Error loading user:", error);
         setAuthError(error.message || "Authentication failed");
-        
-        // Don't auto-redirect, let user click the login button
-        // This prevents infinite redirect loops
       } finally {
         setLoading(false);
       }
@@ -91,7 +93,7 @@ export default function Layout({ children, currentPageName }) {
     return adminUsers.includes(userEmail);
   };
 
-  // If it's a public page, render without authentication
+  // Render public page layout
   if (isPublicPage) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -109,48 +111,16 @@ export default function Layout({ children, currentPageName }) {
                 <h2 className="font-bold text-slate-900 text-lg">My Hope Housing</h2>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Button 
-                onClick={() => window.location.href = createPageUrl("PrivacyPolicy")}
-                variant="ghost"
-                className="text-slate-600"
-              >
-                Privacy Policy
-              </Button>
-              <Button 
-                onClick={() => window.location.href = createPageUrl("TermsOfService")}
-                variant="ghost"
-                className="text-slate-600"
-              >
-                Terms of Service
-              </Button>
-              <Button 
-                onClick={() => base44.auth.redirectToLogin()} 
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Log In
-              </Button>
-            </div>
           </div>
         </header>
         <main className="flex-grow w-full max-w-7xl mx-auto p-6">
           {children}
         </main>
-        <footer className="bg-white border-t border-slate-200 py-6 px-6 mt-12 flex-shrink-0">
-          <div className="max-w-7xl mx-auto text-center text-sm text-slate-600">
-            <p>© {new Date().getFullYear()} My Hope Housing CIC. All rights reserved.</p>
-            <div className="flex justify-center gap-4 mt-2">
-              <a href={createPageUrl("PrivacyPolicy")} className="hover:text-blue-600">Privacy Policy</a>
-              <span>•</span>
-              <a href={createPageUrl("TermsOfService")} className="hover:text-blue-600">Terms of Service</a>
-            </div>
-          </div>
-        </footer>
       </div>
     );
   }
 
-  // Show loading state while checking authentication
+  // Show loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -162,7 +132,7 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Show authentication error with helpful actions
+  // Show authentication error
   if (authError && !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6">
@@ -172,19 +142,10 @@ export default function Layout({ children, currentPageName }) {
               <Lock className="w-8 h-8 text-red-600" />
             </div>
             <h2 className="text-xl font-semibold text-slate-900 mb-2">Authentication Required</h2>
-            <p className="text-slate-600 mb-6">
-              {authError.includes("private") 
-                ? "This app is private. Please log in to access it."
-                : authError.includes("not authenticated")
-                ? "Your session has expired. Please log in again."
-                : "Unable to authenticate. Please try logging in."}
-            </p>
+            <p className="text-slate-600 mb-6">Please log in to access this application.</p>
             <div className="space-y-3">
               <Button 
-                onClick={() => {
-                  // Clear any stale auth state and redirect
-                  window.location.href = '/api/auth/login';
-                }} 
+                onClick={() => base44.auth.redirectToLogin()} 
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 Log In
@@ -197,12 +158,6 @@ export default function Layout({ children, currentPageName }) {
                 Retry
               </Button>
             </div>
-            <p className="text-xs text-slate-500 mt-6">
-              Error details: {authError}
-            </p>
-            <p className="text-xs text-slate-500 mt-2">
-              If you continue to have issues, please contact your administrator.
-            </p>
           </CardContent>
         </Card>
       </div>
