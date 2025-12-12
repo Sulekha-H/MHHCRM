@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,31 +12,19 @@ export default function SetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        setError('This link is invalid or has expired. Please request a new one.');
-      }
-      setLoading(false);
-    };
-
-    checkSession();
-  }, []);
-
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
+    // Simple password validation
     if (password !== password2) {
       setError('Passwords do not match');
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -44,9 +32,8 @@ export default function SetPasswordPage() {
 
     setSubmitting(true);
 
-    const { error } = await supabase.auth.updateUser({
-      password,
-    });
+    // Supabase will use the token in the URL automatically
+    const { error } = await supabase.auth.updateUser({ password });
 
     setSubmitting(false);
 
@@ -55,43 +42,9 @@ export default function SetPasswordPage() {
       return;
     }
 
-    // Password set successfully - redirect to dashboard
-    router.push('/');
+    // Password set successfully - redirect to login/dashboard
+    router.push('/login');
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-slate-600">Checking link...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error && !password) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-slate-900">Set Password</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            <p className="text-slate-600">
-              You can request a new link from your administrator.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">

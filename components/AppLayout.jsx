@@ -31,29 +31,25 @@ import {
   Folder,
   Settings,
   Lock,
-  FileStack,
   Trash2
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
-  const [authError, setAuthError] = React.useState(null);
 
-  // Check if this is a public page that doesn't need authentication
+  // List of public pages that don't require authentication
   const isPublicPage = React.useMemo(() => {
-    const publicPages = ['PrivacyPolicy', 'TermsOfService', 'SetPassword', 'Login'];
+    const publicPages = ['privacypolicy', 'termsofservice', 'set-password', 'login'];
     const pathname = window.location.pathname.toLowerCase();
-    
-    return publicPages.some(page => currentPageName === page) || 
-           pathname.includes('set-password') || 
-           pathname.includes('/login');
-  }, [currentPageName]);
+    return publicPages.some(page => pathname.includes(page));
+  }, []);
 
+  // Load Supabase session user
   React.useEffect(() => {
     if (isPublicPage) {
       setLoading(false);
@@ -61,17 +57,11 @@ export default function Layout({ children, currentPageName }) {
     }
 
     const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        setAuthError(null);
-      } catch (error) {
-        console.error("Error loading user:", error);
-        setAuthError(error.message || "Authentication failed");
-      } finally {
-        setLoading(false);
-      }
+      const { data } = await supabase.auth.getSession();
+      setUser(data?.session?.user || null);
+      setLoading(false);
     };
+
     loadUser();
   }, [isPublicPage]);
 
@@ -82,43 +72,14 @@ export default function Layout({ children, currentPageName }) {
       'amaani@myhopehousing.org.uk',
       'burton@myhopehousing.org.uk'
     ].map(email => email.toLowerCase());
-    const userEmail = user.email?.trim().toLowerCase();
-    return authorizedUsers.includes(userEmail);
+    return authorizedUsers.includes(user.email.toLowerCase());
   };
 
   const hasAdminAccess = (user) => {
     if (!user?.email) return false;
     const adminUsers = ['amaani@myhopehousing.org.uk'].map(email => email.toLowerCase());
-    const userEmail = user.email?.trim().toLowerCase();
-    return adminUsers.includes(userEmail);
+    return adminUsers.includes(user.email.toLowerCase());
   };
-
-  // Render public page layout
-  if (isPublicPage) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden">
-                <img 
-                  src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg" 
-                  alt="My Hope Housing Logo" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900 text-lg">My Hope Housing</h2>
-              </div>
-            </div>
-          </div>
-        </header>
-        <main className="flex-grow w-full max-w-7xl mx-auto p-6">
-          {children}
-        </main>
-      </div>
-    );
-  }
 
   // Show loading state
   if (loading) {
@@ -132,8 +93,8 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
-  // Show authentication error
-  if (authError && !user) {
+  // If page is not public and user is not authenticated, show login prompt
+  if (!isPublicPage && !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6">
         <Card className="w-full max-w-md">
@@ -145,7 +106,7 @@ export default function Layout({ children, currentPageName }) {
             <p className="text-slate-600 mb-6">Please log in to access this application.</p>
             <div className="space-y-3">
               <Button 
-                onClick={() => base44.auth.redirectToLogin()} 
+                onClick={() => window.location.href = '/login'} 
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 Log In
@@ -164,6 +125,7 @@ export default function Layout({ children, currentPageName }) {
     );
   }
 
+  // --- Navigation definitions (unchanged from your previous Layout) ---
   const navigation = [
     { name: "Dashboard", href: createPageUrl("Dashboard"), icon: Home, current: currentPageName === "Dashboard" },
     { name: "Residents", href: createPageUrl("Residents"), icon: Users, current: currentPageName === "Residents" },
@@ -180,7 +142,7 @@ export default function Layout({ children, currentPageName }) {
 
   const supportNav = [
     { name: "Support Plans", href: createPageUrl("SupportPlans"), icon: Heart, current: currentPageName === "SupportPlans" },
-    { name: "Weekly SW Docs", href: createPageUrl("WeeklySWDocs"), icon: FileStack, current: currentPageName === "WeeklySWDocs" },
+    { name: "Weekly SW Docs", href: createPageUrl("WeeklySWDocs"), icon: FileText, current: currentPageName === "WeeklySWDocs" },
     { name: "Benefits", href: createPageUrl("Benefits"), icon: Gift, current: currentPageName === "Benefits" },
     { name: "Referrals", href: createPageUrl("Referrals"), icon: ArrowRightLeft, current: currentPageName === "Referrals" },
   ];
@@ -191,13 +153,11 @@ export default function Layout({ children, currentPageName }) {
     { name: "Documents", href: createPageUrl("Documents"), icon: Folder, current: currentPageName === "Documents" },
   ];
 
-  // Property/Landlord section - Only Amaani and Burton
   const propertyLandlordNav = [
     { name: "Landlord Enquiries", href: createPageUrl("LandlordEnquiries"), icon: Users, current: currentPageName === "LandlordEnquiries" },
     { name: "Property Onboarding", href: createPageUrl("PropertyOnboarding"), icon: Building, current: currentPageName === "PropertyOnboarding" }
   ];
 
-  // Administration section - Only Amaani
   const adminNav = [
     { name: "Custom Sections", href: createPageUrl("CustomSections"), icon: Settings, current: currentPageName === "CustomSections" },
     { name: "Landlord Portal", href: createPageUrl("LandlordPortal"), icon: Settings, current: currentPageName === "LandlordPortal" },
@@ -205,6 +165,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "Deleted Entries", href: createPageUrl("DeletedEntries"), icon: Trash2, current: currentPageName === "DeletedEntries" }
   ];
 
+  // --- Render Layout ---
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-slate-50">
@@ -220,13 +181,12 @@ export default function Layout({ children, currentPageName }) {
               </div>
               <div>
                 <h2 className="font-bold text-slate-900 text-lg">My Hope Housing</h2>
-                <p className="text-xs text-slate-500"></p>
               </div>
             </div>
           </SidebarHeader>
 
           <SidebarContent className="px-4">
-            
+            {/* Main navigation */}
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Main
@@ -247,6 +207,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Operations */}
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Operations
@@ -267,6 +228,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Support */}
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Support & Care
@@ -287,6 +249,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Compliance */}
             <SidebarGroup>
               <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Compliance & Documents
@@ -307,7 +270,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Property/Landlord section - Only Amaani and Burton */}
+            {/* Property/Landlord */}
             {hasPropertyLandlordAccess(user) && (
               <SidebarGroup>
                 <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -330,7 +293,7 @@ export default function Layout({ children, currentPageName }) {
               </SidebarGroup>
             )}
 
-            {/* Administration section - Only Amaani */}
+            {/* Admin */}
             {hasAdminAccess(user) && (
               <SidebarGroup>
                 <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -359,27 +322,12 @@ export default function Layout({ children, currentPageName }) {
           <header className="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="md:hidden" />
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-semibold text-slate-900 capitalize">
-                  {currentPageName === "OfficeLogs" ? "Office Logs" : 
-                   currentPageName === "ServiceCharges" ? "Service Charges" :
-                   currentPageName === "SupportPlans" ? "Support Plans" :
-                   currentPageName === "WeeklySWDocs" ? "Weekly SW Docs" :
-                   currentPageName === "LandlordPortal" ? "Landlord Portal" :
-                   currentPageName === "LandlordEnquiries" ? "Landlord Enquiries" :
-                   currentPageName === "PropertyOnboarding" ? "Property Onboarding" :
-                   currentPageName === "CustomSections" ? "Custom Sections" :
-                   currentPageName === "DeletedEntries" ? "Deleted Entries" :
-                   currentPageName}
-                </h1>
-              </div>
+              <h1 className="text-xl font-semibold text-slate-900 capitalize">{currentPageName}</h1>
             </div>
           </header>
 
           <main className="flex-1 w-full min-w-0 overflow-x-auto p-6">
-            <div className="w-full h-full">
-              {children}
-            </div>
+            {children}
           </main>
         </div>
       </div>
