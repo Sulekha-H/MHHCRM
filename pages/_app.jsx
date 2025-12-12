@@ -6,8 +6,9 @@ function MyApp({ Component, pageProps }) {
   const router = useRouter();
   
   // Pages that should NOT have the AppLayout authentication check
-  const publicPages = ['/login', '/set-password"'];
-  const isPublicPage = publicPages.includes(router.pathname);
+  const publicPages = ['/SupabaseLogin', '/SetPassword', '/supabaselogin', '/setpassword'];
+  const isPublicPage = publicPages.includes(router.pathname.toLowerCase()) || 
+                        publicPages.includes(router.pathname);
   
   if (isPublicPage) {
     return <Component {...pageProps} />;
