@@ -16,29 +16,38 @@ export default function SetPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      // Check if we have a recovery/invite token in the URL
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      const type = hashParams.get('type');
+useEffect(() => {
+  const handleAuthCallback = async () => {
+    // Check for hash parameters (token from email)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+    
+    if (accessToken && (type === 'recovery' || type === 'invite')) {
+      // Exchange the tokens for a session
+      const { data, error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
       
-      if (accessToken && (type === 'recovery' || type === 'invite')) {
-        // Valid token in URL, allow password setting
-        setLoading(false);
-        return;
-      }
-      
-      // Otherwise check for existing session
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+      if (error) {
         setError('This link is invalid or has expired. Please request a new one.');
       }
       setLoading(false);
-    };
+      return;
+    }
+    
+    // Check if there's already an existing session
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setError('This link is invalid or has expired. Please request a new one.');
+    }
+    setLoading(false);
+  };
 
-    checkSession();
-  }, []);
+  handleAuthCallback();
+}, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
