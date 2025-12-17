@@ -19,7 +19,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { createPageUrl } from "@/lib/utils";
+import { createPageUrl } from "@/lib/utils"
 import {
   Home,
   Users,
