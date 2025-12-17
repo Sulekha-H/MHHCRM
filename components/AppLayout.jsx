@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { supabase } from './supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import {
   Home,
   Users,
