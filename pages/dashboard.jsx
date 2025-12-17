@@ -566,7 +566,7 @@ export default function Dashboard() {
             </Card>
           </a>
 
-          <a href={createPageUrl("Referral")}>
+          <a href={createPageUrl("Referrals")}>
             <Card className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
                 <FileUp className="w-6 h-6 mx-auto mb-2" />

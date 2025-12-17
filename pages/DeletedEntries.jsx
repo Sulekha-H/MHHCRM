@@ -9,7 +9,7 @@ import { Search, RotateCcw, Trash2, Calendar, User as UserIcon, Download } from 
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-export default function DeletedEntries_Supabase() {
+export default function DeletedEntries() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("residents");
