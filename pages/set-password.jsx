@@ -20,12 +20,28 @@ useEffect(() => {
   const handleAuthCallback = async () => {
     // Check for hash parameters (token from email)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
+    const tokenHash = hashParams.get('token_hash');
     const type = hashParams.get('type');
     
-    if (accessToken && (type === 'recovery' || type === 'invite')) {
-      // Exchange the tokens for a session
+    if (tokenHash && type === 'invite') {
+      // Verify the OTP token
+      const { data, error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'invite',
+      });
+      
+      if (error) {
+        setError('This link is invalid or has expired. Please request a new one.');
+      }
+      setLoading(false);
+      return;
+    }
+    
+    // Check for access_token (alternative flow)
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    
+    if (accessToken && type) {
       const { data, error } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
