@@ -93,7 +93,7 @@ useEffect(() => {
     }
 
     // Password set successfully - redirect to dashboard
-    router.push('/');
+    router.push('/login');
   };
 
   if (loading) {
