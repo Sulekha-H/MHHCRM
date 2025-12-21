@@ -3,40 +3,46 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function ProtectedPage({ children }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    let isMounted = true;
+    const checkAuth = async () => {
+      try {
+        // Supabase v2 method to get current session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-
-      if (error) {
-        console.error("Supabase getSession error:", error.message);
+        if (session) {
+          setAuthenticated(true);
+        } else {
+          router.replace("/login"); // Redirect if not authenticated
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
         router.replace("/login");
-        return;
-      } 
-
-      if (!session) {
-        router.replace("/login");
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      if (isMounted) setLoading(false);
     };
 
-    checkSession();
-
-    return () => {
-      isMounted = false;
-    };
+    checkAuth();
   }, [router]);
 
-  if (loading) return null; // you can show a spinner here
+  if (loading) {
+    // Show a loading state until session is verified
+    return <div className="p-6 text-center">Loading...</div>;
+  }
+
+  if (!authenticated) {
+    // User is being redirected, do not render children
+    return null;
+  }
 
   return <>{children}</>;
 }
