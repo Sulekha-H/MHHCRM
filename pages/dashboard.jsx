@@ -18,7 +18,7 @@ import { format, addDays } from "date-fns";
 export default function DashboardPage() {
   return (
     <ProtectedPage>
-      <dashboard/>
+      <Dashboard/>
     </ProtectedPage>
   );
 }   
