@@ -1,65 +1,54 @@
 import '../styles/globals.css';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import AppLayout from '../components/AppLayout';
 import { supabase } from '../lib/supabaseClient';
+import AppLayout from '../components/AppLayout';
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
-
-  // Pages that do NOT require login
   const publicPages = ['/login', '/set-password'];
 
-  useEffect(() => {
-    if (!router.isReady) return;
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
+  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-
       if (session) {
         setUser(session.user);
       } else if (!publicPages.includes(router.pathname)) {
         router.replace('/login');
-        return;
       }
-
-      setAuthChecked(true);
+      setLoading(false);
     };
 
     checkSession();
 
-    // Listen for auth changes
+    // Listen to auth changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
-
       if (!session && !publicPages.includes(router.pathname)) {
         router.replace('/login');
       }
     });
 
-    return () => listener.subscription.unsubscribe();
-  }, [router.isReady, router.pathname]);
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, [router]);
 
-  // While checking auth, show loading
-  if (!authChecked) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        Loading...
-      </div>
-    );
-  }
+  // ✅ Do not render anything until loading is complete
+  if (loading) return null;
 
-  // Public page – no layout
+  // Render public pages normally
   if (publicPages.includes(router.pathname)) {
-    return <Component {...pageProps} user={user} />;
+    return <Component {...pageProps} />;
   }
 
-  // Authenticated page – wrap in layout
+  // Render protected pages inside AppLayout
   return (
     <AppLayout user={user}>
-      <Component {...pageProps} user={user} />
+      <Component {...pageProps} />
     </AppLayout>
   );
 }
