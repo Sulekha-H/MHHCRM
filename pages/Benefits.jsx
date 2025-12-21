@@ -24,7 +24,7 @@ const normalizeData = (data) => {
     normalized[normalizedKey] = data[key];
   });
   return normalized;
-};
+}; 
 
 export default function Benefits() {
   const [logs, setLogs] = useState([]);

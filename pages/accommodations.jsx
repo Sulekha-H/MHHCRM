@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ProtectedPage from "../components/ProtectedPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +14,19 @@ import AccommodationCard from "../components/accommodations/AccommodationCard";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AccommodationDetailModal from "../components/accommodations/AccommodationDetailModal";
+ 
+// pages/accommodations.jsx
 
-export default function Accommodations_Supabase() {
+
+export default function AccommodationsPage() {
+  return (
+    <ProtectedPage>
+      <Accommodations/>
+    </ProtectedPage>
+  );
+}    
+
+function Accommodations() {
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
