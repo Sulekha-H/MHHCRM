@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import ProtectedPage from "../pages/ProtectedPage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,15 @@ import {
 import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 
-export default function Dashboard() {
+export default function DashboardPage() {
+  return (
+    <ProtectedPage>
+      <Dashboard/>
+    </ProtectedPage>
+  );
+}   
+
+function Dashboard() {
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     residents: 0,
