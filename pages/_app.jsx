@@ -1,30 +1,36 @@
 import '../styles/globals.css';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
 import AppLayout from '../components/AppLayout';
+import { supabase } from '../lib/supabaseClient';
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Pages that should NOT require login
-  const publicPages = ['/set-password', '/login'];
+  // Pages that do not require authentication
+  const publicPages = ['/login', '/set-password'];
   const isPublicPage = publicPages.includes(router.pathname);
 
   useEffect(() => {
-    const session = supabase.auth.session();
+    // Check current session
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (session) {
-      setUser(session.user);
-    } else if (!isPublicPage) {
-      router.replace('/login');
-      return; // stop further execution
+      if (session) {
+        setUser(session.user);
+      } else if (!isPublicPage) {
+        router.replace('/login'); // redirect unauthenticated users
+        return;
+      }
+
+      setAuthChecked(true);
     }
 
-    setAuthChecked(true);
+    checkSession();
 
+    // Listen to auth state changes (login/logout)
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session && !isPublicPage) {
         router.replace('/login');
@@ -34,16 +40,18 @@ function MyApp({ Component, pageProps }) {
       }
     });
 
-    return () => listener.unsubscribe();
+    return () => listener.subscription.unsubscribe();
   }, [router, isPublicPage]);
 
-  // Wait until auth is checked before rendering
-  if (!authChecked) return null;
+  if (!authChecked) {
+    // Optional: loading state while checking session
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
 
-  // Render public pages directly
-  if (isPublicPage) return <Component {...pageProps} />;
+  if (isPublicPage) {
+    return <Component {...pageProps} />;
+  }
 
-  // Render protected pages with AppLayout
   return (
     <AppLayout user={user}>
       <Component {...pageProps} user={user} />
