@@ -16,6 +16,7 @@ import { format, addDays } from "date-fns";
 
 
 export default function Dashboard({session}) {
+    if (!session) return <div>Loading...</div>
   const user = session.user;
   const [stats, setStats] = useState({
     residents: 0,
