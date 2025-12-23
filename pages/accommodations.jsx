@@ -16,17 +16,8 @@ import AccommodationDetailModal from "../components/accommodations/Accommodation
  
 // pages/accommodations.jsx
 
-export const getServerSideProps = requireAuth;
 
-export default function DashboardPage() {
-  return (
-    <ProtectedPage>
-      <Accommdoations/>
-    </ProtectedPage>
-  );
-}   
-
- function Accommodations() {
+ export default function Accommodations() {
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
