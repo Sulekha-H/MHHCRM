@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +15,7 @@ import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 
 
-export default function Dashboard({session }) {
+export default function Dashboard({session}) {
   const user = session.user;
   const [stats, setStats] = useState({
     residents: 0,
