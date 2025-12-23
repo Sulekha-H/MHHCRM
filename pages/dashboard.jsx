@@ -17,16 +17,12 @@ import { format, addDays } from "date-fns";
 
 export const getServerSideProps = requireAuth;
 
-export default function DashboardPage() {
-  return (
-    <ProtectedPage>
-      <Dashboard/>
-    </ProtectedPage>
-  );
-}   
+export default function DashboardPage({ session, accommodations }) {
+  return <Dashboard session={session} accommodations={accommodations} />;
+}
 
-function Dashboard() {
-  const [user, setUser] = useState(null);
+function Dashboard({session, accommodations }) {
+  const user = session.user;
   const [stats, setStats] = useState({
     residents: 0,
     activeIncidents: 0,
