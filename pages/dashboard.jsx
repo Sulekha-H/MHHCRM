@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import ProtectedPage from "../pages/ProtectedPage";
+import { requireAuth } from '../lib/requireAuth';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
+
+export const getServerSideProps = requireAuth;
 
 export default function DashboardPage() {
   return (

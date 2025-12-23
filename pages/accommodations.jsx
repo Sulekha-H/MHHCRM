@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import ProtectedPage from "../pages/ProtectedPage";
+import { requireAuth } from '../lib/requireAuth';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,16 +17,17 @@ import AccommodationDetailModal from "../components/accommodations/Accommodation
  
 // pages/accommodations.jsx
 
- 
-export default function AccommodationsPage() {
+export const getServerSideProps = requireAuth;
+
+export default function DashboardPage() {
   return (
     <ProtectedPage>
-      <Accommodations/>
+      <Accommdoations/>
     </ProtectedPage>
   );
-}    
+}   
 
-function Accommodations() {
+ function Accommodations() {
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);

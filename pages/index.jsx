@@ -1,19 +1,9 @@
 import { supabase } from "@/lib/supabaseClient";
 
-export async function getServerSideProps({ req }) {
-  const { data: { session } } = await supabase.auth.getSession(); // server-side version
-  if (!session) {
-    return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      }
-    }
-  }
+import { requireAuth } from '../lib/requireAuth';
 
-  return { props: {} }; // User is authenticated
-}
+export const getServerSideProps = requireAuth;
 
-export default function HomePage() {
-  return <div>Protected Home Page Content</div>;
+export default function Home() {
+  return <div>Dashboard</div>;
 }
