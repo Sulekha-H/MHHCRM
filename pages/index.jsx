@@ -1,5 +1,3 @@
-import { supabase } from "@/lib/supabaseClient";
-
 import { requireAuth } from '../lib/requireAuth';
 
 export const getServerSideProps = requireAuth;
