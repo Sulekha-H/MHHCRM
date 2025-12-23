@@ -17,11 +17,11 @@ import { format, addDays } from "date-fns";
 
 export const getServerSideProps = requireAuth;
 
-export default function DashboardPage({ session, accommodations }) {
-  return <Dashboard session={session} accommodations={accommodations} />;
+export default function DashboardPage({ session}) {
+  return <Dashboard session={session} />;
 }
 
-function Dashboard({session, accommodations }) {
+function Dashboard({session }) {
   const user = session.user;
   const [stats, setStats] = useState({
     residents: 0,
