@@ -16,7 +16,7 @@ import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 
 
-function Dashboard({session }) {
+export default function Dashboard({session }) {
   const user = session.user;
   const [stats, setStats] = useState({
     residents: 0,
