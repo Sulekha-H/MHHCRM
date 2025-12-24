@@ -1,7 +1,9 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { supabase } from '../lib/supabaseClient';
+import { usePathname } from 'next/navigation';
+//import { supabase } from '../lib/supabaseClient';
 import {
   Home,
   Users,
@@ -27,17 +29,10 @@ import {
 export default function AppLayout({ children }) {
   console.log("🔵 AppLayout is rendering!");
   
-  const router = useRouter();
-  const [user, setUser] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
-  }, []);
+  const pathname = usePathname();
+  //const [user, setUser] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -80,7 +75,7 @@ export default function AppLayout({ children }) {
     { name: "Deleted Entries", href: "/DeletedEntries", icon: Trash2 }
   ];
 
-  const isActive = (href) => router.pathname === href;
+     const isActive = (href) => pathname === href;
 
   return (
     <div className="flex min-h-screen bg-gray-50">

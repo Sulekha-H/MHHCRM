@@ -1,9 +1,7 @@
-// pages/dashboard.jsx
-import Dashboard from '@/components/dashboard/Dashboard';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export const getServerSideProps = async (context) => {
+export const getServerSideProps = async () => {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -15,14 +13,13 @@ export const getServerSideProps = async (context) => {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session) {
     return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
+      redirect: { destination: '/login', permanent: false },
     };
   }
 
@@ -30,7 +27,3 @@ export const getServerSideProps = async (context) => {
     props: { session },
   };
 };
-
-export default function DashboardPage({ session }) {
-  return <Dashboard session={session} />;
-}

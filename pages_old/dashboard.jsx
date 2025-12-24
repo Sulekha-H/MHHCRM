@@ -14,10 +14,8 @@ import {
 import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 
-
-export default function Dashboard({session}) {
-    if (!session) return <div>Loading...</div>
-  const user = session.user;
+export default function Dashboard() {
+  const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
     residents: 0,
     activeIncidents: 0,
