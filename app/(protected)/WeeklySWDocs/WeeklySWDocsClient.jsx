@@ -9,7 +9,7 @@ import { PlusCircle, CheckCircle, AlertTriangle, FileStack, XCircle, Download, R
 import { format } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import WeeklySWDocLogForm_Supabase from "../components/weekly-sw-docs/WeeklySWDocLogForm";
+import WeeklySWDocLogForm_Supabase from "@/components/weekly-sw-docs/WeeklySWDocLogForm";
 import WeeklySWDocLogDetailModal from "../components/weekly-sw-docs/WeeklySWDocLogDetailModal";
 
 export default function WeeklySWDocs() {
