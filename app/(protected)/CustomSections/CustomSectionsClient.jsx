@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Download, FolderOpen, Settings, Eye, Trash2, Edit } from "lucide-react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import CustomSectionForm_Supabase from "../components/custom-sections/csform";
+import CustomSectionForm_Supabase from "@/components/custom-sections/csform";
 
 export default function CustomSections() {
   const [sections, setSections] = useState([]);

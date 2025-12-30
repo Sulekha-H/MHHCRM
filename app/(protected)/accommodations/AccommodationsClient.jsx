@@ -12,7 +12,7 @@ import AccommodationForm_Supabase from "@/components/accommodations/Accommodatio
 import AccommodationCard from "@/components/accommodations/AccommodationCard";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import AccommodationDetailModal from "../components/accommodations/AccommodationDetailModal";
+import AccommodationDetailModal from "@/components/accommodations/AccommodationDetailModal";
  
 // pages/accommodations.jsx
 
