@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, ArrowLeft, Settings, FolderOpen, Download } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter} from "next/navigation";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import CustomSectionDataForm_Supabase from "@/components/custom-sections/csdataform";
 import CustomSectionDataCard from "@/components/custom-sections/cssectioncard";
@@ -16,7 +16,7 @@ import CustomSectionDataDetailModal from "@/components/custom-sections/CustomSec
 
 export default function CustomSectionDetail() {
   const router = useRouter();
-  const { id: sectionId } = router.query;
+  const { id: sectionId } = useParams;
   
   const [section, setSection] = useState(null);
   const [dataRecords, setDataRecords] = useState([]);
