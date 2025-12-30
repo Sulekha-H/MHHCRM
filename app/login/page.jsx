@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export default function SupabaseLogin() {
     }
 
     // Login successful - redirect to dashboard
-    router.push('/');
+    router.push('@/app/(protected)/Dashboard/DashboardClient.jsx');
   };
 
   return (
