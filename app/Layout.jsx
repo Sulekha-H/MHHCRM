@@ -1,13 +1,16 @@
-// /app/layout.jsx
-export const metadata = {
-  title: 'My Hope Housing',
-  description: 'Dashboard app',
-};
+import { redirect } from "next/navigation";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+export default async function ProtectedLayout({ children }) {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return <>{children}</>;
 }
