@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient"; // Updated import path
 import { Button } from "@/components/ui/button";
