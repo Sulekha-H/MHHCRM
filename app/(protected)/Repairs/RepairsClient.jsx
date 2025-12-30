@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Download, Wrench, AlertCircle, Filter, List } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import RepairFormSupabase from "../components/repairs/RepairForm";
-import RepairCard from "../components/repairs/RepairCard";
-import RepairDetailModal from "../components/repairs/RepairDetailModal"; // New import
+import RepairFormSupabase from "@/components/repairs/RepairForm";
+import RepairCard from "@/components/repairs/RepairCard";
+import RepairDetailModal from "@/components/repairs/RepairDetailModal"; // New import
 
 export default function Repairs() { // Component name changed
   const [repairs, setRepairs] = useState([]);

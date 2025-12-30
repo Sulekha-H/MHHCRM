@@ -6,8 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings as SettingsIcon, Users, List } from "lucide-react";
 
-import StaffManagement_Supabase from "../components/settings/StaffManagementSupabase";
-import DropdownSettings_Supabase from "../components/settings/DropDownSettingsSupabase";
+import StaffManagement_Supabase from "@/components/settings/StaffManagementSupabase";
+import DropdownSettings_Supabase from "@/components/settings/DropDownSettingsSupabase";
 
 export default function Settings() {
   const [hasAccess, setHasAccess] = useState(false);

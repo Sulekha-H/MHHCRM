@@ -10,11 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Receipt, AlertCircle, Download, PoundSterling, HelpCircle, PlusCircle } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, setDate } from "date-fns";
-import ServiceChargeLogFormSupabase from "../components/service-charges/ServiceChargeLogForm";
-import CashLogFormSupabase from "../components/service-charges/CashLogForm";
-import CashLogCard from "../components/service-charges/CashLogCard";
-import ServiceChargeDetailModal from "../components/service-charges/ServiceChargeDetailModal";
-import CashLogDetailModal from "../components/service-charges/CashLogDetailModal";
+import ServiceChargeLogFormSupabase from "@/components/service-charges/ServiceChargeLogForm";
+import CashLogFormSupabase from "@/components/service-charges/CashLogForm";
+import CashLogCard from "@/components/service-charges/CashLogCard";
+import ServiceChargeDetailModal from "@/components/service-charges/ServiceChargeDetailModal";
+import CashLogDetailModal from "@/components/service-charges/CashLogDetailModal";
 import {
   Table,
   TableBody,

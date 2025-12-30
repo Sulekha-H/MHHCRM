@@ -8,9 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, HandCoins, Edit, Building2, Users, Download, Calendar, User as UserIcon, FileText, Banknote } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import BenefitLogForm_Supabase from "../components/Benefits/BenefitLogForm";
-import BenefitLogCard from "../components/Benefits/BenefitLogCard";
-import BenefitLogDetailModal from "../components/Benefits/BenefitLogDetailModal";
+import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
+import BenefitLogCard from "@/components/Benefits/BenefitLogCard";
+import BenefitLogDetailModal from "@/components/Benefits/BenefitLogDetailModal";
 import { format } from "date-fns";
 
 // Helper function to normalize column names from Supabase

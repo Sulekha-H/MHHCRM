@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Building2, MapPin, Users, Calendar, Download, X, Edit, Trash2 } from "lucide-react";
-import PropertyForm from "../components/properties/PropertyForm";
-import PropertyCard from "../components/properties/PropertyCard";
-import PropertyDetailModal from "../components/properties/PropertyDetailModal";
+import PropertyForm from "@/components/properties/PropertyForm";
+import PropertyCard from "@/components/properties/PropertyCard";
+import PropertyDetailModal from "@/components/properties/PropertyDetailModal";
 import { format } from 'date-fns';
 
 export default function Properties() {

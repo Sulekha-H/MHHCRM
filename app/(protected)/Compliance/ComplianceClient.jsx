@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, FileCheck, AlertTriangle, Calendar, ExternalLink, Building2, MapPin, ChevronDown, ChevronRight, Download } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
-import ComplianceForm_Supabase from "../components/compliance/ComplianceForm";
-import ComplianceDetailModal from "../components/compliance/ComplianceDetailModal";
+import ComplianceForm_Supabase from "@/components/compliance/ComplianceForm";
+import ComplianceDetailModal from "@/components/compliance/ComplianceDetailModal";
 import {
   Table,
   TableBody,

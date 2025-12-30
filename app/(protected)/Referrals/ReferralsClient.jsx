@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, ClipboardPlus, Download } from "lucide-react";
 import { format } from "date-fns";
-import ReferralForm from "../components/referrals/ReferralForm";
-import ReferralDetailModal from "../components/referrals/ReferralDetailModal";
+import ReferralForm from "@/components/referrals/ReferralForm";
+import ReferralDetailModal from "@/components/referrals/ReferralDetailModal";
 import {
   Table,
   TableBody,

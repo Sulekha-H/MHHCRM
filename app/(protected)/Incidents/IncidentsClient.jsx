@@ -8,9 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Shield, Download } from "lucide-react";
 import { format } from "date-fns";
-import IncidentForm from "../components/Incidents/IncidentForm";
-import IncidentCard from "../components/Incidents/IncidentCard";
-import IncidentDetailModal from "../components/Incidents/IncidentDetailModal";
+import IncidentForm from "@/components/Incidents/IncidentForm";
+import IncidentCard from "@/components/Incidents/IncidentCard";
+import IncidentDetailModal from "@/components/Incidents/IncidentDetailModal";
 
 export default function IncidentsSupabase() {
   const [incidents, setIncidents] = useState([]);

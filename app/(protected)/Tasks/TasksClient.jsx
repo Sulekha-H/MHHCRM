@@ -12,9 +12,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
-import TaskForm_Supabase from "../components/tasks/TaskForm";
-import TaskCard from "../components/tasks/TaskCard";
-import TaskDetailModal from "../components/tasks/TaskDetailModal";
+import TaskForm_Supabase from "@/components/tasks/TaskForm";
+import TaskCard from "@/components/tasks/TaskCard";
+import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function TasksPage() {

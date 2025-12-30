@@ -10,8 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, FileText, Download, CheckCircle, AlertCircle, Timer } from "lucide-react";
 import { format } from "date-fns";
-import OfficeLogForm from "../components/office-logs/OfficeLogForm";
-import OfficeLogCard from "../components/office-logs/OfficeLogCard";
+import OfficeLogForm from "@/components/office-logs/OfficeLogForm";
+import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
 export default function OfficeLogsSupabase() {
   const [logs, setLogs] = useState([]);

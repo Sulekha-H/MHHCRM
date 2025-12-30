@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Edit, CheckCircle, PlusCircle, XCircle, Download, Calendar, FileText } from "lucide-react";
 import { format } from "date-fns";
-import SupportPlanForm_Supabase from "../components/support-plans/SupportPlanForm";
-import SupportPlanDetailModal from "../components/support-plans/SupportPlanDetailModal";
+import SupportPlanForm_Supabase from "@/components/support-plans/SupportPlanForm";
+import SupportPlanDetailModal from "@/components/support-plans/SupportPlanDetailModal";
 import {
   Table,
   TableBody,

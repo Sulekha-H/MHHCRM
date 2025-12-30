@@ -9,14 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, FileText, Download, Edit, Trash2, User as UserIcon, ExternalLink, Shield, Wrench, Calendar, Tag } from "lucide-react";
 import { format } from "date-fns";
-import DocumentFormSupabase from "../components/documents/DocumentForm";
-import WarrantyFormSupabase from "../components/documents/WarrantyForm";
-import InsuranceFormSupabase from "../components/documents/InsuranceForm";
-import ApplianceFormSupabase from "../components/documents/ApplianceForm";
-import DocumentDetailModal from "../components/documents/DocumentDetailModal";
-import WarrantyDetailModal from "../components/documents/WarrantyDetailModal";
-import InsuranceDetailModal from "../components/documents/InsuranceDetailModal";
-import ApplianceDetailModal from "../components/documents/ApplianceDetailModal";
+import DocumentFormSupabase from "@/components/documents/DocumentForm";
+import WarrantyFormSupabase from "@/components/documents/WarrantyForm";
+import InsuranceFormSupabase from "@/components/documents/InsuranceForm";
+import ApplianceFormSupabase from "@/components/documents/ApplianceForm";
+import DocumentDetailModal from "@/components/documents/DocumentDetailModal";
+import WarrantyDetailModal from "@/components/documents/WarrantyDetailModal";
+import InsuranceDetailModal from "@/components/documents/InsuranceDetailModal";
+import ApplianceDetailModal from "@/components/documents/ApplianceDetailModal";
 import {
   Table,
   TableBody,
