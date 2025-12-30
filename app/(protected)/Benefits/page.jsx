@@ -1,10 +1,10 @@
-import AccommodationsClient from "./BenefitsClient";
+import BenefitsClient from "./BenefitsClient";
 
-export default async function BenefitssPage() {
+export default async function BenefitsPage() {
   return (
     <div>
       <h1>Benefits</h1>
-      <AccommodationsClient />
+      <BenefitsClient />
     </div>
   );
 }

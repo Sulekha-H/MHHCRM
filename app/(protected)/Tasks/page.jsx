@@ -1,10 +1,10 @@
-import AccommodationsClient from "./TasksClient";
+import TasksClient from "./TasksClient";
 
 export default async function TasksPage() {
   return (
     <div>
       <h1>Tasks</h1>
-      <AccommodationsClient />
+      <TasksClient />
     </div>
   );
 }

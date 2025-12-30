@@ -1,8 +1,6 @@
-// /app/(protected)/layout.jsx
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
-import AppLayout from '@/components/AppLayout';
+import { redirect } from "next/navigation";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export default async function ProtectedLayout({ children }) {
   const supabase = createServerClient(
@@ -14,13 +12,15 @@ export default async function ProtectedLayout({ children }) {
         setAll: () => {},
       },
     }
-  ); 
+  );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   if (!session) {
-    redirect('/login');
+    redirect("/login");
   }
 
-  return <AppLayout>{children}</AppLayout>;
+  return <>{children}</>;
 }
