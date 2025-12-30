@@ -14,7 +14,7 @@ export default async function ProtectedLayout({ children }) {
         setAll: () => {},
       },
     }
-  );
+  ); 
 
   const { data: { session } } = await supabase.auth.getSession();
 
