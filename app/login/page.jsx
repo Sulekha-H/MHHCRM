@@ -35,7 +35,7 @@ export default function SupabaseLogin() {
     }
 
     // Login successful - redirect to dashboard
-    router.push('@/app/(protected)/Dashboard/DashboardClient.jsx');
+    router.push('/dashboard');
   };
 
   return (
