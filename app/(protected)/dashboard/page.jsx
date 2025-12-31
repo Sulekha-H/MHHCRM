@@ -1,4 +1,4 @@
-import DashboardClient from "./DashboardClient";
+import DashboardClient from "./dashboardClient";
 
 export default async function DashboardPage() {
   return (
