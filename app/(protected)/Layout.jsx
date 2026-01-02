@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import ClientAppLayout from "@/components/ClientAppLayout";
 
 export default async function ProtectedLayout({ children }) {
   const supabase = createServerClient(
@@ -14,13 +15,9 @@ export default async function ProtectedLayout({ children }) {
     }
   );
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    redirect("/login");
-  }
+  if (!session) redirect("/login");
 
-  return <>{children}</>;
+  return <ClientAppLayout>{children}</ClientAppLayout>;
 }
