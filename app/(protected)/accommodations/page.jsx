@@ -1,4 +1,4 @@
-import AccommodationsClient from "./AccommodationsClient";
+import AccommodationsClient from "./accommodationsClient";
 
 export default async function AccommodationsPage() {
   return (
