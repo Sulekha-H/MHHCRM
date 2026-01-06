@@ -1,6 +1,6 @@
-import AccommodationsClient from "./accommodationsClient";
+import AccommodationsClient from "./AccommodationsClient";
 
-export default async function AccommodationsPage() {
+export default async function AccommodtionsPage() {
   return (
     <div>
       <h1>Accommodations</h1>
