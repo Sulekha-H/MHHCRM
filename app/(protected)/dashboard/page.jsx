@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabaseClient";
 
 export default async function Dashboard() {
   const { userId, emailAddresses } = auth();
