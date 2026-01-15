@@ -1,10 +1,8 @@
-import BenefitsClient from "./BenefitsClient";
-
-export default async function BenefitsPage() {
+export default function BenefitsPage() {
   return (
     <div>
-      <h1>Benefits</h1>
-      <BenefitsClient />
+      <h1>Your Benefits</h1>
+      {/* UI only, auth already handled */}
     </div>
   );
 }
