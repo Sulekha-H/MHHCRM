@@ -1,10 +1,12 @@
-import ResidentsClient from "./ResidentsClient";
+"use client";
 
-export default async function ResidentsPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import ResidentsClient from "@/app/(protected)/Residents/ResidentsClient"
+
+export default function BenefitsPage() {
   return (
-    <div>
-      <h1>Residents</h1>
+    <ProtectedPage>
       <ResidentsClient />
-    </div>
+    </ProtectedPage>
   );
 }
