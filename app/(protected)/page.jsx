@@ -1,12 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import ProtectedPage from "@/components/ProtectedPage";
-import DashboardClient from "@/app/(protected)/Dashboard/DashboardClient"
-
-export default function DashboardPage() {
-  return (
-    <ProtectedPage>
-      <DashboardClient />
-    </ProtectedPage>
-  );
+export default function HomePage() {
+  redirect("/sign-in");
 }
