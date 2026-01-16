@@ -1,12 +1,12 @@
 "use client";
 
 import ProtectedPage from "@/components/ProtectedPage";
-import ResidentsClient from "@/app/(protected)/Residents/ResidentsClient"
+import residentsClient from "@/app/(protected)/residents/ResidentsClient"
 
-export default function BenefitsPage() {
+export default function ResidentsPage() {
   return (
     <ProtectedPage>
-      <ResidentsClient />
+      <residentsClient />
     </ProtectedPage>
   );
 }
