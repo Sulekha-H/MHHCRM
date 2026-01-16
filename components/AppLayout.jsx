@@ -36,7 +36,7 @@ export default function AppLayout({ children }) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Residents", href: "/residents", icon: Users },
+    { name: "Residents", href: "/Residents", icon: Users },
     { name: "Properties", href: "/Properties", icon: Building },
     { name: "Accommodations", href: "/accommodations", icon: Bed },
   ];
