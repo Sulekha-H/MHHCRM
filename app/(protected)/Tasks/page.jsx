@@ -1,10 +1,12 @@
-import TasksClient from "./TasksClient";
+"use client";
 
-export default async function TasksPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import TasksClient from "@/app/(protected)/Tasks/TasksClient"
+
+export default function BenefitsPage() {
   return (
-    <div>
-      <h1>Tasks</h1>
+    <ProtectedPage>
       <TasksClient />
-    </div>
+    </ProtectedPage>
   );
 }
