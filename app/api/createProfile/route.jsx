@@ -1,12 +1,12 @@
 // app/api/createProfile/route.js
 import { clerkClient } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req) {
   const body = await req.json();
   const { userId, fullName } = body;
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("profiles")
     .insert([{ ID: userId, "Full Name": fullName, "Created At": new Date() }]);
 
