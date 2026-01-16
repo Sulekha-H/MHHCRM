@@ -1,16 +1,13 @@
-// app/protected/layout.jsx
-import { ClerkProvider, auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import ClientAppLayout from "@/components/ClientAppLayout";
 
-export default async function ProtectedLayout({ children }) {
-  const { userId } = auth(); // Clerk server-side auth
+export default function ProtectedLayout({ children }) {
+  const { userId } = auth();
 
-  if (!userId) redirect("/sign-in"); // redirect if not logged in
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
-  return (
-    <ClerkProvider>
-      <ClientAppLayout>{children}</ClientAppLayout>
-    </ClerkProvider>
-  );
+  return <ClientAppLayout>{children}</ClientAppLayout>;
 }
