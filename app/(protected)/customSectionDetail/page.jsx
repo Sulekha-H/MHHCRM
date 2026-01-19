@@ -6,7 +6,7 @@ import CustomSectionDetailClient from "@/app/(protected)/CustomSectionDetail/Cus
 export default function CustomSectionDetailPage() {
   return (
     <ProtectedPage>
-      <LCustomSectionDetailClient/>
+      <CustomSectionDetailClient/>
     </ProtectedPage>
   );
 }
