@@ -1,10 +1,12 @@
-import ReferralsClient from "./ReferralsClient";
+"use client";
 
-export default async function ReferralsPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import ReferralsClient from "@/app/(protected)/Referrals/ReferralsClient"
+
+export default function ReferralsPage() {
   return (
-    <div>
-      <h1>Referrals</h1>
-      <ReferralsClient />
-    </div>
+    <ProtectedPage>
+      <ReferralsClient/>
+    </ProtectedPage>
   );
 }

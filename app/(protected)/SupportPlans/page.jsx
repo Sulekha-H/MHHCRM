@@ -1,10 +1,12 @@
-import SupportPlansClient from "./SupportPlansClient";
+"use client";
 
-export default async function SupportPlansPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import SupportPlansClient from "@/app/(protected)/SupportPlans/SupportPlansClient"
+
+export default function SupportPlansPage() {
   return (
-    <div>
-      <h1>Support Plans</h1>
-      <SupportPlansClient />
-    </div>
+    <ProtectedPage>
+      <SupportPlansClient/>
+    </ProtectedPage>
   );
 }

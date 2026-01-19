@@ -1,10 +1,12 @@
-import LandLordPortalClient from "./LandlLordPortalClient";
+"use client";
 
-export default async function LandLordPortalPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import LandLordPortalClient from "@/app/(protected)/LandLordPortal/LandLordPortalClient"
+
+export default function LandlordPortalPage() {
   return (
-    <div>
-      <h1>Landlord Portal</h1>
-      <LandLordPortalClient />
-    </div>
+    <ProtectedPage>
+      <LandLordPortalClient/>
+    </ProtectedPage>
   );
 }

@@ -1,10 +1,12 @@
-import PropertiesClient from "./PropertiesClient";
+"use client";
 
-export default async function PropertiesPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import PropertiesClient from "@/app/(protected)/Properties/PropertiesClient"
+
+export default function PropertiesPage() {
   return (
-    <div>
-      <h1>Properties</h1>
-      <PropertiesClient />
-    </div>
+    <ProtectedPage>
+      <PropertiesClient/>
+    </ProtectedPage>
   );
 }

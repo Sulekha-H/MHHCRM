@@ -1,10 +1,12 @@
-import RepairsClient from "./RepairsClient";
+"use client";
 
-export default async function RepairsPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import RepairsClient from "@/app/(protected)/Repairs/RepairsClient"
+
+export default function RepairsPage() {
   return (
-    <div>
-      <h1>Repairs</h1>
-      <RepairsClient />
-    </div>
+    <ProtectedPage>
+      <RepairsClient/>
+    </ProtectedPage>
   );
 }

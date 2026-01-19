@@ -1,10 +1,12 @@
-import PropertiesOnBoardingClient from "./PropertyOnBoardingClient";
+"use client";
 
-export default async function PropertyOnBoardingPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import PropertyOnBoardingClient from "@/app/(protected)/PropertyOnBoarding/PropertyOnBoardingClient"
+
+export default function PropertyOnBoardingPage() {
   return (
-    <div>
-      <h1>PropertyOnBoarding</h1>
-      <PropertiesOnBoardingClient />
-    </div>
+    <ProtectedPage>
+      <PropertyOnBoardingClient/>
+    </ProtectedPage>
   );
 }

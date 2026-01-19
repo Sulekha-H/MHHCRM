@@ -1,10 +1,12 @@
-import IncidentsClient from "./IncidentsClient";
+"use client";
 
-export default async function IncidentsPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import IncidentsClient from "@/app/(protected)/Incidents/IncidentsClient"
+
+export default function IncidentsPage() {
   return (
-    <div>
-      <h1>Incidents</h1>
+    <ProtectedPage>
       <IncidentsClient />
-    </div>
+    </ProtectedPage>
   );
 }

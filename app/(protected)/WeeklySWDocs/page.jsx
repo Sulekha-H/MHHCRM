@@ -1,10 +1,12 @@
-import WeeklySWDocsClient from "./WeeklySWDocsClient";
+"use client";
 
-export default async function WeeklySWDocsPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import TasksClient from "@/app/(protected)/Tasks/TasksClient"
+
+export default function TasksPage() {
   return (
-    <div>
-      <h1>Weekly SW Docs</h1>
-      <WeeklySWDocsClient />
-    </div>
+    <ProtectedPage>
+      <TasksClient/>
+    </ProtectedPage>
   );
 }

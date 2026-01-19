@@ -1,11 +1,12 @@
-import CustomSectionDetailClient from "./CustomSectionDetailClient";
+"use client";
 
-export default async function CustomSectionDetailPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import CustomSectionDetailClient from "@/app/(protected)/CustomSectionDetail/CustomSectionDetailClient"
+
+export default function CustomSectionDetailPage() {
   return (
-    <div>
-      <h1>CustomSectionDetail</h1>
-      <CustomSectionDetailClient />
-    </div>
+    <ProtectedPage>
+      <LCustomSectionDetailClient/>
+    </ProtectedPage>
   );
 }
- 

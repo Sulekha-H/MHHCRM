@@ -1,10 +1,12 @@
-import SettingsClient from "./SettingsClient";
+"use client";
 
-export default async function SettingsPage() {
+import ProtectedPage from "@/components/ProtectedPage";
+import SettingsClient from "@/app/(protected)/Settings/SettingsClient"
+
+export default function SettingsPage() {
   return (
-    <div>
-      <h1>Settings</h1>
-      <SettingsClient />
-    </div>
+    <ProtectedPage>
+      <SettingsClient/>
+    </ProtectedPage>
   );
 }
