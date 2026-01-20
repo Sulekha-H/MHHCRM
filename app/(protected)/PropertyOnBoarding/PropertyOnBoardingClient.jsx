@@ -1,5 +1,6 @@
 "use client"
 
+import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
@@ -78,7 +79,7 @@ export default function PropertyOnboardingSupabase() {
   const [viewingCase, setViewingCase] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [users, setUsers] = useState([]);
+  const { user } = useUser();
   const [currentUser, setCurrentUser] = useState(null);
   const [caseToDelete, setCaseToDelete] = useState(null);
 
