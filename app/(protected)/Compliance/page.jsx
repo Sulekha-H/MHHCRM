@@ -38,9 +38,9 @@ const normalizeData = (data) => {
 
 export default function Compliance() {
   
+  
   const [complianceLogs, setComplianceLogs] = useState([]);
   const [properties, setProperties] = useState([])
-  const { user } = useUser();
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -66,15 +66,14 @@ export default function Compliance() {
     }
     
     if (log.created_by) {
-      const user = users.find(u => u.email === log.created_by);
-      if (user?.full_name) {
-        return user.full_name;
+      if (user?.email ===log.created_by ){
+        return user.fullName || user.firstName; //clerk user info
       }
       return log.created_by.split('@')[0];
     }
     
     return '-';
-  }, [users]);
+  }, [CurrentUser]);
 
   const filterLogs = useCallback(() => {
     let filtered = complianceLogs;
