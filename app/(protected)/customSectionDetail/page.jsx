@@ -1,12 +1,12 @@
 "use client";
 
 import ProtectedPage from "@/components/ProtectedPage";
-import CustomSectionDetailClient from "@/app/(protected)/CustomSectionDetail/CustomSectionDetailClient"
+import CustomSectionsDetailClient from "@/app/(protected)/CustomSectionDetail/CustomSectionsDetailClient"
 
 export default function CustomSectionDetailPage() {
   return (
     <ProtectedPage>
-      <CustomSectionDetailClient/>
+      <CustomSectionsDetailClient/>
     </ProtectedPage>
   );
 }
