@@ -73,7 +73,7 @@ export default function Compliance() {
     }
     
     return '-';
-  }, [CurrentUser]);
+  }, [user]);
 
   const filterLogs = useCallback(() => {
     let filtered = complianceLogs;
