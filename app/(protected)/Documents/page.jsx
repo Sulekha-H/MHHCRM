@@ -29,6 +29,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function DocumentsSupabase() {
+    const { user } = useUser();
   const [activeTab, setActiveTab] = useState("documents");
   const [documents, setDocuments] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -37,7 +38,6 @@ export default function DocumentsSupabase() {
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
-  const { user } = useUser();
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
