@@ -1,4 +1,7 @@
 "use client"
+
+
+import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,7 @@ const normalizeData = (data) => {
 }; 
 
 export default function Benefits() {
+    const { user } = useUser();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
