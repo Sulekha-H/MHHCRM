@@ -37,9 +37,10 @@ const normalizeData = (data) => {
 };
 
 export default function Compliance() {
-  const { user } = useUser();
+  
   const [complianceLogs, setComplianceLogs] = useState([]);
-  const [properties, setProperties] = useState([]);
+  const [properties, setProperties] = useState([])
+  const { user } = useUser();
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
