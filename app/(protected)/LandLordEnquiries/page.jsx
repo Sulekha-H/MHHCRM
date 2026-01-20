@@ -195,7 +195,7 @@ export default function LandlordEnquiries() {
     }
     
     if (enquiry.created_by) {
-      const user = users.find(u => u.email === enquiry.created_by);
+      const user = user.find(u => u.email === enquiry.created_by);
       if (user?.full_name) {
         return user.full_name;
       }
@@ -203,7 +203,7 @@ export default function LandlordEnquiries() {
     }
     
     return '-';
-  }, [users]);
+  }, [user]);
 
   const formatEnquiryDate = (dateString) => {
     if (!dateString) return 'No date provided';
