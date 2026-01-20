@@ -29,7 +29,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function DocumentsSupabase() {
-    const { user } = useUser();
+  
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState("documents");
   const [documents, setDocuments] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -59,8 +60,8 @@ export default function DocumentsSupabase() {
     
     const createdBy = record.created_by || record["Created By"];
     if (createdBy) {
-      if (users && users.length > 0) {
-        const user = users.find(u => u.email === createdBy);
+      if (user && user.length > 0) {
+        const user = user.find(u => u.email === createdBy);
         if (user?.full_name) {
           return user.full_name;
         }
@@ -69,7 +70,7 @@ export default function DocumentsSupabase() {
     }
     
     return null;
-  }, [users]);
+  }, [user]);
 
   useEffect(() => {
     let filtered = documents;
