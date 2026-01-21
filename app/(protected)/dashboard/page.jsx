@@ -518,83 +518,85 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Welcome Section */}
-      <div className="bg-white border-b px-8 py-8 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
+      <div className="bg-white border-b px-6 py-6">
+        <h1 className="text-2xl font-semibold text-gray-700">
           Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
         </h1>
         <p className="text-gray-500 text-sm mt-1">Here's what's happening today</p>
       </div>
 
-      <div className="px-8 pb-8 space-y-8">
+      <div className="p-6 space-y-6">
         {/* Quick Action Buttons */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <a href={createPageUrl("residents")}>
-            <Card className="bg-[#3b82f6] hover:bg-[#2563eb] cursor-pointer transition-colors duration-200 h-28 flex items-center justify-center border-0 shadow-sm rounded-xl">
+          <a href={createPageUrl("Residents")}>
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
-                <Users className="w-7 h-7 mx-auto mb-2" />
-                <p className="font-semibold text-sm">Add Resident</p>
+                <Users className="w-6 h-6 mx-auto mb-2" />
+                <p className="font-medium text-sm">Add Resident</p>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("incidents")}>
-            <Card className="bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer transition-colors duration-200 h-28 flex items-center justify-center border-0 shadow-sm rounded-xl">
+          <a href={createPageUrl("Incidents")}>
+            <Card className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
-                <AlertTriangle className="w-7 h-7 mx-auto mb-2" />
-                <p className="font-semibold text-sm">Report Incident</p>
+                <AlertTriangle className="w-6 h-6 mx-auto mb-2" />
+                <p className="font-medium text-sm">Report Incident</p>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("referrals")}>
-            <Card className="bg-[#a855f7] hover:bg-[#9333ea] cursor-pointer transition-colors duration-200 h-28 flex items-center justify-center border-0 shadow-sm rounded-xl">
+          <a href={createPageUrl("Referrals")}>
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
-                <FileUp className="w-7 h-7 mx-auto mb-2" />
-                <p className="font-semibold text-sm">Add Enquiry</p>
+                <FileUp className="w-6 h-6 mx-auto mb-2" />
+                <p className="font-medium text-sm">Add Enquiry</p>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("documents")}>
-            <Card className="bg-[#10b981] hover:bg-[#059669] cursor-pointer transition-colors duration-200 h-28 flex items-center justify-center border-0 shadow-sm rounded-xl">
+          <a href={createPageUrl("Documents")}>
+            <Card className="bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
-                <Upload className="w-7 h-7 mx-auto mb-2" />
-                <p className="font-semibold text-sm">Upload Document</p>
+                <Upload className="w-6 h-6 mx-auto mb-2" />
+                <p className="font-medium text-sm">Upload Document</p>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("tasks")}>
-            <Card className="bg-[#06b6d4] hover:bg-[#0891b2] cursor-pointer transition-colors duration-200 h-28 flex items-center justify-center border-0 shadow-sm rounded-xl">
+          <a href={createPageUrl("Tasks")}>
+            <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
-                <CheckSquare className="w-7 h-7 mx-auto mb-2" />
-                <p className="font-semibold text-sm">Add Task</p>
+                <CheckSquare className="w-6 h-6 mx-auto mb-2" />
+                <p className="font-medium text-sm">Add Task</p>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("repairs")}>
-            <Card className="bg-[#f97316] hover:bg-[#ea580c] cursor-pointer transition-colors duration-200 h-28 flex items-center justify-center border-0 shadow-sm rounded-xl">
+          <a href={createPageUrl("Repairs")}>
+            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
-                <Wrench className="w-7 h-7 mx-auto mb-2" />
-                <p className="font-semibold text-sm">Add Repair</p>
+                <Wrench className="w-6 h-6 mx-auto mb-2" />
+                <p className="font-medium text-sm">Add Repair</p>
               </CardContent>
             </Card>
           </a>
         </div>
 
-        {/* Six Reminder Cards */}
+        {/* Six Reminder Cards - 2 Rows of 3 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Row 1 - Card 1: Voids / Available Rooms */}
-          <Card className="bg-[#f0f9f9] border-[#ccfbf1] shadow-none rounded-xl">
+          <Card className="bg-gradient-to-br from-teal-50 to-blue-50 border-teal-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-[#0d9488]">
+                <CardTitle className="text-lg flex items-center gap-2 text-teal-700">
                   <DoorOpen className="w-5 h-5" />
-                  Voids / Available Rooms
+                  Available Rooms
                 </CardTitle>
-                <a href={createPageUrl("accommodations")}>
-                  <ArrowRight className="w-5 h-5 text-[#0d9488]" />
+                <a href={createPageUrl("Accommodations")}>
+                  <Button variant="ghost" size="sm" className="text-teal-700 hover:text-teal-800">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </a>
               </div>
             </CardHeader>
@@ -603,26 +605,26 @@ export default function Dashboard() {
                 <Skeleton className="h-24 w-full" />
               ) : (
                 <>
-                  <div className="text-center mb-6">
-                    <div className="text-5xl font-bold text-[#0d9488]">{voidsSummary.count}</div>
-                    <div className="text-sm font-medium text-[#0d9488] mt-1">rooms currently available</div>
+                  <div className="text-center mb-4">
+                    <div className="text-4xl font-bold text-teal-600">{voidsSummary.count}</div>
+                    <div className="text-sm text-teal-700">rooms currently available</div>
                   </div>
                   {voidsSummary.recentVoids.length > 0 ? (
-                    <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
                       {voidsSummary.recentVoids.map(void_item => {
                         const property = properties.find(p => p.ID === void_item["Property ID"]);
                         return (
-                          <div key={void_item.ID} className="flex items-center justify-between p-3 bg-white rounded-lg border border-[#e0f2f1]">
+                          <div key={void_item.ID} className="flex items-center justify-between p-2 bg-white rounded border border-teal-100">
                             <div>
-                              <div className="font-bold text-gray-800">R{void_item["Room Number"] || void_item.ID.slice(0,2)}</div>
+                              <div className="font-medium text-gray-900">{void_item["Room Number"]}</div>
                               {property && (
-                                <div className="text-xs text-gray-500">{property.Name}</div>
+                                <div className="text-xs text-gray-600">{property.Name}</div>
                               )}
-                              <div className="text-xs text-gray-500 capitalize">
+                              <div className="text-xs text-gray-600 capitalize">
                                 {void_item["Accommodation Type"]?.replace(/_/g, ' ')}
                               </div>
                             </div>
-                            <Badge className="bg-[#f0fdfa] text-[#0d9488] border-[#ccfbf1] hover:bg-[#ccfbf1]">
+                            <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
                               Available
                             </Badge>
                           </div>
@@ -630,10 +632,10 @@ export default function Dashboard() {
                       })}
                     </div>
                   ) : (
-                    <p className="text-sm text-[#0d9488] text-center py-4">No voids available</p>
+                    <p className="text-sm text-teal-700 text-center py-4">No voids available</p>
                   )}
-                  <a href={createPageUrl("accommodations")} className="block text-center mt-6">
-                    <Button variant="link" className="text-[#0d9488] hover:text-[#0f766e] font-bold p-0">
+                  <a href={createPageUrl("Accommodations")}>
+                    <Button variant="link" className="w-full mt-3 text-teal-700 hover:text-teal-800">
                       View All Accommodations <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </a>
@@ -643,15 +645,17 @@ export default function Dashboard() {
           </Card>
 
           {/* Row 1 - Card 2: Task Reminders */}
-          <Card className="bg-[#fffcf0] border-[#fef3c7] shadow-none rounded-xl">
+          <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-[#b45309]">
+                <CardTitle className="text-lg flex items-center gap-2 text-orange-700">
                   <Bell className="w-5 h-5" />
-                  Task Reminders
+                  Tasks
                 </CardTitle>
-                <a href={createPageUrl("tasks")}>
-                  <ArrowRight className="w-5 h-5 text-[#b45309]" />
+                <a href={createPageUrl("Tasks")}>
+                  <Button variant="ghost" size="sm" className="text-orange-700 hover:text-orange-800">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </a>
               </div>
             </CardHeader>
@@ -660,39 +664,51 @@ export default function Dashboard() {
                 <Skeleton className="h-24 w-full" />
               ) : (
                 <>
-                  <div className="mb-6">
-                    <h4 className="text-sm font-bold text-[#b45309] mb-3">My Tasks</h4>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="text-center p-4 bg-white rounded-lg border border-[#fef3c7]">
-                        <div className="text-3xl font-bold text-[#d97706]">{taskSummary.myDueSoon}</div>
-                        <div className="text-xs font-bold text-[#b45309]">Due soon</div>
+                  {/* My Tasks Section */}
+                  <div className="mb-4">
+                    <h4 className="text-sm font-semibold text-orange-800 mb-2">My Tasks</h4>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="text-center p-3 bg-white rounded border border-orange-100">
+                        <div className="text-2xl font-bold text-orange-600">{taskSummary.myDueSoon}</div>
+                        <div className="text-xs text-orange-700">Due soon</div>
                       </div>
-                      <div className="text-center p-4 bg-white rounded-lg border border-[#fee2e2]">
-                        <div className="text-3xl font-bold text-[#dc2626]">{taskSummary.myOverdue}</div>
-                        <div className="text-xs font-bold text-[#991b1b]">Overdue</div>
+                      <div className="text-center p-3 bg-white rounded border border-red-100">
+                        <div className="text-2xl font-bold text-red-600">{taskSummary.myOverdue}</div>
+                        <div className="text-xs text-red-700">Overdue</div>
                       </div>
                     </div>
-                    {taskSummary.myRecentTasks.length === 0 && (
-                      <p className="text-xs text-[#b45309] text-center py-2 italic">No tasks assigned to you</p>
+                    {taskSummary.myRecentTasks.length > 0 ? (
+                      <div className="space-y-2 max-h-24 overflow-y-auto">
+                        {taskSummary.myRecentTasks.map(task => (
+                          <div key={task.ID} className="p-2 bg-white rounded text-sm border border-orange-100">
+                            <div className="font-medium text-gray-900 truncate">{task.Title}</div>
+                            <div className="text-xs text-gray-600">
+                              Due: {format(new Date(task["Due Date"]), 'MMM d, yyyy')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-orange-700 text-center py-2">No tasks assigned to you</p>
                     )}
                   </div>
 
-                  <div className="border-t border-[#fde68a] pt-4">
-                    <h4 className="text-sm font-bold text-[#b45309] mb-3">All Tasks</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-4 bg-white rounded-lg border border-[#fef3c7]">
-                        <div className="text-3xl font-bold text-[#d97706]">{taskSummary.dueSoon}</div>
-                        <div className="text-xs font-bold text-[#b45309]">Due soon</div>
+                  <div className="border-t border-orange-200 pt-3">
+                    <h4 className="text-sm font-semibold text-orange-800 mb-2">All Tasks</h4>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="text-center p-3 bg-white rounded border border-yellow-100">
+                        <div className="text-2xl font-bold text-yellow-600">{taskSummary.dueSoon}</div>
+                        <div className="text-xs text-yellow-700">Due soon</div>
                       </div>
-                      <div className="text-center p-4 bg-white rounded-lg border border-[#fee2e2]">
-                        <div className="text-3xl font-bold text-[#dc2626]">{taskSummary.overdueTasks}</div>
-                        <div className="text-xs font-bold text-[#991b1b]">Overdue</div>
+                      <div className="text-center p-3 bg-white rounded border border-red-100">
+                        <div className="text-2xl font-bold text-red-600">{taskSummary.overdueTasks}</div>
+                        <div className="text-xs text-red-700">Overdue</div>
                       </div>
                     </div>
                   </div>
 
-                  <a href={createPageUrl("tasks")} className="block text-center mt-6">
-                    <Button variant="link" className="text-[#b45309] hover:text-[#92400e] font-bold p-0">
+                  <a href={createPageUrl("Tasks")}>
+                    <Button variant="link" className="w-full mt-3 text-orange-700 hover:text-orange-800">
                       View All Tasks <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </a>
@@ -702,15 +718,17 @@ export default function Dashboard() {
           </Card>
 
           {/* Row 1 - Card 3: Compliance Reminders */}
-          <Card className="bg-[#fff5f5] border-[#fee2e2] shadow-none rounded-xl">
+          <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-[#b91c1c]">
+                <CardTitle className="text-lg flex items-center gap-2 text-red-700">
                   <ShieldCheck className="w-5 h-5" />
-                  Compliance Reminders
+                  Compliance
                 </CardTitle>
-                <a href={createPageUrl("compliance")}>
-                  <ArrowRight className="w-5 h-5 text-[#b91c1c]" />
+                <a href={createPageUrl("Compliance")}>
+                  <Button variant="ghost" size="sm" className="text-red-700 hover:text-red-800">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </a>
               </div>
             </CardHeader>
@@ -719,25 +737,25 @@ export default function Dashboard() {
                 <Skeleton className="h-24 w-full" />
               ) : (
                 <>
-                  <div className="text-center mb-6">
-                    <div className="text-6xl font-bold text-[#dc2626]">{complianceSummary.overdue}</div>
-                    <div className="text-sm font-bold text-[#b91c1c] mt-2">Expired</div>
+                  <div className="text-center mb-4">
+                    <div className="text-4xl font-bold text-red-600">{complianceSummary.overdue}</div>
+                    <div className="text-sm text-red-700">Expired</div>
                   </div>
                   {complianceSummary.recentItems.length > 0 ? (
-                    <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
                       {complianceSummary.recentItems.slice(0, 3).map(item => {
                         const property = properties.find(p => p.ID === item["Property ID"]);
                         return (
-                          <div key={item.ID} className="p-3 bg-white rounded-lg border border-[#fee2e2]">
-                            <div className="font-bold text-gray-800">{item["Certificate Name"]}</div>
+                          <div key={item.ID} className="p-2 bg-white rounded text-sm border border-red-100">
+                            <div className="font-medium text-gray-900">{item["Certificate Name"]}</div>
                             {property && (
-                              <div className="text-xs text-gray-500 mt-1">{property.Name}</div>
+                              <div className="text-xs text-gray-600 mt-1">{property.Name}</div>
                             )}
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-xs font-medium text-gray-500">
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs text-gray-600">
                                 Expires: {format(new Date(item["Expiry Date"]), 'MMM d, yyyy')}
                               </span>
-                              <Badge variant="destructive" className="text-[10px] h-5 px-1.5">
+                              <Badge variant="destructive" className="text-xs">
                                 Expired
                               </Badge>
                             </div>
@@ -746,17 +764,10 @@ export default function Dashboard() {
                       })}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-6 text-[#15803d]">
-                      <p className="text-sm font-bold">All up to date</p>
-                      <div className="mt-2 bg-green-100 p-1 rounded-full">
-                        <Badge className="bg-[#15803d] hover:bg-[#166534] border-none">
-                          <CheckSquare className="w-3 h-3" />
-                        </Badge>
-                      </div>
-                    </div>
+                    <p className="text-sm text-red-700 text-center py-4">All up to date ✅</p>
                   )}
-                  <a href={createPageUrl("compliance")} className="block text-center mt-6">
-                    <Button variant="link" className="text-[#b91c1c] hover:text-[#991b1b] font-bold p-0">
+                  <a href={createPageUrl("Compliance")}>
+                    <Button variant="link" className="w-full mt-3 text-red-700 hover:text-red-800">
                       View All Compliance <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </a>
@@ -766,15 +777,17 @@ export default function Dashboard() {
           </Card>
 
           {/* Row 2 - Card 4: Service Charge Reminders */}
-          <Card className="bg-[#f0fdf4] border-[#dcfce7] shadow-none rounded-xl">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-[#15803d]">
+                <CardTitle className="text-lg flex items-center gap-2 text-green-700">
                   <PoundSterling className="w-5 h-5" />
                   Service Charges
                 </CardTitle>
-                <a href={createPageUrl("servicecharges")}>
-                  <ArrowRight className="w-5 h-5 text-[#15803d]" />
+                <a href={createPageUrl("ServiceCharges")}>
+                  <Button variant="ghost" size="sm" className="text-green-700 hover:text-green-800">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </a>
               </div>
             </CardHeader>
@@ -783,22 +796,22 @@ export default function Dashboard() {
                 <Skeleton className="h-24 w-full" />
               ) : (
                 <>
-                  <div className="text-center mb-6">
-                    <div className="text-5xl font-bold text-[#16a34a]">{serviceChargeSummary.overdue}</div>
-                    <div className="text-sm font-bold text-[#15803d] mt-1">Overdue Payments</div>
+                  <div className="text-center mb-4">
+                    <div className="text-4xl font-bold text-green-600">{serviceChargeSummary.overdue}</div>
+                    <div className="text-sm text-green-700">Overdue Payments</div>
                   </div>
                   {serviceChargeSummary.overdueItems.length > 0 ? (
-                    <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
                       {serviceChargeSummary.overdueItems.map(item => (
-                        <div key={item.resident?.ID} className="p-3 bg-white rounded-lg border border-[#dcfce7]">
-                          <div className="font-bold text-gray-800">
+                        <div key={item.resident?.ID} className="p-2 bg-white rounded text-sm border border-green-100">
+                          <div className="font-medium text-gray-900">
                             {item.resident?.["First Name"]} {item.resident?.["Last Name"]}
                           </div>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-medium text-gray-500">
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-gray-600">
                               {item.count} overdue payment{item.count !== 1 ? 's' : ''}
                             </span>
-                            <Badge className="bg-[#f0fdf4] text-[#15803d] border-[#dcfce7] hover:bg-[#dcfce7] text-[10px]">
+                            <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
                               Overdue
                             </Badge>
                           </div>
@@ -806,10 +819,10 @@ export default function Dashboard() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[#15803d] text-center py-4 font-bold">All up to date ✅</p>
+                    <p className="text-sm text-green-700 text-center py-4">All up to date ✅</p>
                   )}
-                  <a href={createPageUrl("servicecharges")} className="block text-center mt-6">
-                    <Button variant="link" className="text-[#15803d] hover:text-[#166534] font-bold p-0">
+                  <a href={createPageUrl("ServiceCharges")}>
+                    <Button variant="link" className="w-full mt-3 text-green-700 hover:text-green-800">
                       View All Service Charges <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </a>
@@ -819,15 +832,17 @@ export default function Dashboard() {
           </Card>
 
           {/* Row 2 - Card 5: Repairs Reminders */}
-          <Card className="bg-[#fff7ed] border-[#ffedd5] shadow-none rounded-xl">
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-gray-700">
+                <CardTitle className="text-lg flex items-center gap-2 text-gray-700">
                   <Wrench className="w-5 h-5" />
-                  Repairs Reminders
+                  Repairs
                 </CardTitle>
-                <a href={createPageUrl("repairs")}>
-                  <ArrowRight className="w-5 h-5 text-gray-700" />
+                <a href={createPageUrl("Repairs")}>
+                  <Button variant="ghost" size="sm" className="text-gray-700 hover:text-gray-800">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </a>
               </div>
             </CardHeader>
@@ -836,26 +851,26 @@ export default function Dashboard() {
                 <Skeleton className="h-24 w-full" />
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="text-center p-4 bg-white rounded-lg border border-[#ffedd5]">
-                      <div className="text-4xl font-bold text-gray-800">{repairsSummary.reported}</div>
-                      <div className="text-xs font-bold text-gray-600 mt-1">Reported</div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="text-center p-3 bg-white rounded border border-gray-100">
+                      <div className="text-3xl font-bold text-gray-600">{repairsSummary.reported}</div>
+                      <div className="text-xs text-gray-700">Reported</div>
                     </div>
-                    <div className="text-center p-4 bg-white rounded-lg border border-[#ffedd5]">
-                      <div className="text-4xl font-bold text-gray-800">{repairsSummary.scheduled}</div>
-                      <div className="text-xs font-bold text-gray-600 mt-1">Scheduled</div>
+                    <div className="text-center p-3 bg-white rounded border border-gray-100">
+                      <div className="text-3xl font-bold text-gray-600">{repairsSummary.scheduled}</div>
+                      <div className="text-xs text-gray-700">Scheduled</div>
                     </div>
                   </div>
                   {repairsSummary.recentRepairs.length > 0 ? (
-                    <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
                       {repairsSummary.recentRepairs.map(repair => (
-                        <div key={repair.ID} className="p-3 bg-white rounded-lg border border-[#ffedd5]">
-                          <div className="font-bold text-gray-800 text-sm truncate">{repair.Title || repair.Description?.slice(0, 50)}</div>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                              <span className={`px-1.5 py-0.5 rounded ${repair.Priority === 'Emergency' ? 'bg-red-100 text-red-600' : repair.Priority === 'Urgent' ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'}`}>{repair.Priority}</span>
+                        <div key={repair.ID} className="p-2 bg-white rounded text-sm border border-gray-100">
+                          <div className="font-medium text-gray-900">{repair.Title || repair.Description?.slice(0, 50)}</div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-gray-600">
+                              Priority: <span className={`capitalize font-semibold ${repair.Priority === 'Emergency' ? 'text-red-500' : repair.Priority === 'Urgent' ? 'text-orange-500' : 'text-gray-500'}`}>{repair.Priority}</span>
                             </span>
-                            <Badge className="bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 text-[10px] capitalize">
+                            <Badge className="bg-gray-100 text-gray-800 border-gray-200 text-xs capitalize">
                               {repair.Status}
                             </Badge>
                           </div>
@@ -863,10 +878,10 @@ export default function Dashboard() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-600 text-center py-4 italic">No urgent repairs</p>
+                    <p className="text-sm text-gray-700 text-center py-4">No urgent repairs</p>
                   )}
-                  <a href={createPageUrl("repairs")} className="block text-center mt-6">
-                    <Button variant="link" className="text-gray-700 hover:text-gray-900 font-bold p-0">
+                  <a href={createPageUrl("Repairs")}>
+                    <Button variant="link" className="w-full mt-3 text-gray-700 hover:text-gray-800">
                       View All Repairs <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </a>
@@ -876,15 +891,17 @@ export default function Dashboard() {
           </Card>
 
           {/* Row 2 - Card 6: Referrals Reminders */}
-          <Card className="bg-[#f5f3ff] border-[#ede9fe] shadow-none rounded-xl">
+          <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-[#6d28d9]">
+                <CardTitle className="text-lg flex items-center gap-2 text-indigo-700">
                   <ArrowRightLeft className="w-5 h-5" />
                   Referrals
                 </CardTitle>
-                <a href={createPageUrl("referrals")}>
-                  <ArrowRight className="w-5 h-5 text-[#6d28d9]" />
+                <a href={createPageUrl("Referrals")}>
+                  <Button variant="ghost" size="sm" className="text-indigo-700 hover:text-indigo-800">
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </a>
               </div>
             </CardHeader>
@@ -893,20 +910,20 @@ export default function Dashboard() {
                 <Skeleton className="h-24 w-full" />
               ) : (
                 <>
-                  <div className="text-center mb-6">
-                    <div className="text-5xl font-bold text-[#7c3aed]">{referralsSummary.underAssessment}</div>
-                    <div className="text-sm font-bold text-[#6d28d9] mt-1">Under Assessment</div>
+                  <div className="text-center mb-4">
+                    <div className="text-4xl font-bold text-indigo-600">{referralsSummary.underAssessment}</div>
+                    <div className="text-sm text-indigo-700">Under Assessment</div>
                   </div>
                   {referralsSummary.recentReferrals.length > 0 ? (
-                    <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
                       {referralsSummary.recentReferrals.map(referral => (
-                        <div key={referral.ID} className="p-3 bg-white rounded-lg border border-[#ede9fe]">
-                          <div className="font-bold text-gray-800">{referral["Applicant Name"]}</div>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-medium text-gray-500">
+                        <div key={referral.ID} className="p-2 bg-white rounded text-sm border border-indigo-100">
+                          <div className="font-medium text-gray-900">{referral["Applicant Name"]}</div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-gray-600">
                               {format(new Date(referral["Referral Date"]), 'MMM d, yyyy')}
                             </span>
-                            <Badge className="bg-[#f5f3ff] text-[#6d28d9] border-[#ede9fe] hover:bg-[#ede9fe] text-[10px]">
+                            <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 text-xs">
                               Assessment
                             </Badge>
                           </div>
@@ -914,10 +931,10 @@ export default function Dashboard() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[#6d28d9] text-center py-4 italic">No referrals under assessment</p>
+                    <p className="text-sm text-indigo-700 text-center py-4">No referrals under assessment</p>
                   )}
-                  <a href={createPageUrl("referrals")} className="block text-center mt-6">
-                    <Button variant="link" className="text-[#6d28d9] hover:text-[#5b21b6] font-bold p-0">
+                  <a href={createPageUrl("Referrals")}>
+                    <Button variant="link" className="w-full mt-3 text-indigo-700 hover:text-indigo-800">
                       View All Referrals <ArrowRight className="w-4 h-4 ml-1" />
                     </Button>
                   </a>
@@ -928,85 +945,88 @@ export default function Dashboard() {
         </div>
 
         {/* Housing Benefit Alerts - Full Width */}
-        <Card className="bg-[#fdfaff] border-[#f3e8ff] shadow-sm rounded-xl overflow-hidden">
-          <CardHeader className="bg-white border-b border-[#f3e8ff] pb-4">
+        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold flex items-center gap-2 text-[#7e22ce]">
+                <CardTitle className="text-xl flex items-center gap-2 text-purple-700">
                   <HandCoins className="w-6 h-6" />
                   Housing Benefits
                 </CardTitle>
-                <p className="text-sm text-purple-500 mt-1">Last 4 weeks summary</p>
+                <p className="text-sm text-purple-600 mt-1">Logs from the last 4 weeks</p>
               </div>
-              <a href={createPageUrl("benefits")}>
-                <Button variant="outline" size="sm" className="text-[#7e22ce] border-[#e9d5ff] hover:bg-[#f3e8ff] font-bold rounded-lg px-4">
-                  Full Reports <ArrowRight className="w-4 h-4 ml-2" />
+              <a href={createPageUrl("Benefits")}>
+                <Button variant="outline" size="sm" className="text-purple-700 hover:text-purple-800 border-purple-300">
+                  View All Benefits <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </a>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent>
             {loadingReminders ? (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
                 {[1, 2, 3, 4, 5, 6, 7].map(i => <Skeleton key={i} className="h-24 w-full" />)}
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#f3e8ff] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.requestedSupportNotes > 0 ? 'text-[#9333ea]' : 'text-gray-300'}`}>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.requestedSupportNotes > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.requestedSupportNotes}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tight">Support Notes</div>
+                    <div className="text-xs text-gray-700 font-medium">Support Notes</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#f3e8ff] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.requestedDocuments > 0 ? 'text-[#9333ea]' : 'text-gray-300'}`}>
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.requestedDocuments > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.requestedDocuments}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tight">Documents</div>
+                    <div className="text-xs text-gray-700 font-medium">Documents</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#fee2e2] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.suspendedClaims > 0 ? 'text-[#dc2626]' : 'text-gray-300'}`}>
+                  <div className="text-center p-4 bg-white rounded-lg border border-red-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.suspendedClaims > 0 ? 'text-red-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.suspendedClaims}
                     </div>
-                    <div className="text-[10px] text-red-600 font-bold uppercase tracking-tight">Suspensions</div>
+                    <div className="text-xs text-gray-700 font-medium">Suspended Claims</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#f3e8ff] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.changeOfAddresses > 0 ? 'text-[#9333ea]' : 'text-gray-300'}`}>
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.changeOfAddresses > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.changeOfAddresses}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tight">Addresses</div>
+                    <div className="text-xs text-gray-700 font-medium">Address Changes</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#f3e8ff] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.roomTransfers > 0 ? 'text-[#9333ea]' : 'text-gray-300'}`}>
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.roomTransfers > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.roomTransfers}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tight">Transfers</div>
+                    <div className="text-xs text-gray-700 font-medium">Room Transfers</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#f3e8ff] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.hbCalls > 0 ? 'text-[#9333ea]' : 'text-gray-300'}`}>
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.hbCalls > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.hbCalls}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tight">HB Calls</div>
+                    <div className="text-xs text-gray-700 font-medium">HB Calls</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white rounded-xl border border-[#f3e8ff] shadow-sm">
-                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.hbLeavers > 0 ? 'text-[#9333ea]' : 'text-gray-300'}`}>
+                  <div className="text-center p-4 bg-white rounded-lg border border-purple-100 shadow-sm">
+                    <div className={`text-3xl font-bold mb-1 ${housingBenefitSummary.hbLeavers > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
                       {housingBenefitSummary.hbLeavers}
                     </div>
-                    <div className="text-[10px] text-gray-600 font-bold uppercase tracking-tight">HB Leavers</div>
+                    <div className="text-xs text-gray-700 font-medium">HB Leavers</div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center pt-2">
-                  <Badge className="bg-[#7e22ce] hover:bg-[#6b21a8] text-sm px-6 py-1.5 rounded-full border-none">
-                    Total Logs: {housingBenefitSummary.total}
-                  </Badge>
+                <div className="text-center pt-3 border-t border-purple-200">
+                  <div className="inline-flex items-center gap-2 text-sm text-purple-700">
+                    <span className="font-semibold">Total Logs:</span>
+                    <Badge className="bg-purple-600 text-white text-base px-3 py-1">
+                      {housingBenefitSummary.total}
+                    </Badge>
+                  </div>
                 </div>
               </>
             )}
@@ -1015,81 +1035,78 @@ export default function Dashboard() {
 
         {/* Summary Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <a href={createPageUrl("residents")}>
-            <Card className="bg-white border-blue-100 hover:shadow-md transition-shadow duration-200 cursor-pointer rounded-xl overflow-hidden">
-              <div className="h-2 bg-blue-500 w-full" />
+          <a href={createPageUrl("Residents")}>
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-blue-700">
+                <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
                   <UserCheck className="w-5 h-5" />
                   Active Residents
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-2">
-                  <div className="text-5xl font-extrabold text-blue-600 mb-2">{stats.residents}</div>
-                  <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">Active Residents</div>
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-blue-600 mb-2">{stats.residents}</div>
+                  <div className="text-sm text-blue-700">currently active in system</div>
                 </div>
-                <Button variant="link" className="w-full mt-4 text-blue-600 font-bold">
-                  Manage Directory <ArrowRight className="w-4 h-4 ml-1" />
+                <Button variant="link" className="w-full mt-4 text-blue-700 hover:text-blue-800">
+                  View All Residents <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("incidents")}>
-            <Card className="bg-white border-red-100 hover:shadow-md transition-shadow duration-200 cursor-pointer rounded-xl overflow-hidden">
-              <div className="h-2 bg-red-500 w-full" />
+          <a href={createPageUrl("Incidents")}>
+            <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-red-700">
+                <CardTitle className="text-lg flex items-center gap-2 text-red-700">
                   <AlertTriangle className="w-5 h-5" />
                   Open Incidents
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-2">
-                  <div className="text-5xl font-extrabold text-red-600 mb-2">{stats.activeIncidents}</div>
-                  <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">Unresolved Issues</div>
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-red-600 mb-2">{stats.activeIncidents}</div>
+                  <div className="text-sm text-red-700">requiring attention</div>
                 </div>
-                <Button variant="link" className="w-full mt-4 text-red-600 font-bold">
-                  View Incident Log <ArrowRight className="w-4 h-4 ml-1" />
+                <Button variant="link" className="w-full mt-4 text-red-700 hover:text-red-800">
+                  View All Incidents <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </CardContent>
             </Card>
           </a>
 
-          <a href={createPageUrl("officelogs")}>
-            <Card className="bg-white border-cyan-100 hover:shadow-md transition-shadow duration-200 cursor-pointer rounded-xl overflow-hidden">
-              <div className="h-2 bg-cyan-500 w-full" />
+          <a href={createPageUrl("OfficeLogs")}>
+            <Card className="bg-gradient-to-br from-sky-50 to-blue-50 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold flex items-center gap-2 text-cyan-700">
+                <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
                   <FileText className="w-5 h-5" />
                   Today's Logs
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-2">
-                  <div className="text-5xl font-extrabold text-cyan-600 mb-2">{stats.todayLogs}</div>
-                  <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">New Entries Today</div>
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-blue-600 mb-2">{stats.todayLogs}</div>
+                  <div className="text-sm text-blue-700">office logs recorded today</div>
                 </div>
-                <Button variant="link" className="w-full mt-4 text-cyan-600 font-bold">
-                  Daily Summary <ArrowRight className="w-4 h-4 ml-1" />
+                <Button variant="link" className="w-full mt-4 text-blue-700 hover:text-blue-800">
+                  View All Logs <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </CardContent>
             </Card>
           </a>
         </div>
 
-        {/* Restore missing sections: Recent Activity and Quarterly Reviews */}
+        {/* Recent Activity Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="rounded-xl shadow-sm border-gray-100">
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-gray-700">
                   <AlertTriangle className="w-5 h-5 text-red-500" />
                   Recent Incidents (Last 4 Weeks)
                 </CardTitle>
-                <a href={createPageUrl("incidents")}>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm font-bold">
+                <a href={createPageUrl("Incidents")}>
+                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
                     View All <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </a>
@@ -1099,34 +1116,34 @@ export default function Dashboard() {
               {recentActivity.incidents.length > 0 ? (
                 <div className="space-y-3">
                   {recentActivity.incidents.map((incident) => (
-                    <div key={incident.ID} className="border-l-4 border-red-400 pl-3 py-2 bg-gray-50 rounded-r-lg">
+                    <div key={incident.ID} className="border-l-4 border-red-400 pl-3 py-2">
                       <div className="flex items-center justify-between mb-1">
-                        <Badge className="bg-red-100 text-red-800 text-[10px] uppercase font-bold">
+                        <Badge className="bg-red-100 text-red-800 text-xs">
                           {incident["Incident Type"]?.replace(/_/g, ' ')}
                         </Badge>
-                        <span className="text-[10px] font-bold text-gray-400">
+                        <span className="text-xs text-gray-500">
                           {format(new Date(incident["Incident Date"]), 'MMM d')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 font-medium line-clamp-2">{incident.Description}</p>
+                      <p className="text-sm text-gray-700 font-medium">{incident.Description?.slice(0, 60)}...</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 text-center py-8 italic">No incidents in the last 4 weeks</p>
+                <p className="text-sm text-gray-500 text-center py-8">No incidents in the last 4 weeks</p>
               )}
             </CardContent>
           </Card>
 
-          <Card className="rounded-xl shadow-sm border-gray-100">
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-gray-700">
                   <FileText className="w-5 h-5 text-blue-500" />
                   This Week's Office Logs
                 </CardTitle>
-                <a href={createPageUrl("officelogs")}>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm font-bold">
+                <a href={createPageUrl("OfficeLogs")}>
+                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
                     View All <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </a>
@@ -1136,38 +1153,41 @@ export default function Dashboard() {
               {recentActivity.logs.length > 0 ? (
                 <div className="space-y-3">
                   {recentActivity.logs.map((log) => (
-                    <div key={log.ID} className="border-l-4 border-blue-400 pl-3 py-2 bg-gray-50 rounded-r-lg">
+                    <div key={log.ID} className="border-l-4 border-blue-400 pl-3 py-2">
                       <div className="flex items-center justify-between mb-1">
-                        <Badge className="bg-blue-100 text-blue-800 text-[10px] uppercase font-bold">
+                        <Badge className="bg-blue-100 text-blue-800 text-xs capitalize">
                           {log["Log Type"]?.replace(/_/g, ' ')}
                         </Badge>
-                        <span className="text-[10px] font-bold text-gray-400">
+                        <span className="text-xs text-gray-500">
                           {format(new Date(log["Date/Time"]), 'MMM d')}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 font-medium line-clamp-1">
-                        {log.Title || log.Description || 'Office log entry'}
+                      <p className="text-sm text-gray-700 font-medium">
+                        {log.Title || log.Description?.slice(0, 60) || 'Office log entry'}
                       </p>
+                      {log["Person Involved"] && (
+                        <p className="text-xs text-gray-500 mt-1">By: {log["Person Involved"]}</p>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 text-center py-8 italic">No office logs this week</p>
+                <p className="text-sm text-gray-500 text-center py-8">No office logs this week</p>
               )}
             </CardContent>
           </Card>
         </div>
 
         {/* Quarterly Review Reminders */}
-        <Card className="rounded-xl shadow-sm border-gray-100">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-gray-700">
                 <Heart className="w-5 h-5 text-pink-500" />
                 Quarterly Review Reminders
               </CardTitle>
-              <a href={createPageUrl("supportplans")}>
-                <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm font-bold">
+              <a href={createPageUrl("SupportPlans")}>
+                <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
                   View Support Plans <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </a>
@@ -1182,43 +1202,43 @@ export default function Dashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-sm font-bold text-red-700 mb-3 flex items-center gap-2">
+                  <h3 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
                     <Bell className="w-4 h-4" />
                     Overdue ({quarterlyReviewSummary.overdue.length})
                   </h3>
                   {quarterlyReviewSummary.overdue.length > 0 ? (
                     <div className="space-y-2">
                       {quarterlyReviewSummary.overdue.slice(0, 3).map(review => (
-                        <div key={review.ID} className="p-3 bg-red-50 rounded-lg text-sm border border-red-100">
-                          <div className="font-bold text-gray-800">{review.Title}</div>
-                          <div className="text-[10px] font-bold text-red-600 mt-1 uppercase">
-                            Overdue: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-400 py-2 italic">No overdue reviews</p>
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-amber-700 mb-3 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Due Soon ({quarterlyReviewSummary.dueSoon.length})
-                  </h3>
-                  {quarterlyReviewSummary.dueSoon.length > 0 ? (
-                    <div className="space-y-2">
-                      {quarterlyReviewSummary.dueSoon.slice(0, 3).map(review => (
-                        <div key={review.ID} className="p-3 bg-amber-50 rounded-lg text-sm border border-amber-100">
-                          <div className="font-bold text-gray-800">{review.Title}</div>
-                          <div className="text-[10px] font-bold text-amber-600 mt-1 uppercase">
+                        <div key={review.ID} className="p-3 bg-red-50 rounded-lg text-sm border border-red-200">
+                          <div className="font-medium text-gray-900">{review.Title}</div>
+                          <div className="text-xs text-gray-600 mt-1">
                             Due: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-400 py-2 italic">No reviews due soon</p>
+                    <p className="text-sm text-gray-500 py-4">No overdue reviews ✅</p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-yellow-700 mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Due Soon ({quarterlyReviewSummary.dueSoon.length})
+                  </h3>
+                  {quarterlyReviewSummary.dueSoon.length > 0 ? (
+                    <div className="space-y-2">
+                      {quarterlyReviewSummary.dueSoon.slice(0, 3).map(review => (
+                        <div key={review.ID} className="p-3 bg-yellow-50 rounded-lg text-sm border border-yellow-200">
+                          <div className="font-medium text-gray-900">{review.Title}</div>
+                          <div className="text-xs text-gray-600 mt-1">
+                            Due: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 py-4">No reviews due soon</p>
                   )}
                 </div>
               </div>
