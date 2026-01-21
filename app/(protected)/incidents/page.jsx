@@ -26,6 +26,7 @@ export default function IncidentsSupabase() {
   const [activeTab, setActiveTab] = useState("all");
   const [viewingIncident, setViewingIncident] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [users, setUsers] = useState([]);
 
   // Transform status from any format to database format
   const transformStatus = (status) => {
