@@ -128,7 +128,7 @@ export default function PropertyOnboardingSupabase() {
     }
     
     if (onboardingCase.created_by) {
-      const user = users.find(u => (u.Email || u.email) === onboardingCase.created_by);
+      const user = user.find(u => (u.Email || u.email) === onboardingCase.created_by);
       if (user?.Full_Name || user?.full_name) {
         return user.Full_Name || user.full_name;
       }
@@ -136,7 +136,7 @@ export default function PropertyOnboardingSupabase() {
     }
     
     return '-';
-  }, [users]);
+  }, [user]);
 
   const filterCases = useCallback(() => {
     let filtered = onboardingCases;
