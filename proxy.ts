@@ -7,11 +7,17 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/clerk(.*)"
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+// In Next.js 16, "middleware" is renamed to "proxy"
+export const proxy = clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
-    await auth.protect();
+    const authObj = await auth();
+    if (!authObj.userId) {
+      return authObj.redirectToSignIn();
+    }
   }
 });
+
+export default proxy;
 
 export const config = {
   matcher: [
