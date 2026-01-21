@@ -37,45 +37,48 @@ export default function AppLayout({ children }) {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Residents", href: "/residents", icon: Users },
-    { name: "Properties", href: "/Properties", icon: Building },
+    { name: "Properties", href: "/properties", icon: Building },
     { name: "Accommodations", href: "/accommodations", icon: Bed },
   ];
 
   const operationsNav = [
-    { name: "Tasks", href: "/Tasks", icon: CheckSquare },
-    { name: "Incidents", href: "/Incidents", icon: AlertTriangle },
-    { name: "Office Logs", href: "/OfficeLogs", icon: FileText },
-    { name: "Repairs", href: "/Repairs", icon: Wrench },
+    { name: "Tasks", href: "/tasks", icon: CheckSquare },
+    { name: "Incidents", href: "/incidents", icon: AlertTriangle },
+    { name: "Office Logs", href: "/officelogs", icon: FileText },
+    { name: "Repairs", href: "/repairs", icon: Wrench },
   ];
 
   const supportNav = [
-    { name: "Support Plans", href: "/SupportPlans", icon: Heart },
-    { name: "Weekly SW Docs", href: "/WeeklySWDocs", icon: FileStack },
-    { name: "Benefits", href: "/Benefits", icon: Gift },
-    { name: "Referrals", href: "/Referrals", icon: ArrowRightLeft },
+    { name: "Support Plans", href: "/supportplans", icon: Heart },
+    { name: "Weekly SW Docs", href: "/weeklyswdocs", icon: FileStack },
+    { name: "Benefits", href: "/benefits", icon: Gift },
+    { name: "Referrals", href: "/referrals", icon: ArrowRightLeft },
   ];
 
   const complianceNav = [
-    { name: "Service Charges", href: "/ServiceCharges", icon: PoundSterling },
-    { name: "Compliance", href: "/Compliance", icon: Shield },
-    { name: "Documents", href: "/Documents", icon: Folder },
+    { name: "Service Charges", href: "/servicecharges", icon: PoundSterling },
+    { name: "Compliance", href: "/compliance", icon: Shield },
+    { name: "Documents", href: "/documents", icon: Folder },
   ];
 
   // Property/Landlord section
   const propertyLandlordNav = [
-    { name: "Landlord Enquiries", href: "/LandLordEnquiries", icon: Users },
-    { name: "Property Onboarding", href: "/PropertyOnBoarding", icon: Building }
+    { name: "Landlord Enquiries", href: "/landlordenquiries", icon: Users },
+    { name: "Property Onboarding", href: "/propertyonboarding", icon: Building }
   ];
 
   // Administration section
   const adminNav = [
-    { name: "Custom Sections", href: "/CustomSections", icon: Settings },
-    { name: "Landlord Portal", href: "/LandLordPortal", icon: Settings },
-    { name: "Settings", href: "/Settings", icon: Settings },
-    { name: "Deleted Entries", href: "/DeletedEntries", icon: Trash2 }
+    { name: "Custom Sections", href: "/customsections", icon: Settings },
+    { name: "Landlord Portal", href: "/landlordportal", icon: Settings },
+    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Deleted Entries", href: "/deletedentries", icon: Trash2 }
   ];
 
-     const isActive = (href) => pathname === href;
+     const isActive = (href) => {
+       if (href === '/dashboard' && pathname === '/') return true;
+       return pathname?.toLowerCase() === href.toLowerCase();
+     };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -277,7 +280,7 @@ export default function AppLayout({ children }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-0">
           {children}
         </main>
       </div>
