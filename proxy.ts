@@ -4,6 +4,7 @@ const isPublicRoute = createRouteMatcher([
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/login(.*)",
   "/api/webhooks/clerk(.*)",
   "/_clerk(.*)",
   "/api/clerk(.*)"
@@ -11,10 +12,26 @@ const isPublicRoute = createRouteMatcher([
 
 // In Next.js 16, "middleware" is renamed to "proxy"
 export const proxy = clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
+  const { pathname } = req.nextUrl;
+  const publicRoute = isPublicRoute(req);
+  console.log(`[Middleware] Path: ${pathname}, Public: ${publicRoute}`);
+
+  if (!publicRoute) {
     // Calling await auth() explicitly before protect can sometimes resolve sync issues in Clerk v6
     const authObj = await auth();
-    await authObj.protect();
+    console.log(`[Middleware] Protecting route: ${pathname}, UserID: ${authObj.userId}`);
+
+    // In some Clerk versions, protect is on the auth object returned by await auth()
+    // In others, it might be different. Let's try both.
+    if (typeof authObj.protect === 'function') {
+      await authObj.protect();
+    } else {
+      // Fallback for different Clerk versions
+      const { protect } = await auth();
+      if (typeof protect === 'function') {
+        await protect();
+      }
+    }
   }
 });
 
