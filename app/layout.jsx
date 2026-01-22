@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "My Hope Housing Dashboard",
+  title: "My Hope Housing",
   description: "Housing management system",
 };
 
@@ -24,8 +24,6 @@ export default function RootLayout({ children }) {
         <ClerkProvider
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
-          fallbackRedirectUrl="/dashboard"
-          signUpFallbackRedirectUrl="/dashboard"
         >
           {children}
         </ClerkProvider>
