@@ -5,13 +5,17 @@ const isPublicRoute = createRouteMatcher([
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/login(.*)",
-  "/api/webhooks/clerk(.*)"
+  "/api/webhooks/clerk(.*)",
+  "/_clerk(.*)",
+  "/api/clerk(.*)"
 ]);
 
 // In Next.js 16, "middleware" is renamed to "proxy"
 export const proxy = clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
-    await auth.protect();
+    // Calling await auth() explicitly before protect can sometimes resolve sync issues in Clerk v6
+    const authObj = await auth();
+    await authObj.protect();
   }
 });
 
