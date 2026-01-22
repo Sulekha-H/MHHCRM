@@ -21,7 +21,12 @@ export default function RootLayout({ children }) {
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full antialiased bg-background text-foreground`}>
         {/* ClerkProvider must wrap everything that uses Clerk */}
-        <ClerkProvider>
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          afterSignInUrl="/"
+          afterSignUpUrl="/"
+        >
           {children}
         </ClerkProvider>
       </body>

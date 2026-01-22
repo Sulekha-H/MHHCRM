@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
+  "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/login(.*)",
@@ -10,10 +11,7 @@ const isPublicRoute = createRouteMatcher([
 // In Next.js 16, "middleware" is renamed to "proxy"
 export const proxy = clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
-    const authObj = await auth();
-    if (!authObj.userId) {
-      return authObj.redirectToSignIn();
-    }
+    await auth.protect();
   }
 });
 
