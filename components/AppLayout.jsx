@@ -97,13 +97,14 @@ export default function AppLayout({ children }) {
         }`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden">
+        <div className="h-16 flex-shrink-0 flex items-center justify-between px-6 border-b border-gray-200">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden bg-gray-50 border border-gray-100">
               <img
                 src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
                 alt="My Hope Housing Logo"
                 className="w-full h-full object-contain"
+                style={{ width: '40px', height: '40px' }}
               />
             </div>
             <div>
