@@ -1,6 +1,6 @@
 "use client";
 import { SignUp } from "@clerk/nextjs";
 
-export default function SetPasswordPage() {
-  return <SignUp path="/set-password" routing="path" />;
+export default function SignUpPage() {
+  return <SignUp path="/sign-up" routing="path" />;
 }
