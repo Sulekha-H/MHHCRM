@@ -16,7 +16,10 @@ import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
+  console.log(`[Dashboard] User Status - Loaded: ${isLoaded}, SignedIn: ${isSignedIn}, UserID: ${user?.id}`);
+
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     residents: 0,
     activeIncidents: 0,
@@ -96,10 +99,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadDashboardData = async () => {
+      setError(null);
       try {
-        console.log("Loading dashboard data...");
+        console.log(`[Dashboard] Starting data fetch for user: ${user?.id}...`);
         
         // Load all data in parallel
+        console.log("[Dashboard] Calling Promise.all for all Supabase queries...");
+        if (!supabase) {
+          const msg = "Supabase client is not initialized. Please check your environment variables.";
+          console.error(`[Dashboard] ${msg}`);
+          setError(msg);
+          setLoading(false);
+          return;
+        }
+
         const [
           residentsResult,
           incidentsResult,
@@ -128,7 +141,7 @@ export default function Dashboard() {
           retryApiCall(() => supabase.from('properties').select('*').eq('"Deleted"', false))
         ]);
 
-        console.log("✅ All data loaded");
+        console.log("[Dashboard] ✅ All data loaded successfully from Supabase");
 
         const residents = residentsResult.data || [];
         const allIncidents = incidentsResult.data || [];
@@ -495,6 +508,31 @@ export default function Dashboard() {
       loadDashboardData();
     }
   }, [user, delay, retryApiCall]);
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <CardTitle className="text-red-700 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Error Loading Dashboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-600">{error}</p>
+            <Button
+              variant="outline"
+              className="mt-4 border-red-300 text-red-700 hover:bg-red-100"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
