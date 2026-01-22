@@ -42,7 +42,7 @@ export default function AppLayout({ children }) {
   ];
 
   const operationsNav = [
-    { name: "Tasks", href: "/tasks", icon: CheckSquare },
+    { name: "tasks", href: "/tasks", icon: CheckSquare },
     { name: "Incidents", href: "/incidents", icon: AlertTriangle },
     { name: "Office Logs", href: "/officelogs", icon: FileText },
     { name: "Repairs", href: "/repairs", icon: Wrench },
