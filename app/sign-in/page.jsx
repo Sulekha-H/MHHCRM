@@ -5,10 +5,11 @@ export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <SignIn
-        path="/sign-in"
         routing="path"
+        path="/sign-in"
+        RedirectUrl="/dashboard"
         signUpUrl="/sign-up"
-        forceRedirectUrl="/dashboard"
+        
       />
     </div>
   );
