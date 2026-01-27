@@ -1,5 +1,5 @@
 "use client";
-import LogoutButton from "./LogoutButton"; // adjust path as needed
+import LogoutButton from "@/app/LogoutButton"; // adjust path as needed
 import { SignedIn } from "@clerk/nextjs";
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
