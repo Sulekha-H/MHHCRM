@@ -1,6 +1,12 @@
 // app/layout.jsx
 import "./global.css";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarProvider } from '@/components/ui/sidebar.jsx'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -25,21 +31,20 @@ export default function RootLayout({ children }) {
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
         >
-          <SidebarProvider>
-            <div className="flex h-full">
-              {/* Sidebar on the left */}
-              <Sidebar className="w-64">
-                <SidebarContent>
-                  {/* Here go your sidebar groups, menus, etc. */}
-                  {/* Footer at the bottom */}
-                  <SidebarFooter />
-                </SidebarContent>
-              </Sidebar>
+    <SidebarProvider>
+  <Sidebar>
+    <SidebarContent>
+      <SidebarFooter />
+    </SidebarContent>
+  </Sidebar>
 
-              {/* Main content */}
-              <main className="flex-1 bg-red-100">{children}</main>
-            </div>
-          </SidebarProvider>
+  <SidebarInset>
+    <div className="p-6">
+      {children}
+    </div>
+  </SidebarInset>
+</SidebarProvider>
+
         </ClerkProvider>
       </body>
     </html>
