@@ -1,8 +1,9 @@
 "use client"
 
-import React from "react"
+import "./global.css"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ClerkProvider, useUser, SignInButton, UserButton } from "@clerk/nextjs"
 
 import {
   Sidebar,
@@ -21,90 +22,42 @@ import {
 import {
   Home,
   Users,
-  AlertTriangle,
-  FileText,
   Building,
   Bed,
-  PoundSterling,
-  CheckSquare,
-  Wrench,
-  Gift,
-  ArrowRightLeft,
   Shield,
-  Heart,
-  Folder,
-  Settings,
-  Lock,
-  FileStack,
-  Trash2,
 } from "lucide-react"
 
-import { base44 } from "@/api/base44Client"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-
-export default function RootLayout({ children }) {
+function AppShell({ children }) {
   const pathname = usePathname()
+  const { user, isLoaded, isSignedIn } = useUser()
 
-  const [user, setUser] = React.useState(null)
-  const [loading, setLoading] = React.useState(true)
-  const [authError, setAuthError] = React.useState(null)
-
-  // 🔐 AUTH (same logic as Pages Router)
-  React.useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me()
-        setUser(currentUser)
-        setAuthError(null)
-      } catch (error) {
-        setAuthError(error.message || "Authentication failed")
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadUser()
-  }, [])
-
-  const hasPropertyLandlordAccess = (user) => {
-    if (!user?.email) return false
-    return [
-      "amaani@myhopehousing.org.uk",
-      "burton@myhopehousing.org.uk",
-    ].includes(user.email.toLowerCase())
+  // ⏳ Clerk still loading
+  if (!isLoaded) {
+    return <div className="p-6">Loading…</div>
   }
 
-  const hasAdminAccess = (user) => {
-    if (!user?.email) return false
-    return ["amaani@myhopehousing.org.uk"].includes(user.email.toLowerCase())
-  }
-
-  // ⏳ Loading
-  if (loading) {
+  // 🔒 Not signed in
+  if (!isSignedIn) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading…
+      <div className="flex min-h-screen items-center justify-center">
+        <SignInButton mode="modal">
+          <button className="px-4 py-2 rounded bg-black text-white">
+            Sign in
+          </button>
+        </SignInButton>
       </div>
     )
   }
 
-  // 🔒 Auth error
-  if (authError && !user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen p-6">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center">
-            <Lock className="mx-auto mb-4 text-red-600" />
-            <Button onClick={() => base44.auth.redirectToLogin()}>
-              Log in
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  // 🧠 ROLE CHECKS (email-based like your old logic)
+  const email = user.primaryEmailAddress?.emailAddress?.toLowerCase()
 
-  // 🔗 NAV CONFIG (same as before)
+  const isAdmin = email === "amaani@myhopehousing.org.uk"
+  const isLandlord = [
+    "amaani@myhopehousing.org.uk",
+    "burton@myhopehousing.org.uk",
+  ].includes(email)
+
   const navItem = (name, href, icon) => ({
     name,
     href,
@@ -112,31 +65,80 @@ export default function RootLayout({ children }) {
     active: pathname === href,
   })
 
-  const navigation = [
+  const mainNav = [
     navItem("Dashboard", "/dashboard", Home),
     navItem("Residents", "/residents", Users),
     navItem("Properties", "/properties", Building),
     navItem("Accommodations", "/accommodations", Bed),
   ]
 
-  // (Repeat same arrays for operationsNav, supportNav, etc.)
+  if (isAdmin) {
+    mainNav.push(navItem("Admin", "/admin", Shield))
+  }
 
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-slate-50">
+
+        {/* SIDEBAR (persistent) */}
+        <Sidebar className="border-r bg-white">
+          <SidebarHeader className="p-6 border-b flex items-center justify-between">
+            <span className="font-bold">My Hope Housing</span>
+            <UserButton />
+          </SidebarHeader>
+
+          <SidebarContent className="px-4">
+            <SidebarGroup>
+              <SidebarGroupLabel>Main</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {mainNav.map((item) => (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild isActive={item.active}>
+                        <Link
+                          href={item.href}
+                          className="flex items-center gap-3 px-3 py-2"
+                        >
+                          <item.icon className="w-5 h-5" />
+                          {item.name}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+
+        {/* MAIN CONTENT */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="border-b bg-white px-6 py-4 flex items-center gap-4">
+            <SidebarTrigger className="md:hidden" />
+            <h1 className="font-semibold capitalize">
+              {pathname.replace("/", "")}
+            </h1>
+          </header>
+
+          <main className="flex-1 p-6 overflow-auto">
+            {children}
+          </main>
+        </div>
+
+      </div>
+    </SidebarProvider>
+  )
+}
+
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <SidebarProvider>
-          <div className="flex min-h-screen w-full bg-slate-50">
+        <ClerkProvider>
+          <AppShell>{children}</AppShell>
+        </ClerkProvider>
+      </body>
+    </html>
+  )
+}
 
-            {/* SIDEBAR (persistent) */}
-            <Sidebar className="border-r bg-white">
-              <SidebarHeader className="p-6 border-b">
-                <h2 className="font-bold text-lg">My Hope Housing</h2>
-              </SidebarHeader>
-
-              <SidebarContent className="px-4">
-                <SidebarGroup>
-                  <SidebarGroupLabel>Main</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-
- 
