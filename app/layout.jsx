@@ -1,6 +1,6 @@
 // app/layout.jsx
 import "./global.css";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarProvider } from './path-to-your-sidebar-component';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarProvider } from '@/components/ui/sidebar.jsx'
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
