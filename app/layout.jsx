@@ -31,9 +31,10 @@ export default function RootLayout({ children }) {
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
         >
-    <SidebarProvider>
-  <Sidebar>
+<SidebarProvider defaultOpen={true}>
+  <Sidebar collapsible="none" className="w-64">
     <SidebarContent>
+      {/* Your sidebar groups, menus, etc. */}
       <SidebarFooter />
     </SidebarContent>
   </Sidebar>
