@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
           <SidebarProvider>
             <div className="flex h-full">
               {/* Sidebar on the left */}
-              <Sidebar>
+              <Sidebar className="w-64">
                 <SidebarContent>
                   {/* Here go your sidebar groups, menus, etc. */}
                   {/* Footer at the bottom */}
@@ -37,7 +37,7 @@ export default function RootLayout({ children }) {
               </Sidebar>
 
               {/* Main content */}
-              <main className="flex-1">{children}</main>
+              <main className="flex-1 overflow-y-auto p-6 max-w-7xl mx-auto">{children}</main>
             </div>
           </SidebarProvider>
         </ClerkProvider>
