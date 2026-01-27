@@ -37,7 +37,7 @@ export default function RootLayout({ children }) {
               </Sidebar>
 
               {/* Main content */}
-              <main className="flex-1 overflow-y-auto p-6">{children}</main>
+              <main className="flex-1 bg-red-100">{children}</main>
             </div>
           </SidebarProvider>
         </ClerkProvider>
