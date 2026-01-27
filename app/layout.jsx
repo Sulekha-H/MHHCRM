@@ -1,10 +1,5 @@
-"use client"
-
-import "./global.css"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { ClerkProvider, useUser, SignInButton, UserButton } from "@clerk/nextjs"
-
+// app/layout.jsx
+import "./global.css";
 import {
   Sidebar,
   SidebarContent,
@@ -16,129 +11,101 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarInset,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
-
+} from "@/components/ui/sidebar";
 import {
   Home,
   Users,
+  AlertTriangle,
+  FileText,
   Building,
   Bed,
+  PoundSterling,
+  CheckSquare,
+  Wrench,
+  Gift,
+  ArrowRightLeft,
   Shield,
-} from "lucide-react"
+  Heart,
+  Folder,
+  Settings,
+  Lock,
+  FileStack,
+  Trash2
+} from "lucide-react";
+import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
+import SidebarNavigation from "@/components/SidebarNavigation";
 
-function AppShell({ children }) {
-  const pathname = usePathname()
-  const { user, isLoaded, isSignedIn } = useUser()
+const inter = Inter({ subsets: ["latin"] });
 
-  // ⏳ Clerk still loading
-  if (!isLoaded) {
-    return <div className="p-6">Loading…</div>
-  }
+export const metadata = {
+  title: "My Hope Housing",
+  description: "Housing management system",
+};
 
-  // 🔒 Not signed in
-  if (!isSignedIn) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <SignInButton mode="modal">
-          <button className="px-4 py-2 rounded bg-black text-white">
-            Sign in
-          </button>
-        </SignInButton>
-      </div>
-    )
-  }
-
-  // 🧠 ROLE CHECKS (email-based like your old logic)
-  const email = user.primaryEmailAddress?.emailAddress?.toLowerCase()
-
-  const isAdmin = email === "amaani@myhopehousing.org.uk"
-  const isLandlord = [
-    "amaani@myhopehousing.org.uk",
-    "burton@myhopehousing.org.uk",
-  ].includes(email)
-
-  const navItem = (name, href, icon) => ({
-    name,
-    href,
-    icon,
-    active: pathname === href,
-  })
-
-  const mainNav = [
-    navItem("Dashboard", "/dashboard", Home),
-    navItem("Residents", "/residents", Users),
-    navItem("Properties", "/properties", Building),
-    navItem("Accommodations", "/accommodations", Bed),
-  ]
-
-  if (isAdmin) {
-    mainNav.push(navItem("Admin", "/admin", Shield))
-  }
-
-  return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-slate-50">
-
-        {/* SIDEBAR (persistent) */}
-        <Sidebar className="border-r bg-white">
-          <SidebarHeader className="p-6 border-b flex items-center justify-between">
-            <span className="font-bold">My Hope Housing</span>
-            <UserButton />
-          </SidebarHeader>
-
-          <SidebarContent className="px-4">
-            <SidebarGroup>
-              <SidebarGroupLabel>Main</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {mainNav.map((item) => (
-                    <SidebarMenuItem key={item.name}>
-                      <SidebarMenuButton asChild isActive={item.active}>
-                        <Link
-                          href={item.href}
-                          className="flex items-center gap-3 px-3 py-2"
-                        >
-                          <item.icon className="w-5 h-5" />
-                          {item.name}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-
-        {/* MAIN CONTENT */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="border-b bg-white px-6 py-4 flex items-center gap-4">
-            <SidebarTrigger className="md:hidden" />
-            <h1 className="font-semibold capitalize">
-              {pathname.replace("/", "")}
-            </h1>
-          </header>
-
-          <main className="flex-1 p-6 overflow-auto">
-            {children}
-          </main>
-        </div>
-
-      </div>
-    </SidebarProvider>
-  )
-}
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body>
-        <ClerkProvider>
-          <AppShell>{children}</AppShell>
+    <html lang="en" className="h-full">
+      <body className={`${inter.className} h-full antialiased bg-slate-50`}>
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+        >
+          <SidebarProvider defaultOpen={true}>
+            <div className="flex min-h-screen w-full bg-slate-50">
+              <Sidebar
+                collapsible="icon"
+                className="border-r border-slate-200 bg-white w-64"
+              >
+                <SidebarHeader className="border-b border-slate-200 p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden">
+                      <img
+                        src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
+                        alt="My Hope Housing Logo"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-slate-900 text-lg">My Hope Housing</h2>
+                      <p className="text-xs text-slate-500"></p>
+                    </div>
+                  </div>
+                </SidebarHeader>
+
+                <SidebarContent className="px-4">
+                  <SidebarNavigation />
+                </SidebarContent>
+              </Sidebar>
+
+              <SidebarInset className="flex-1 flex flex-col min-w-0 w-full">
+                <header className="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
+                  <div className="flex items-center gap-4">
+                    <SidebarTrigger className="md:hidden" />
+                    {/* Page title will be handled by individual pages */}
+                  </div>
+                </header>
+
+                <main className="flex-1 w-full min-w-0 overflow-x-auto p-6">
+                  <div className="w-full h-full">
+                    {children}
+                  </div>
+                </main>
+              </SidebarInset>
+            </div>
+          </SidebarProvider>
         </ClerkProvider>
       </body>
     </html>
-  )
+  );
 }
 
+ 
