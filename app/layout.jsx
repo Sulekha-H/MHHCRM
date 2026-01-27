@@ -1,5 +1,6 @@
 // app/layout.jsx
 import "./global.css";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarProvider } from './path-to-your-sidebar-component';
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -13,24 +14,34 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5, // Allow some scaling for accessibility but keep it stable
+  maximumScale: 5,
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} h-full antialiased bg-background text-foreground`}>
-        {/* ClerkProvider must wrap everything that uses Clerk */}
         <ClerkProvider
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
         >
-          {children}
+          <SidebarProvider>
+            <div className="flex h-full">
+              {/* Sidebar on the left */}
+              <Sidebar>
+                <SidebarContent>
+                  {/* Here go your sidebar groups, menus, etc. */}
+                  {/* Footer at the bottom */}
+                  <SidebarFooter />
+                </SidebarContent>
+              </Sidebar>
+
+              {/* Main content */}
+              <main className="flex-1">{children}</main>
+            </div>
+          </SidebarProvider>
         </ClerkProvider>
       </body>
-    </html>
-  );
-}
     </html>
   );
 }
