@@ -1,4 +1,6 @@
 "use client";
+import LogoutButton from "../LogoutButton"; // adjust path as needed
+import { SignedIn } from "@clerk/nextjs";
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva } from "class-variance-authority";
@@ -324,7 +326,12 @@ function SidebarFooter({
       data-slot="sidebar-footer"
       data-sidebar="footer"
       className={cn("flex flex-col gap-2 p-2", className)}
-      {...props} />
+      {...props}
+    >
+      <SignedIn>
+        <LogoutButton />
+      </SignedIn>
+    </div>
   );
 }
 
