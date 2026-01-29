@@ -63,7 +63,7 @@ export default function RootLayout({ children }) {
           <SidebarProvider defaultOpen={true}>
             <div className="flex min-h-screen w-full bg-slate-50">
               <Sidebar
-                collapsible="icon"
+                collapsible="none"
                 className="border-r border-slate-200 bg-white w-64"
               >
                 <SidebarHeader className="border-b border-slate-200 p-6">
