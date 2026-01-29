@@ -61,29 +61,27 @@ export default function RootLayout({ children }) {
           signUpUrl="/sign-up"
         >
           <SidebarProvider defaultOpen={true}>
-            <div className="flex min-h-screen w-full bg-slate-50">
-              {/* Sidebar: fixed width, full height, never shrinks */}
-              <aside className="flex h-screen w-64 min-w-[16rem] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white">
+            <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+              {/* Sidebar: full height, no outer scroll — nav scrolls inside if needed */}
+              <aside className="flex h-full min-h-0 w-64 min-w-[16rem] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white">
                 <Sidebar
                   collapsible="none"
-                  className="h-full w-full min-w-0 flex-col border-0 bg-transparent"
+                  className="flex h-full min-h-0 w-full flex-col border-0 bg-transparent"
                 >
-                  <SidebarHeader className="flex-shrink-0 border-b border-slate-200 px-3 py-3">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-lg shadow-sm">
+                  <SidebarHeader className="shrink-0 border-b border-slate-200 px-2 py-2">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="h-5 w-5 shrink-0 overflow-hidden rounded shadow-sm">
                         <img
                           src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
                           alt="My Hope Housing Logo"
                           className="h-full w-full object-contain"
                         />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h2 className="truncate text-sm font-bold text-slate-900">My Hope Housing</h2>
-                      </div>
+                      <span className="truncate text-xs font-semibold text-slate-900">My Hope Housing</span>
                     </div>
                   </SidebarHeader>
 
-                  <SidebarContent className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+                  <SidebarContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-2">
                     <SidebarNavigation />
                   </SidebarContent>
                 </Sidebar>
