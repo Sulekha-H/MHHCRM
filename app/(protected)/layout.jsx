@@ -3,7 +3,6 @@
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import AppLayout from "@/components/AppLayout";
 
 export default function ProtectedLayout({ children }) {
   const { isLoaded, userId } = useAuth();
@@ -23,5 +22,5 @@ export default function ProtectedLayout({ children }) {
     );
   }
 
-  return <AppLayout>{children}</AppLayout>;
+  return <>{children}</>;
 }

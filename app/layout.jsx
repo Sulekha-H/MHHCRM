@@ -37,6 +37,7 @@ import {
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import SidebarNavigation from "@/components/SidebarNavigation";
+import PageTitle from "@/components/PageTitle";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -90,7 +91,7 @@ export default function RootLayout({ children }) {
                 <header className="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
                   <div className="flex items-center gap-4">
                     <SidebarTrigger className="md:hidden" />
-                    {/* Page title will be handled by individual pages */}
+                    <PageTitle />
                   </div>
                 </header>
 
