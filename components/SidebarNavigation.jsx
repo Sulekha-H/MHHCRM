@@ -96,19 +96,23 @@ export default function SidebarNavigation() {
     { name: "Deleted Entries", href: "/deleted-entries", icon: Trash2, current: pathname === "/deleted-entries" }
   ];
 
+  const groupLabelClass = "mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500";
+  const linkClass = "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors";
+  const iconClass = "h-4 w-4 shrink-0";
+
   return (
     <>
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+      <SidebarGroup className="p-1.5">
+        <SidebarGroupLabel className={groupLabelClass}>
           Main
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="gap-0.5">
             {navigation.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <item.icon className="w-5 h-5" />
+                  <Link href={item.href} className={linkClass}>
+                    <item.icon className={iconClass} />
                     {item.name}
                   </Link>
                 </SidebarMenuButton>
@@ -118,17 +122,17 @@ export default function SidebarNavigation() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+      <SidebarGroup className="p-1.5">
+        <SidebarGroupLabel className={groupLabelClass}>
           Operations
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="gap-0.5">
             {operationsNav.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <item.icon className="w-5 h-5" />
+                  <Link href={item.href} className={linkClass}>
+                    <item.icon className={iconClass} />
                     {item.name}
                   </Link>
                 </SidebarMenuButton>
@@ -138,17 +142,17 @@ export default function SidebarNavigation() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+      <SidebarGroup className="p-1.5">
+        <SidebarGroupLabel className={groupLabelClass}>
           Support & Care
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="gap-0.5">
             {supportNav.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <item.icon className="w-5 h-5" />
+                  <Link href={item.href} className={linkClass}>
+                    <item.icon className={iconClass} />
                     {item.name}
                   </Link>
                 </SidebarMenuButton>
@@ -158,17 +162,17 @@ export default function SidebarNavigation() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+      <SidebarGroup className="p-1.5">
+        <SidebarGroupLabel className={groupLabelClass}>
           Compliance & Documents
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="gap-0.5">
             {complianceNav.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <item.icon className="w-5 h-5" />
+                  <Link href={item.href} className={linkClass}>
+                    <item.icon className={iconClass} />
                     {item.name}
                   </Link>
                 </SidebarMenuButton>
@@ -179,17 +183,17 @@ export default function SidebarNavigation() {
       </SidebarGroup>
 
       {hasPropertyLandlordAccess(user) && (
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        <SidebarGroup className="p-1.5">
+          <SidebarGroupLabel className={groupLabelClass}>
             Property/Landlords
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-0.5">
               {propertyLandlordNav.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton asChild isActive={item.current}>
-                    <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                      <item.icon className="w-5 h-5" />
+                    <Link href={item.href} className={linkClass}>
+                      <item.icon className={iconClass} />
                       {item.name}
                     </Link>
                   </SidebarMenuButton>
@@ -201,17 +205,17 @@ export default function SidebarNavigation() {
       )}
 
       {hasAdminAccess(user) && (
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+        <SidebarGroup className="p-1.5">
+          <SidebarGroupLabel className={groupLabelClass}>
             Administration
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-0.5">
               {adminNav.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton asChild isActive={item.current}>
-                    <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                      <item.icon className="w-5 h-5" />
+                    <Link href={item.href} className={linkClass}>
+                      <item.icon className={iconClass} />
                       {item.name}
                     </Link>
                   </SidebarMenuButton>
@@ -222,17 +226,17 @@ export default function SidebarNavigation() {
         </SidebarGroup>
       )}
 
-      <SidebarGroup>
-        <SidebarGroupLabel className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+      <SidebarGroup className="p-1.5">
+        <SidebarGroupLabel className={groupLabelClass}>
           Personal
         </SidebarGroupLabel>
         <SidebarGroupContent>
-          <SidebarMenu>
+          <SidebarMenu className="gap-0.5">
             {personalNav.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <item.icon className="w-5 h-5" />
+                  <Link href={item.href} className={linkClass}>
+                    <item.icon className={iconClass} />
                     {item.name}
                   </Link>
                 </SidebarMenuButton>
