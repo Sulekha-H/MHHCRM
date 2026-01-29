@@ -62,43 +62,42 @@ export default function RootLayout({ children }) {
         >
           <SidebarProvider defaultOpen={true}>
             <div className="flex min-h-screen w-full bg-slate-50">
-              <Sidebar
-                collapsible="none"
-                className="border-r border-slate-200 bg-white w-64"
-              >
-                <SidebarHeader className="border-b border-slate-200 p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden">
-                      <img
-                        src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
-                        alt="My Hope Housing Logo"
-                        className="w-full h-full object-contain"
-                      />
+              {/* Sidebar: fixed width, full height, never shrinks */}
+              <aside className="flex h-screen w-64 min-w-[16rem] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white">
+                <Sidebar
+                  collapsible="none"
+                  className="h-full w-full min-w-0 flex-col border-0 bg-transparent"
+                >
+                  <SidebarHeader className="flex-shrink-0 border-b border-slate-200 px-4 py-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl shadow-sm">
+                        <img
+                          src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
+                          alt="My Hope Housing Logo"
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h2 className="truncate font-bold text-slate-900 text-lg">My Hope Housing</h2>
+                        <p className="text-xs text-slate-500"> </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="font-bold text-slate-900 text-lg">My Hope Housing</h2>
-                      <p className="text-xs text-slate-500"></p>
-                    </div>
-                  </div>
-                </SidebarHeader>
+                  </SidebarHeader>
 
-                <SidebarContent className="px-4">
-                  <SidebarNavigation />
-                </SidebarContent>
-              </Sidebar>
+                  <SidebarContent className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+                    <SidebarNavigation />
+                  </SidebarContent>
+                </Sidebar>
+              </aside>
 
-              <SidebarInset className="flex-1 flex flex-col min-w-0 w-full">
-                <header className="bg-white border-b border-slate-200 px-6 py-4 flex-shrink-0">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger className="md:hidden" />
-                    <PageTitle />
-                  </div>
+              <SidebarInset className="min-w-0 flex-1 flex flex-col bg-slate-50">
+                <header className="flex shrink-0 items-center gap-4 border-b border-slate-200 bg-white px-6 py-4">
+                  <SidebarTrigger className="md:hidden" />
+                  <PageTitle />
                 </header>
 
-                <main className="flex-1 w-full min-w-0 overflow-x-auto p-6">
-                  <div className="w-full h-full">
-                    {children}
-                  </div>
+                <main className="min-h-0 flex-1 overflow-auto p-6">
+                  {children}
                 </main>
               </SidebarInset>
             </div>
