@@ -554,16 +554,18 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Welcome Section */}
-      <div className="bg-white border-b px-6 py-6">
-        <h1 className="text-2xl font-semibold text-gray-700">
-          Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">Here's what's happening today</p>
-      </div>
+      <Card className="mb-8 border-0 shadow-sm overflow-hidden">
+        <CardContent className="p-8">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Welcome back{user?.firstName ? `, ${user.firstName}` : ''}
+          </h1>
+          <p className="text-gray-500 text-base mt-2">Here's what's happening today</p>
+        </CardContent>
+      </Card>
 
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         {/* Quick Action Buttons */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <a href={createPageUrl("Residents")}>
