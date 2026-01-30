@@ -91,6 +91,9 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
     "PA/Worker Borough": "",
     "PA/Worker Team": "",
     "PA/Worker Duty Line": "",
+    "Future Address": "",
+    "Future Housing Type": "",
+    "Move-on Outcome": "",
   });
 
   const [documentsToUpload, setDocumentsToUpload] = useState([]);
@@ -124,6 +127,9 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
         "PA/Worker Duty Line": resident["PA/Worker Duty Line"] || "",
         "Room Transfers": resident["Room Transfers"] || [],
         "Accommodation Transfers": resident["Accommodation Transfers"] || [],
+        "Future Address": resident["Future Address"] || "",
+        "Future Housing Type": resident["Future Housing Type"] || "",
+        "Move-on Outcome": resident["Move-on Outcome"] || "",
       });
       setPhotoUrlInput(resident["Photo ID URL"] || "");
       setShowGoogleDriveHelp(resident["Photo ID URL"]?.includes('drive.google.com') || false);
@@ -139,6 +145,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
         "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
         "Sign-up Documents URL": "", "Photo ID URL": "",
         "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
+        "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
       });
       setPhotoUrlInput("");
       setShowGoogleDriveHelp(false);
@@ -585,6 +592,67 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
                 </div>
               </div>
             </div>
+
+            {formData.Status === 'Moved On' && (
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                  <Home className="w-5 h-5" />
+                  Move-on Details (Future Housing)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="future_address" className="mb-2 block">Future Address</Label>
+                    <Textarea
+                      id="future_address"
+                      value={formData["Future Address"]}
+                      onChange={(e) => handleChange("Future Address", e.target.value)}
+                      placeholder="Enter the resident's new address outside of My Hope Housing properties"
+                      className="h-20 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="future_housing_type" className="mb-2 block">Future Housing Type</Label>
+                    <Select
+                      value={formData["Future Housing Type"]}
+                      onValueChange={(value) => handleChange("Future Housing Type", value)}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select housing type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Private Rented">Private Rented</SelectItem>
+                        <SelectItem value="Council Housing">Council Housing</SelectItem>
+                        <SelectItem value="Housing Association">Housing Association</SelectItem>
+                        <SelectItem value="Supported Housing (Other)">Supported Housing (Other)</SelectItem>
+                        <SelectItem value="Returning to Family">Returning to Family</SelectItem>
+                        <SelectItem value="Home Ownership">Home Ownership</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="move_on_outcome" className="mb-2 block">Move-on Outcome</Label>
+                    <Select
+                      value={formData["Move-on Outcome"]}
+                      onValueChange={(value) => handleChange("Move-on Outcome", value)}
+                    >
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Select outcome" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Successful Move-on">Successful Move-on</SelectItem>
+                        <SelectItem value="Planned Move">Planned Move</SelectItem>
+                        <SelectItem value="Eviction">Eviction</SelectItem>
+                        <SelectItem value="Abandonment">Abandonment</SelectItem>
+                        <SelectItem value="Hospital/Care">Hospital/Care</SelectItem>
+                        <SelectItem value="Prison">Prison</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Benefits Information</h3>
