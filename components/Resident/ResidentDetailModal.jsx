@@ -96,6 +96,9 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const accommodationTransfers = resident["Accommodation Transfers"] || resident.Accommodation_Transfers || resident.accommodation_transfers || [];
   const signupGdriveUrl = resident["Sign-up Documents URL"] || resident.Signup_Gdrive_Url || resident.signup_gdrive_url;
   const photoIdUrl = resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
+  const futureAddress = resident["Future Address"] || resident.Future_Address || resident.future_address;
+  const futureHousingType = resident["Future Housing Type"] || resident.Future_Housing_Type || resident.future_housing_type;
+  const moveOnOutcome = resident["Move-on Outcome"] || resident.Move_On_Outcome || resident.move_on_outcome;
 
   const previewUrl = convertToDirectImageUrl(photoIdUrl);
 
@@ -185,6 +188,22 @@ export default function ResidentDetailModal({ resident, accommodations, properti
               </div>
 
               <Separator className="my-6" />
+
+              {/* Move-on Details */}
+              {status === 'Moved On' && (
+                <>
+                  <h3 className="text-xl font-semibold text-blue-800 mb-4 flex items-center gap-2">
+                    <Home className="w-6 h-6" />
+                    Move-on Details (Future Housing)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-blue-50 p-6 rounded-xl border border-blue-100">
+                    <DetailItem icon={<MapPin />} label="Future Address">{futureAddress}</DetailItem>
+                    <DetailItem icon={<Home />} label="Housing Type">{futureHousingType}</DetailItem>
+                    <DetailItem icon={<UserCheck />} label="Move-on Outcome">{moveOnOutcome}</DetailItem>
+                  </div>
+                  <Separator className="my-6" />
+                </>
+              )}
 
               {/* Emergency Contact */}
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Emergency Contact</h3>
