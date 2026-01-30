@@ -11,11 +11,23 @@ import {
 export default function LogoutButton() {
   const { signOut } = useClerk();
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // Force a full browser reload to clear all Next.js caches and client state
+      window.location.href = "/sign-in";
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Fallback redirect if signOut fails
+      window.location.href = "/sign-in";
+    }
+  };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton
-          onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          onClick={handleLogout}
           className="text-red-600 hover:text-red-700 hover:bg-red-50"
         >
           <LogOut className="h-4 w-4" />
