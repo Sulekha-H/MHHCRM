@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import IdleTimer from "@/components/IdleTimer";
 
 export default function ProtectedLayout({ children }) {
   const { isLoaded, userId } = useAuth();
@@ -22,5 +23,10 @@ export default function ProtectedLayout({ children }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <IdleTimer timeout={30 * 60 * 1000} />
+      {children}
+    </>
+  );
 }
