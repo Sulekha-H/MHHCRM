@@ -68,8 +68,8 @@ export default function SidebarNavigation() {
   ];
 
   const supportNav = [
-    { name: "Support Plans", href: "/support-plans", icon: Heart, current: pathname === "/support-plans" },
-    { name: "Weekly SW Docs", href: "/weekly-sw-docs", icon: FileStack, current: pathname === "/weekly-sw-docs" },
+    { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
+    { name: "Weekly SW Docs", href: "/weeklyswdocs", icon: FileStack, current: pathname === "/weeklyswdocs" },
     { name: "Benefits", href: "/benefits", icon: Gift, current: pathname === "/benefits" },
     { name: "Referrals", href: "/referrals", icon: ArrowRightLeft, current: pathname === "/referrals" },
   ];
@@ -81,8 +81,8 @@ export default function SidebarNavigation() {
   ];
 
   const propertyLandlordNav = [
-    { name: "Landlord Enquiries", href: "/landlord-enquiries", icon: Users, current: pathname === "/landlord-enquiries" },
-    { name: "Property Onboarding", href: "/property-onboarding", icon: Building, current: pathname === "/property-onboarding" }
+    { name: "Landlord Enquiries", href: "/landlordenquiries", icon: Users, current: pathname === "/landlordenquiries" },
+    { name: "Property Onboarding", href: "/propertyonboarding", icon: Building, current: pathname === "/propertyonboarding" }
   ];
 
   const adminNav = [
