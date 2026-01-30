@@ -70,22 +70,22 @@ export default function RootLayout({ children }) {
                   className="flex h-full min-h-0 w-full flex-col border-0 bg-transparent"
                 >
                   <SidebarHeader className="shrink-0 border-b border-slate-200 px-2 py-2">
-                    <div className="flex min-w-0 items-center justify-between">
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <div className="h-5 w-5 shrink-0 overflow-hidden rounded shadow-sm">
-                          <img
-                            src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
-                            alt="My Hope Housing Logo"
-                            className="h-full w-full object-contain"
-                          />
-                        </div>
-                        <span className="truncate text-xs font-semibold text-slate-900">My Hope Housing</span>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="h-5 w-5 shrink-0 overflow-hidden rounded shadow-sm">
+                        <img
+                          src="https://myhopehousing.org.uk/wp-content/uploads/2024/02/My-Hope-Housing-CIC.jpg"
+                          alt="My Hope Housing Logo"
+                          className="h-full w-full object-contain"
+                        />
                       </div>
-                      <LogoutButton />
+                      <span className="truncate text-xs font-semibold text-slate-900">My Hope Housing</span>
                     </div>
                   </SidebarHeader>
 
                   <SidebarContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-2">
+                    <SidebarGroup className="p-1.5 pt-0">
+                      <LogoutButton />
+                    </SidebarGroup>
                     <SidebarNavigation />
                   </SidebarContent>
                 </Sidebar>
