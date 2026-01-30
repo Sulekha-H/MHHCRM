@@ -63,7 +63,7 @@ export default function SidebarNavigation() {
   const operationsNav = [
     { name: "Tasks", href: "/tasks", icon: CheckSquare, current: pathname === "/tasks" },
     { name: "Incidents", href: "/incidents", icon: AlertTriangle, current: pathname === "/incidents" },
-    { name: "Office Logs", href: "/office-logs", icon: FileText, current: pathname === "/office-logs" },
+    { name: "Office Logs", href: "/officelogs", icon: FileText, current: pathname === "/officelogs" },
     { name: "Repairs", href: "/repairs", icon: Wrench, current: pathname === "/repairs" },
   ];
 
@@ -89,7 +89,7 @@ export default function SidebarNavigation() {
     { name: "Custom Sections", href: "/custom-sections", icon: Settings, current: pathname === "/custom-sections" },
     { name: "Landlord Portal", href: "/landlord-portal", icon: Settings, current: pathname === "/landlord-portal" },
     { name: "Settings", href: "/settings", icon: Settings, current: pathname === "/settings" },
-    { name: "Deleted Entries", href: "/deleted-entries", icon: Trash2, current: pathname === "/deleted-entries" }
+    { name: "Deleted Entries", href: "/deletedentries", icon: Trash2, current: pathname === "/deletedentries" }
   ];
 
   const groupLabelClass = "mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500";
