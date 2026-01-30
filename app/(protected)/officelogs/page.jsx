@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import OfficeLogForm from "@/components/office-logs/OfficeLogForm";
 import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
-export default function OfficeLogsSupabase() {
+export default function OfficeLogs() {
   const { user } = useUser();
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
