@@ -80,10 +80,6 @@ export default function SidebarNavigation() {
     { name: "Documents", href: "/documents", icon: Folder, current: pathname === "/documents" },
   ];
 
-  const personalNav = [
-    { name: "Personal Notes", href: "/personal-notes", icon: FileText, current: pathname === "/personal-notes" }
-  ];
-
   const propertyLandlordNav = [
     { name: "Landlord Enquiries", href: "/landlord-enquiries", icon: Users, current: pathname === "/landlord-enquiries" },
     { name: "Property Onboarding", href: "/property-onboarding", icon: Building, current: pathname === "/property-onboarding" }
@@ -226,25 +222,6 @@ export default function SidebarNavigation() {
         </SidebarGroup>
       )}
 
-      <SidebarGroup className="p-1.5">
-        <SidebarGroupLabel className={groupLabelClass}>
-          Personal
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {personalNav.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className={linkClass}>
-                    <item.icon className={iconClass} />
-                    {item.name}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
     </>
   );
 }
