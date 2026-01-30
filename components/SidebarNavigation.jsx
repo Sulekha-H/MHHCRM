@@ -75,7 +75,7 @@ export default function SidebarNavigation() {
   ];
 
   const complianceNav = [
-    { name: "Service Charges", href: "/service-charges", icon: PoundSterling, current: pathname === "/service-charges" },
+    { name: "Service Charges", href: "/servicecharges", icon: PoundSterling, current: pathname === "/servicecharges" },
     { name: "Compliance", href: "/compliance", icon: Shield, current: pathname === "/compliance" },
     { name: "Documents", href: "/documents", icon: Folder, current: pathname === "/documents" },
   ];
