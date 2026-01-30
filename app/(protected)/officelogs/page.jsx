@@ -512,7 +512,7 @@ export default function OfficeLogsSupabase() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-slate-900">Office Logs (Supabase)</h1>
+          <h1 className="text-4xl font-bold text-slate-900">Office Logs</h1>
           <p className="text-lg text-slate-600">Track and manage daily office activities and events</p>
         </div>
         <div className="flex gap-3">
