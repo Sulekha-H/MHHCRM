@@ -38,6 +38,7 @@ import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import SidebarNavigation from "@/components/SidebarNavigation";
 import PageTitle from "@/components/PageTitle";
+import LogoutButton from "./LogoutButton";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -82,6 +83,9 @@ export default function RootLayout({ children }) {
                   </SidebarHeader>
 
                   <SidebarContent className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2 py-2">
+                    <SidebarGroup className="p-1.5 pt-0">
+                      <LogoutButton />
+                    </SidebarGroup>
                     <SidebarNavigation />
                   </SidebarContent>
                 </Sidebar>
