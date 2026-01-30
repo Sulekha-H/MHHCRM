@@ -16,54 +16,61 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  const checkAccess = (user) => {
+  const checkAccess = (clerkUser) => {
     // Allow access on localhost for development
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
       return true;
     }
     
-    if (!user?.email) return false;
+    const email = clerkUser?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
+    if (!email) return false;
+
     const authorizedUsers = ['amaani@myhopehousing.org.uk'];
-    return authorizedUsers.includes(user.email.toLowerCase());
+    return authorizedUsers.includes(email);
   };
 
   useEffect(() => {
     const loadUserAndCheckAccess = async () => {
-      try {
-        console.log("🔄 Loading user and checking access...");
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          console.log("✅ Auth user found:", user.email);
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('Email', user.email)
-            .single();
-          
-          if (userError) {
-            console.error("❌ Error fetching user data:", userError);
-          } else {
-            console.log("✅ User data loaded:", userData?.["Full Name"]);
-            setCurrentUser(userData);
-            setHasAccess(checkAccess(userData));
-            console.log("🔐 Access granted:", checkAccess(userData));
-          }
+      if (!user) {
+        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+          setHasAccess(true);
         } else {
-          console.log("⚠️ No authenticated user");
-          // Still check if we're on localhost
-          setHasAccess(checkAccess(null));
+          setHasAccess(false);
         }
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log("🔄 Checking access for Clerk user:", user.primaryEmailAddress?.emailAddress);
+
+        // Match Clerk user with Supabase users table if needed for other data
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('Email', user.primaryEmailAddress?.emailAddress)
+          .single();
+        
+        if (userError) {
+          console.warn("⚠️ User data not found in Supabase users table:", userError.message);
+        } else {
+          console.log("✅ Supabase user data loaded:", userData?.["Full Name"]);
+          setCurrentUser(userData);
+        }
+
+        const access = checkAccess(user);
+        setHasAccess(access);
+        console.log("🔐 Access granted:", access);
+
       } catch (error) {
-        console.error("❌ Error loading user:", error);
-        // Still check if we're on localhost
-        setHasAccess(checkAccess(null));
+        console.error("❌ Error loading user access:", error);
       } finally {
         setLoading(false);
       }
     };
+
     loadUserAndCheckAccess();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
