@@ -86,8 +86,8 @@ export default function SidebarNavigation() {
   ];
 
   const adminNav = [
-    { name: "Custom Sections", href: "/custom-sections", icon: Settings, current: pathname === "/custom-sections" },
-    { name: "Landlord Portal", href: "/landlord-portal", icon: Settings, current: pathname === "/landlord-portal" },
+    { name: "Custom Sections", href: "/customsections", icon: Settings, current: pathname === "/customsections" },
+    { name: "Landlord Portal", href: "/landlordportal", icon: Settings, current: pathname === "/landlordportal" },
     { name: "Settings", href: "/settings", icon: Settings, current: pathname === "/settings" },
     { name: "Deleted Entries", href: "/deletedentries", icon: Trash2, current: pathname === "/deletedentries" }
   ];
