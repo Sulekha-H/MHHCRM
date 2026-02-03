@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Residents_Supabase() {
+  const { getToken, isSignedIn} = useAuth ();
   const { user } = useUser();
   const { getSupabaseClient } = useSupabase();
   const [residents, setResidents] = useState([]);
@@ -37,8 +38,9 @@ export default function Residents_Supabase() {
   const [viewingResident, setViewingResident] = useState(null);
 
   useEffect(() => {
+    if (!isSignedIn) return;
     loadData();
-  }, []);
+  }, [isSignedIn]);
 
   useEffect(() => {
     let filtered = residents;
@@ -63,8 +65,10 @@ export default function Residents_Supabase() {
       setLoading(true);
       setError(null);
 
-      console.log("🔄 Loading data...");
-      const supabase = await getSupabaseClient();
+      const token = await getToken({template : "supabase"})
+      console.log("SUPABASE TOKEN", token);
+      
+      const supabase = await getSupabaseClient(token);
 
       const { data: residentsData, error: residentsError } = await supabase
         .from('residents')
