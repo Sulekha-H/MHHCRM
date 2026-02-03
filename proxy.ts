@@ -10,12 +10,13 @@ const isPublicRoute = createRouteMatcher([
   "/api/clerk(.*)"
 ]);
 
-// In Next.js 16, "middleware" is renamed to "proxy"
+// In Next.js 16, the middleware file should be named 'proxy.ts' and
+// the middleware function must be exported as 'proxy'.
 export const proxy = clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
-    // Calling await auth() explicitly before protect can sometimes resolve sync issues in Clerk v6
+    // Calling await auth() explicitly before protect is recommended in Clerk v6
     const authObj = await auth();
-    await authObj.protect();
+    return authObj.protect();
   }
 });
 
