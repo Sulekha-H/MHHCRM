@@ -4,7 +4,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useSupabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Residents_Supabase() {
   const { user } = useUser();
+  const { getSupabaseClient } = useSupabase();
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -63,6 +64,7 @@ export default function Residents_Supabase() {
       setError(null);
 
       console.log("🔄 Loading data...");
+      const supabase = await getSupabaseClient();
 
       const { data: residentsData, error: residentsError } = await supabase
         .from('residents')
@@ -127,6 +129,7 @@ export default function Residents_Supabase() {
   const handleSubmit = async (residentData) => {
     try {
       const now = new Date().toISOString().slice(0, 10);
+      const supabase = await getSupabaseClient();
       
       // Convert empty date strings to null for Supabase
       const cleanedData = JSON.parse(JSON.stringify(residentData)); // Deep clone
@@ -400,14 +403,14 @@ export default function Residents_Supabase() {
   const handleDelete = async (resident) => {
     if (window.confirm(`Are you sure you want to delete ${resident["First Name"]} ${resident["Last Name"]}? It will be moved to deleted entries.`)) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const supabase = await getSupabaseClient();
         
         const { error } = await supabase
           .from('residents')
           .update({
             "Deleted": true,
             "Deleted Date": new Date().toISOString(),
-            "Deleted By": user?.email || 'unknown'
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || 'unknown'
           })
           .eq('ID', resident.ID);
 
