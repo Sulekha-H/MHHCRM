@@ -68,7 +68,7 @@ export default function Residents_Supabase() {
       const token = await getToken({template : "supabase"})
       console.log("SUPABASE TOKEN", token);
       
-      const supabase = await getSupabaseClient(token);
+      const supabase = getSupabaseClient(token);
 
       const { data: residentsData, error: residentsError } = await supabase
         .from('residents')
