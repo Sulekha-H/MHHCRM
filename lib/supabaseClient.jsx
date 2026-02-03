@@ -23,4 +23,7 @@ export const useSupabase = () => {
       },
     });
   };
+
+  return { getSupabaseClient };
+};
   
