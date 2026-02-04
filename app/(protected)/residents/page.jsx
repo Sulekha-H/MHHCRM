@@ -2,9 +2,10 @@
 "use client";
 
 
-import { useUser } from "@clerk/nextjs";
+import { useUser, useSession } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
 import { useSupabase } from "@/lib/supabaseClient";
+import {createClient} from '@supabase/supabase-js'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,14 +22,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Residents_Supabase() {
-  const { getToken, isSignedIn} = useAuth ();
   const { user } = useUser();
+  const { session } = useSession()  
   const { getSupabaseClient } = useSupabase();
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [filteredResidents, setFilteredResidents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [name, setName] = useState('')
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingResident, setEditingResident] = useState(null);
@@ -37,10 +39,27 @@ export default function Residents_Supabase() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
 
+    // This is the recommended helper from the guide
+  function createClerkSupabaseClient() {
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_KEY!,
+      {
+        async accessToken() {
+          return session?.getToken() ?? null
+        },
+      }
+    )
+  }
+
+  const client = createClerkSupabaseClient()
+}
+ const client = createClerkSupabaseClient()
+
   useEffect(() => {
-    if (!isSignedIn) return;
+    if (user) return;
     loadData();
-  }, [isSignedIn]);
+  }, );
 
   useEffect(() => {
     let filtered = residents;
@@ -65,12 +84,7 @@ export default function Residents_Supabase() {
       setLoading(true);
       setError(null);
 
-      const token = await getToken({template : "supabase"})
-      console.log("SUPABASE TOKEN", token);
-      
-      const supabase = getSupabaseClient(token);
-
-      const { data: residentsData, error: residentsError } = await supabase
+      const { data: residentsData, error: residentsError } = await client
         .from('residents')
         .select('*')
         .order('Created Date', { ascending: false });
