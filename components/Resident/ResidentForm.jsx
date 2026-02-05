@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Plus, Upload, FileText, Trash2, User, Link2, Camera, XCircle, X, Save, UserPlus } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
@@ -54,6 +54,7 @@ const getDaySuffix = (day) => {
 
 export default function ResidentForm_Supabase({ resident, accommodations, onSubmit, onCancel }) {
   const [properties, setProperties] = useState([]);
+  const client = useClerkSupabaseClient();
   const [formData, setFormData] = useState(resident || {
     "First Name": "",
     "Last Name": "",
