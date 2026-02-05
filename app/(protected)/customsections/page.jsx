@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import CustomSectionForm_Supabase from "@/components/custom-sections/csform";
 
 export default function CustomSections() {
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [sections, setSections] = useState([]);
   const [filteredSections, setFilteredSections] = useState([]);
   const [loading, setLoading] = useState(true);
