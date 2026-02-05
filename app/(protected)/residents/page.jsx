@@ -51,10 +51,6 @@ export default function Residents_Supabase() {
     )
   }
 
-  const client = createClerkSupabaseClient()
-
- const client = createClerkSupabaseClient()
-
   useEffect(() => {
     if (user) return;
     loadData();
