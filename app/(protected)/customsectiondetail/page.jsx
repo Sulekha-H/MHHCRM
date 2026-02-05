@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import CustomSectionDataDetailModal from "@/components/custom-sections/CustomSec
 
 export default function CustomSectionDetail() {
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const router = useRouter();
   const { id: sectionId } = useParams;
   const [section, setSection] = useState(null);
