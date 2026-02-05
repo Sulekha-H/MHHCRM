@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -181,7 +181,8 @@ export default function LandlordEnquiries() {
   const [viewingEnquiry, setViewingEnquiry] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-   const { user } = useUser();
+  const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [enquiryToDelete, setEnquiryToDelete] = useState(null);
 
