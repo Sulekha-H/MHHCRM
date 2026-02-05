@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function DocumentsSupabase() {
   
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [activeTab, setActiveTab] = useState("documents");
   const [documents, setDocuments] = useState([]);
   const [warranties, setWarranties] = useState([]);
