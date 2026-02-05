@@ -22,7 +22,7 @@ import UserDeactivateForm_Supabase from "./UserDeactivateForm";
 import { format } from "date-fns";
 
 export default function StaffManagement_Supabase() {
-    const client = useClerkSupabaseClient();
+    const supabase = useClerkSupabaseClient();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingUser, setEditingUser] = useState(null);

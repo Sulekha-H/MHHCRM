@@ -17,7 +17,7 @@ import { format, addDays } from "date-fns";
 
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
-   const client = useClerkSupabaseClient();
+   const supabase = useClerkSupabaseClient();
   console.log(`[Dashboard] User Status - Loaded: ${isLoaded}, SignedIn: ${isSignedIn}, UserID: ${user?.id}`);
 
   const [error, setError] = useState(null);
