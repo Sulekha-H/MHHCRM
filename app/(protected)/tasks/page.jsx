@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Download, AlertTriangle, Clock, CheckCircle2, ListTodo } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function TasksPage() {
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [residents, setResidents] = useState([]);
