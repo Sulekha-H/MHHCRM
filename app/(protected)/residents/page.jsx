@@ -131,10 +131,6 @@ export default function Residents_Supabase() {
     try {
       const now = new Date().toISOString().slice(0, 10);
       
-      if (!supabase) {
-        throw new Error("Supabase client not initialized");
-      }
-
       // Convert empty date strings to null for Supabase
       const cleanedData = JSON.parse(JSON.stringify(residentData)); // Deep clone
       
@@ -407,10 +403,6 @@ export default function Residents_Supabase() {
   const handleDelete = async (resident) => {
     if (window.confirm(`Are you sure you want to delete ${resident["First Name"]} ${resident["Last Name"]}? It will be moved to deleted entries.`)) {
       try {
-        if (!supabase) {
-          throw new Error("Supabase client not initialized");
-        }
-        
         const { error } = await supabase
           .from('residents')
           .update({
