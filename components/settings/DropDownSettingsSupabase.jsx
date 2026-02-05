@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
 import { format } from "date-fns";
 
 export default function DropdownSettings_Supabase() {
+    const client = useClerkSupabaseClient();
     const [settings, setSettings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingSetting, setEditingSetting] = useState(null);
