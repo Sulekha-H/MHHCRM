@@ -31,7 +31,7 @@ const normalizeData = (data) => {
 
 export default function Benefits() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -45,14 +45,16 @@ export default function Benefits() {
   const [logToDelete, setLogToDelete] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+      setCurrentUser(authUser);
 
       console.log('🔄 Starting data load...');
       

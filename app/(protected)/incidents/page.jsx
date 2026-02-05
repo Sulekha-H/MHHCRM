@@ -17,7 +17,7 @@ export default function IncidentsSupabase() {
   const [incidents, setIncidents] = useState([]);
   const [residents, setResidents] = useState([]);
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [properties, setProperties] = useState([]);
   const [filteredIncidents, setFilteredIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +73,10 @@ export default function IncidentsSupabase() {
   }, [incidents, searchTerm, activeTab]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   useEffect(() => {
     filterIncidents();
@@ -86,7 +88,7 @@ export default function IncidentsSupabase() {
 
     try {
       // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
       if (authUser) {
         const { data: userData } = await supabase
           .from('users')
@@ -214,14 +216,12 @@ export default function IncidentsSupabase() {
   const handleDelete = async (incident) => {
     if (window.confirm(`Are you sure you want to delete this incident? It will be moved to deleted entries.`)) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
         const { error } = await supabase
           .from('incidents')
           .update({
             "Deleted": true,
             "Deleted Date": new Date().toISOString(),
-            "Deleted By": user?.email || 'unknown'
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || 'unknown'
           })
           .eq('ID', incident.ID || incident.id);
 

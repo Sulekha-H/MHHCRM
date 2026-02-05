@@ -47,8 +47,10 @@ export default function StaffManagement_Supabase() {
     };
 
     useEffect(() => {
-        loadUsers();
-    }, []);
+        if (supabase) {
+            loadUsers();
+        }
+    }, [supabase]);
 
     const handleSave = async (userId, data) => {
         try {

@@ -505,10 +505,10 @@ export default function Dashboard() {
       }
     };
 
-    if (user) {
+    if (user && supabase) {
       loadDashboardData();
     }
-  }, [user, delay, retryApiCall]);
+  }, [user, supabase, delay, retryApiCall]);
 
   if (error) {
     return (

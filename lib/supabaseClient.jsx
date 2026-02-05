@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { useSession } from '@clerk/nextjs'
+import { useState, useEffect } from 'react'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY
@@ -14,15 +15,49 @@ export const supabase = (supabaseUrl && supabaseKey)
 
 export function useClerkSupabaseClient() {
   const { session } = useSession()
+  const [client, setClient] = useState(null)
 
-  // Return null if session or keys are missing
-  if (!session || !supabaseUrl || !supabaseKey) return null
+  useEffect(() => {
+    // If keys are missing, we can't create a client
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("Supabase environment variables are missing.")
+      return
+    }
 
-  // Create a Supabase client that automatically uses Clerk token
-  return createClient(supabaseUrl, supabaseKey, {
-    async accessToken() {
-      // Use the 'supabase' JWT template for consistent auth
-      return session.getToken({ template: 'supabase' }) ?? null
-    },
-  })
+    if (!session) {
+      setClient(null)
+      return
+    }
+
+    const initClient = async () => {
+      try {
+        const token = await session.getToken({ template: 'supabase' })
+
+        if (!token) {
+          console.warn("No 'supabase' JWT template found in Clerk or user not authenticated.")
+          // Fallback to anonymous client if possible, or null
+          setClient(supabase)
+          return
+        }
+
+        const cl = createClient(supabaseUrl, supabaseKey, {
+          global: {
+            headers: {
+              // Explicitly include apikey to prevent "No API key found" error
+              apikey: supabaseKey,
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        })
+        setClient(cl)
+      } catch (error) {
+        console.error("Error initializing authenticated Supabase client:", error)
+        setClient(supabase) // Fallback
+      }
+    }
+
+    initClient()
+  }, [session])
+
+  return client
 }
