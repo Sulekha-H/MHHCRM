@@ -2,7 +2,7 @@
 "use client"
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
 export default function OfficeLogs() {
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
