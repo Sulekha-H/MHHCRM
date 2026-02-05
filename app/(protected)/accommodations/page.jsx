@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
 
  export default function Accommodations() {
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
