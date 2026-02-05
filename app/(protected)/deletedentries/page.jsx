@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function DeletedEntries() {
   const { user } = useUser();
+  const client = useClerkSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("residents");
