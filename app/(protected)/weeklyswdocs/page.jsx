@@ -2,7 +2,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +15,7 @@ import WeeklySWDocLogDetailModal from "@/components/weekly-sw-docs/WeeklySWDocLo
 
 export default function WeeklySWDocs() {
     const { user } = useUser();
+    const client = useClerkSupabaseClient();
     const [properties, setProperties] = useState([]);
     const [swDocuments, setSwDocuments] = useState([]);
     const [logs, setLogs] = useState([]);
