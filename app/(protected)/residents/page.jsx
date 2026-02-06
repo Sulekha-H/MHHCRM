@@ -19,19 +19,17 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-  // Create a custom Supabase client that injects the Clerk session token into the request headers
-  function createClerkSupabaseClient() {
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_KEY,
-      {
-        async accessToken() {
-          return session?.getToken() ?? null
-        },
+function createClerkSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_KEY,
+    {
+      async accessToken() {
+        return session?.getToken() ?? null
       },
-    )
-  }
-
+    }
+  )
+}
 
 export default function Residents_Supabase() {
   const { session } = useSession()
@@ -53,16 +51,16 @@ export default function Residents_Supabase() {
 useEffect(() => {
   if (!user) return; // wait for Clerk user
 
-const client = createClerkSupabaseClient()
+  const client = createClerkSupabaseClient();
 
   async function loadAndFilterResidents() {
     setLoading(true);
 
-    // 1️⃣ Fetch residents from Supabase
+    // Fetch residents from Supabase
     const { data, error } = await client.from("residents").select("*");
 
     if (!error && data) {
-      // 2️⃣ Filter the fetched data immediately
+      // Filter the fetched data immediately
       let filtered = data;
 
       if (activeTab !== "all") {
