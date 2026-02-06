@@ -32,7 +32,6 @@ import { Skeleton } from "@/components/ui/skeleton";
     )
   }
 
-const client = createClerkSupabaseClient()
 
 export default function Residents_Supabase() {
   const { user } = useUser();
@@ -53,6 +52,8 @@ export default function Residents_Supabase() {
 
 useEffect(() => {
   if (!user) return; // wait for Clerk user
+
+const client = createClerkSupabaseClient()
 
   async function loadAndFilterResidents() {
     setLoading(true);
