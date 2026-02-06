@@ -4,7 +4,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
-import { useClerkSupabaseClient } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +20,23 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
+  // Create a custom Supabase client that injects the Clerk session token into the request headers
+  function createClerkSupabaseClient() {
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_KEY,
+      {
+        async accessToken() {
+          return session?.getToken() ?? null
+        },
+      },
+    )
+  }
+
+const client = createClerkSupabaseClient()
+
 export default function Residents_Supabase() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -37,29 +51,43 @@ export default function Residents_Supabase() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
 
-  useEffect(() => {
-    if (supabase) {
-      loadData();
+useEffect(() => {
+  if (!user) return; // wait for Clerk user
+
+  async function loadAndFilterResidents() {
+    setLoading(true);
+
+    // 1️⃣ Fetch residents from Supabase
+    const { data, error } = await supabase.from("residents").select("*");
+
+    if (!error && data) {
+      // 2️⃣ Filter the fetched data immediately
+      let filtered = data;
+
+      if (activeTab !== "all") {
+        filtered = filtered.filter(resident => resident.Status === activeTab);
+      }
+
+      if (searchTerm) {
+        filtered = filtered.filter(resident =>
+          `${resident["First Name"]} ${resident["Last Name"]}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          resident["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          resident["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      // 3️⃣ Update state
+      setResidents(data); // raw data
+      setFilteredResidents(filtered); // filtered view
+    } else if (error) {
+      console.error("Error fetching residents:", error);
     }
-  }, [supabase]);
 
-  useEffect(() => {
-    let filtered = residents;
+    setLoading(false);
+  }
 
-    if (activeTab !== "all") {
-      filtered = filtered.filter(resident => resident.Status === activeTab);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(resident =>
-        `${resident["First Name"]} ${resident["Last Name"]}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resident["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resident["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredResidents(filtered);
-  }, [residents, searchTerm, activeTab]);
+  loadAndFilterResidents();
+}, [user, activeTab, searchTerm]); // rerun if user, tab, or search changes
 
   const loadData = async () => {
     if (!supabase) return;
