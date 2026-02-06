@@ -2,7 +2,7 @@
 "use client";
 
 
-import { useUser, useSession } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Residents_Supabase() {
   const { user } = useUser();
-  const { session } = useSession()  
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -38,23 +37,11 @@ export default function Residents_Supabase() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
 
-    // This is the recommended helper from the guide
-  function createClerkSupabaseClient() {
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_KEY,
-      {
-        async accessToken() {
-          return session?.getToken() ?? null
-        },
-      }
-    )
-  }
-
   useEffect(() => {
-    if (user) return;
-    loadData();
-  }, );
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   useEffect(() => {
     let filtered = residents;
@@ -75,11 +62,12 @@ export default function Residents_Supabase() {
   }, [residents, searchTerm, activeTab]);
 
   const loadData = async () => {
+    if (!supabase) return;
     try {
       setLoading(true);
       setError(null);
 
-      const { data: residentsData, error: residentsError } = await client
+      const { data: residentsData, error: residentsError } = await supabase
         .from('residents')
         .select('*')
         .order('Created Date', { ascending: false });
@@ -140,9 +128,12 @@ export default function Residents_Supabase() {
   };
 
   const handleSubmit = async (residentData) => {
+    if (!supabase) {
+      alert("Authentication client not initialized");
+      return;
+    }
     try {
       const now = new Date().toISOString().slice(0, 10);
-      const supabase = await getSupabaseClient();
       
       // Convert empty date strings to null for Supabase
       const cleanedData = JSON.parse(JSON.stringify(residentData)); // Deep clone
@@ -414,10 +405,12 @@ export default function Residents_Supabase() {
   };
 
   const handleDelete = async (resident) => {
+    if (!supabase) {
+      alert("Authentication client not initialized");
+      return;
+    }
     if (window.confirm(`Are you sure you want to delete ${resident["First Name"]} ${resident["Last Name"]}? It will be moved to deleted entries.`)) {
       try {
-        const supabase = await getSupabaseClient();
-        
         const { error } = await supabase
           .from('residents')
           .update({
