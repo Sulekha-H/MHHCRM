@@ -34,8 +34,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 
 export default function Residents_Supabase() {
-  const { user } = useUser();
   const { session } = useSession()
+  const { user } = useUser();
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
