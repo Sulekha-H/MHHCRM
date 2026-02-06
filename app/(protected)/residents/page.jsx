@@ -4,6 +4,7 @@
 
 import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
+import { useSession, useUser } from '@clerk/nextjs'
 import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ const client = createClerkSupabaseClient()
 
 export default function Residents_Supabase() {
   const { user } = useUser();
+  const { session } = useSession()
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
