@@ -58,7 +58,7 @@ useEffect(() => {
     setLoading(true);
 
     // 1️⃣ Fetch residents from Supabase
-    const { data, error } = await supabase.from("residents").select("*");
+    const { data, error } = await client.from("residents").select("*");
 
     if (!error && data) {
       // 2️⃣ Filter the fetched data immediately
