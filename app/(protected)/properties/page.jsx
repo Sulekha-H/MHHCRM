@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 
 export default function Properties() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -32,6 +32,7 @@ export default function Properties() {
 
   // Load data only once on mount
   useEffect(() => {
+    if (!supabase) return;
     let mounted = true;
 
     const loadData = async () => {
@@ -41,12 +42,12 @@ export default function Properties() {
         
         // Load current user
         try {
-          const { data: { user: authUser } = {} } = await supabase.auth.getUser(); // Add default empty object for data
+          const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
           if (authUser && mounted) {
             const { data, error } = await supabase
               .from('users')
               .select('*')
-              .eq('ID', authUser.id)
+              .eq('Email', authUser.email)
               .single();
             if (error) throw error; // Handle user fetch error
             if (mounted) {
@@ -119,7 +120,7 @@ export default function Properties() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [supabase]);
 
   // Update properties with accurate occupancy data - MEMOIZED to prevent infinite loops
   const propertiesWithOccupancy = useMemo(() => {

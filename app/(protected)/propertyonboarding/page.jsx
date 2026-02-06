@@ -80,7 +80,7 @@ export default function PropertyOnboardingSupabase() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [caseToDelete, setCaseToDelete] = useState(null);
 
@@ -101,14 +101,15 @@ export default function PropertyOnboardingSupabase() {
 
   useEffect(() => {
     const loadUserAndData = async () => {
+      if (!supabase) return;
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
         
         if (authUser) {
           const { data: userData } = await supabase
             .from('users')
             .select('*')
-            .eq('email', authUser.email)
+            .eq('Email', authUser.email)
             .single();
           setCurrentUser(userData);
           console.log("Current user:", userData?.Email || userData?.email);
@@ -120,8 +121,10 @@ export default function PropertyOnboardingSupabase() {
       // Load data regardless of access check
       loadData();
     };
-    loadUserAndData();
-  }, []);
+    if (supabase) {
+      loadUserAndData();
+    }
+  }, [supabase]);
 
   const getLoggedByName = useCallback((onboardingCase) => {
     if (onboardingCase.logged_by) {

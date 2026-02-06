@@ -23,7 +23,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Referrals() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [referrals, setReferrals] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredReferrals, setFilteredReferrals] = useState([]);
@@ -37,8 +37,10 @@ export default function Referrals() {
   const [viewingReferral, setViewingReferral] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, [referralTypeTab]);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase, referralTypeTab]);
 
   const getUserName = useCallback((userId) => {
     const user = users.find(u => u.id === userId);
@@ -95,16 +97,17 @@ export default function Referrals() {
   }, [filterReferrals]);
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
       let userData = null;
       
       if (authUser) {
         const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('"ID"', authUser.id)
+          .eq('Email', authUser.email)
           .single();
         userData = data;
         setCurrentUser(userData);

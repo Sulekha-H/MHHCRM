@@ -182,7 +182,7 @@ export default function LandlordEnquiries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [enquiryToDelete, setEnquiryToDelete] = useState(null);
 
@@ -222,17 +222,20 @@ export default function LandlordEnquiries() {
 
   useEffect(() => {
     const loadUser = async () => {
+      if (!supabase) return;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-        console.log("Current user:", user?.email);
+        const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+        setCurrentUser(authUser);
+        console.log("Current user:", authUser?.email);
       } catch (error) {
         console.error("Error loading user:", error);
       }
     };
-    loadUser();
-    loadData();
-  }, []);
+    if (supabase) {
+      loadUser();
+      loadData();
+    }
+  }, [supabase]);
 
   const filterEnquiries = useCallback(() => {
     let filtered = enquiries;

@@ -26,7 +26,7 @@ export default function Repairs() { // Component name changed
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
 
@@ -81,22 +81,25 @@ export default function Repairs() { // Component name changed
   }, [filterRepairs]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
       // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
       if (authUser) {
         const { data: userData } = await supabase
           .from('users')
           .select('*')
-          .eq('email', authUser.email)
+          .eq('Email', authUser.email)
           .single();
         
-        setUser(userData);
+        // No setUser state, maybe it was intended for something else or is a typo for setCurrentUser if it existed
       }
 
       // Load repairs - using PostgreSQL column names with spaces

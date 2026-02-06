@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function DocumentsSupabase() {
   
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [activeTab, setActiveTab] = useState("documents");
   const [documents, setDocuments] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -51,8 +51,10 @@ export default function DocumentsSupabase() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const getLoggedByName = useCallback((record) => {
     if (record.logged_by || record["Logged By"]) {
@@ -111,15 +113,16 @@ export default function DocumentsSupabase() {
   }, [documents, searchTerm, residentFilter, selectedTags, getLoggedByName]);
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     console.log('🔄 Starting to load Documents & Assets data...');
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
       console.log('👤 Current user:', authUser?.email);
       
       let userData = null;
       if (authUser) {
-        const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+        const { data } = await supabase.from('users').select('*').eq('Email', authUser.email).single();
         userData = data;
         setCurrentUser(userData);
       }

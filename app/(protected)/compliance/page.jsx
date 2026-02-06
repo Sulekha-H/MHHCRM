@@ -39,7 +39,7 @@ const normalizeData = (data) => {
 export default function Compliance() {
 
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [complianceLogs, setComplianceLogs] = useState([]);
   const [properties, setProperties] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([]);
@@ -53,8 +53,10 @@ export default function Compliance() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
@@ -120,10 +122,11 @@ export default function Compliance() {
   };
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+      setCurrentUser(authUser);
 
       const [logsResult, propertiesResult, usersResult] = await Promise.all([
         supabase.from('compliance_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('"Expiry Date"', { ascending: false }),

@@ -53,7 +53,7 @@ const normalizeLogData = (log) => {
 
 export default function LandlordPortalSupabase() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -66,9 +66,10 @@ export default function LandlordPortalSupabase() {
   const [logToDelete, setLogToDelete] = useState(null);
 
   const loadData = useCallback(async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
       let userData = null;
       
       if (authUser) {
@@ -120,8 +121,10 @@ export default function LandlordPortalSupabase() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase, loadData]);
 
   const filterLogs = useCallback(() => {
     let filtered = logs;

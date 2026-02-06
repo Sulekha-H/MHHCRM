@@ -17,9 +17,9 @@ import CustomSectionDataDetailModal from "@/components/custom-sections/CustomSec
 
 export default function CustomSectionDetail() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const router = useRouter();
-  const { id: sectionId } = useParams;
+  const { id: sectionId } = useParams();
   const [section, setSection] = useState(null);
   const [dataRecords, setDataRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
@@ -44,24 +44,27 @@ export default function CustomSectionDetail() {
 
   useEffect(() => {
     const loadUser = async () => {
+      if (!supabase) return;
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
+        const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+        setCurrentUser(authUser);
       } catch (error) {
         console.error("Error loading user:", error);
       }
     };
-    loadUser();
-  }, []);
+    if (supabase) {
+      loadUser();
+    }
+  }, [supabase]);
 
   useEffect(() => {
-    if (sectionId) {
+    if (supabase && sectionId) {
       console.log("Loading section data for ID:", sectionId);
       loadData();
-    } else {
+    } else if (!sectionId) {
       setLoading(false);
     }
-  }, [sectionId]);
+  }, [supabase, sectionId]);
 
   useEffect(() => {
     if (!searchTerm) {

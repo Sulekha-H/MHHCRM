@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function TasksPage() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -110,22 +110,25 @@ export default function TasksPage() {
   }, [tasks, filters.search, filters.status, filters.priority, filters.assignee, sortOrder]);
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (supabase) {
+      loadTasks();
+    }
+  }, [supabase]);
 
   useEffect(() => {
     filterTasks();
   }, [filterTasks]);
 
   const loadTasks = async () => {
+    if (!supabase) return;
     setLoading(true);
     console.log("🔄 [SUPABASE] Starting to load tasks...");
     
     try {
       // Load current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+      if (authUser) {
+        const { data: userData } = await supabase.from('users').select('*').eq('Email', authUser.email).single();
         setCurrentUser(userData);
         console.log("✅ [SUPABASE] Current user:", userData?.["Full Name"] || userData?.Email);
       }

@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function DeletedEntries() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("residents");
@@ -57,8 +57,10 @@ export default function DeletedEntries() {
   };
 
   useEffect(() => {
-    loadAllDeletedData().finally(() => setLoading(false));
-  }, []);
+    if (supabase) {
+      loadAllDeletedData().finally(() => setLoading(false));
+    }
+  }, [supabase]);
 
   const loadAllDeletedData = async () => {
     try {

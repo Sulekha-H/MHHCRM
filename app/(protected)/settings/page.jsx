@@ -12,7 +12,7 @@ import DropdownSettings_Supabase from "@/components/settings/DropDownSettingsSup
 
 export default function Settings() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
@@ -32,6 +32,7 @@ export default function Settings() {
 
   useEffect(() => {
     const loadUserAndCheckAccess = async () => {
+      if (!supabase) return;
       if (!user) {
         if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
           setHasAccess(true);
@@ -71,7 +72,7 @@ export default function Settings() {
     };
 
     loadUserAndCheckAccess();
-  }, [user]);
+  }, [user, supabase]);
 
   if (loading) {
     return (

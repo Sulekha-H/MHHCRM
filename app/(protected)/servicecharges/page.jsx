@@ -28,7 +28,7 @@ import {
 
 export default function ServiceChargesSupabase() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [serviceCharges, setServiceCharges] = useState([]);
   const [cashLogs, setCashLogs] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -76,8 +76,10 @@ export default function ServiceChargesSupabase() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const getResidentName = useCallback((residentId) => {
     const resident = residents.find(r => (r.ID || r.id) === residentId);
@@ -197,14 +199,17 @@ export default function ServiceChargesSupabase() {
   }, [filterCashLogs]);
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     console.log('🔄 Starting to load Service Charges data...');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('👤 Current user:', user?.email);
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+      console.log('👤 Current user:', authUser?.email);
       
-      const { data: userData } = await supabase.from('users').select('*').eq('id', user?.id).single();
-      setCurrentUser(userData || user);
+      if (authUser) {
+        const { data: userData } = await supabase.from('users').select('*').eq('Email', authUser.email).single();
+        setCurrentUser(userData || authUser);
+      }
 
       const [
         { data: chargesData, error: chargesError },

@@ -38,7 +38,7 @@ const normalizeData = (data) => {
 
 export default function SupportPlans_Supabase() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [supportPlans, setSupportPlans] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -55,8 +55,10 @@ export default function SupportPlans_Supabase() {
   const [planToDelete, setPlanToDelete] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const getResidentName = useCallback((residentId) => {
     const resident = residents.find(r => r.id === residentId);
@@ -115,10 +117,11 @@ export default function SupportPlans_Supabase() {
   }, [filterPlans]);
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
+      setCurrentUser(authUser);
 
       const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
         supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),

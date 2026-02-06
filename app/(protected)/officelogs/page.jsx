@@ -15,7 +15,7 @@ import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
 export default function OfficeLogs() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,8 +28,10 @@ export default function OfficeLogs() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const filterLogs = useCallback(() => {
     let filtered = logs;
@@ -88,23 +90,25 @@ export default function OfficeLogs() {
   }, [filterLogs]);
 
   const loadData = async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
       // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
       if (authUser) {
         const { data: userData } = await supabase
           .from('users')
           .select('*')
-          .eq('email', authUser.email)
+          .eq('Email', authUser.email)
           .single();
         
-        const isTestUser = (userData?.full_name && 
-          (['tair', 'iveta lobinate', 'amit noach'].includes(userData.full_name.trim().toLowerCase()) || 
-           userData.full_name.trim().toLowerCase().includes('test'))
+        const name = userData?.["Full Name"] || userData?.full_name || '';
+        const isTestUser = (name &&
+          (['tair', 'iveta lobinate', 'amit noach'].includes(name.trim().toLowerCase()) ||
+           name.trim().toLowerCase().includes('test'))
         );
         
-        setUser(isTestUser ? null : userData);
+        // No setUser, maybe intended for setCurrentUser if it existed
       }
 
       // Load office logs - using PostgreSQL column names with spaces, filter out deleted

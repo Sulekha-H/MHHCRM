@@ -15,7 +15,7 @@ import WeeklySWDocLogDetailModal from "@/components/weekly-sw-docs/WeeklySWDocLo
 
 export default function WeeklySWDocs() {
     const { user } = useUser();
-    const client = useClerkSupabaseClient();
+    const supabase = useClerkSupabaseClient();
     const [properties, setProperties] = useState([]);
     const [swDocuments, setSwDocuments] = useState([]);
     const [logs, setLogs] = useState([]);
@@ -48,13 +48,14 @@ export default function WeeklySWDocs() {
     }, [delay]);
 
     const loadData = async () => {
+        if (!supabase) return;
         setLoading(true);
         setError(null);
         try {
             console.log("Loading Weekly SW Docs data...");
 
             // Load user first
-            const { data: { user: authUser } } = await supabase.auth.getUser();
+            const authUser = user ? { email: user.primaryEmailAddress?.emailAddress } : null;
             let userData = null;
             
             if (authUser) {
@@ -156,8 +157,10 @@ export default function WeeklySWDocs() {
     };
 
     useEffect(() => {
-        loadData();
-    }, []);
+        if (supabase) {
+            loadData();
+        }
+    }, [supabase]);
 
     const generateWeekDates = (startDate, numWeeks) => {
         const weeks = [];
