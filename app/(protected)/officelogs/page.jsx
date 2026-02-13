@@ -15,7 +15,7 @@ import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
 export default function OfficeLogs() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);

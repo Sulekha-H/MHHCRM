@@ -53,7 +53,7 @@ const normalizeLogData = (log) => {
 
 export default function LandlordPortalSupabase() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);

@@ -23,7 +23,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Referrals() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [referrals, setReferrals] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredReferrals, setFilteredReferrals] = useState([]);
