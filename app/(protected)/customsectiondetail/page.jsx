@@ -17,7 +17,7 @@ import CustomSectionDataDetailModal from "@/components/custom-sections/CustomSec
 
 export default function CustomSectionDetail() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const router = useRouter();
   const { id: sectionId } = useParams;
   const [section, setSection] = useState(null);

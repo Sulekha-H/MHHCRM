@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function TasksPage() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [residents, setResidents] = useState([]);

@@ -12,7 +12,7 @@ import DropdownSettings_Supabase from "@/components/settings/DropDownSettingsSup
 
 export default function Settings() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
