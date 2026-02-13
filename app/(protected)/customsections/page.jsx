@@ -25,17 +25,19 @@ export default function CustomSections() {
   const [sectionToDelete, setSectionToDelete] = useState(null);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-    loadData();
-  }, []);
+    if (supabase) {
+      const loadUser = async () => {
+        try {
+          const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
+          setCurrentUser(authUser);
+        } catch (error) {
+          console.error("Error loading user:", error);
+        }
+      };
+      loadUser();
+      loadData();
+    }
+  }, [supabase]);
 
   const loadData = async () => {
     setLoading(true);
@@ -68,17 +70,19 @@ export default function CustomSections() {
   };
 
   useEffect(() => {
-    let filtered = sections;
+    if (supabase) {
+      let filtered = sections;
 
-    if (searchTerm) {
-      filtered = filtered.filter(section =>
-        section["Section Name"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        section["Description"]?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      if (searchTerm) {
+        filtered = filtered.filter(section =>
+          section["Section Name"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          section["Description"]?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+
+      setFilteredSections(filtered);
     }
-
-    setFilteredSections(filtered);
-  }, [sections, searchTerm]);
+  }, [sections, searchTerm, supabase]);
 
   const handleSubmit = async (sectionData) => {
     try {
@@ -350,7 +354,7 @@ export default function CustomSections() {
                   </div>
                 )}
                 <div className="flex gap-2 pt-2">
-                  <a href={`/CustomSectionDetail?id=${section.ID}`} className="flex-1">
+                  <a href={`/customsectiondetail?id=${section.ID}`} className="flex-1">
                     <Button variant="outline" size="sm" className="w-full">
                       <Eye className="w-4 h-4 mr-2" />
                       View Data

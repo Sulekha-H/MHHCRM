@@ -79,8 +79,10 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   };
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const accommodationsWithOccupancy = useMemo(() => {
     console.log("🔄 [SUPABASE] Calculating occupancy for accommodations...");
@@ -147,7 +149,9 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   }, [accommodationsWithOccupancy, searchTerm, activeTab, properties, residents]);
 
   useEffect(() => {
-    filterAccommodations();
+    if (supabase) {
+      filterAccommodations();
+    }
   }, [filterAccommodations]);
 
   const handleSubmit = async (accommodationData) => {
@@ -194,7 +198,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
         console.log(`Accommodation ${accommodation.ID} deleted successfully.`);
         setViewingAccommodation(null);
         await loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting accommodation:", error);
         alert("Error deleting accommodation: " + error.message);
       }

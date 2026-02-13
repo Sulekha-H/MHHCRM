@@ -188,7 +188,7 @@ export default function LandlordEnquiries() {
 
   const hasFollowUpNeeded = useCallback((enquiry) => {
     return enquiry.follow_up_action && !enquiry.follow_up_completed;
-  }, []);
+  }, [supabase]);
 
   const getLoggedByName = useCallback((enquiry) => {
     if (enquiry.logged_by) {
@@ -221,10 +221,11 @@ export default function LandlordEnquiries() {
   };
 
   useEffect(() => {
+    if (supabase) {
     const loadUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
+        const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
+        setCurrentUser(authUser);
         console.log("Current user:", user?.email);
       } catch (error) {
         console.error("Error loading user:", error);
@@ -232,7 +233,8 @@ export default function LandlordEnquiries() {
     };
     loadUser();
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const filterEnquiries = useCallback(() => {
     let filtered = enquiries;
@@ -253,7 +255,9 @@ export default function LandlordEnquiries() {
   }, [enquiries, searchTerm, activeTab]);
 
   useEffect(() => {
-    filterEnquiries();
+    if (supabase) {
+      filterEnquiries();
+    }
   }, [filterEnquiries]);
 
   const loadData = async () => {
@@ -386,7 +390,7 @@ export default function LandlordEnquiries() {
         setEnquiryToDelete(null);
         setViewingEnquiry(null);
         await loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting landlord enquiry:", error);
         alert("Error deleting landlord enquiry: " + error.message);
       }

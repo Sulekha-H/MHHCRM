@@ -43,43 +43,49 @@ export default function CustomSectionDetail() {
   };
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, []);
+    if (supabase) {
+      const loadUser = async () => {
+        try {
+          const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
+          setCurrentUser(authUser);
+        } catch (error) {
+          console.error("Error loading user:", error);
+        }
+      };
+      loadUser();
+    }
+  }, [supabase]);
 
   useEffect(() => {
-    if (sectionId) {
-      console.log("Loading section data for ID:", sectionId);
-      loadData();
+    if (supabase) {
+      if (sectionId) {
+        console.log("Loading section data for ID:", sectionId);
+        loadData();
+      }
     } else {
       setLoading(false);
     }
-  }, [sectionId]);
+  }, [sectionId, supabase]);
 
   useEffect(() => {
-    if (!searchTerm) {
-      setFilteredRecords(dataRecords);
-    } else {
-      const filtered = dataRecords.filter(record => {
-        const searchLower = searchTerm.toLowerCase();
-        if (record.title?.toLowerCase().includes(searchLower)) return true;
-        if (record.notes?.toLowerCase().includes(searchLower)) return true;
-        if (record.data) {
-          const dataString = JSON.stringify(record.data).toLowerCase();
-          if (dataString.includes(searchLower)) return true;
-        }
-        return false;
-      });
-      setFilteredRecords(filtered);
+    if (supabase) {
+      if (!searchTerm) {
+        setFilteredRecords(dataRecords);
+      } else {
+        const filtered = dataRecords.filter(record => {
+          const searchLower = searchTerm.toLowerCase();
+          if (record.title?.toLowerCase().includes(searchLower)) return true;
+          if (record.notes?.toLowerCase().includes(searchLower)) return true;
+          if (record.data) {
+            const dataString = JSON.stringify(record.data).toLowerCase();
+            if (dataString.includes(searchLower)) return true;
+          }
+          return false;
+        });
+        setFilteredRecords(filtered);
+      }
     }
-  }, [searchTerm, dataRecords]);
+  }, [searchTerm, dataRecords, supabase]);
 
   const loadData = async () => {
     setLoading(true);
@@ -187,7 +193,7 @@ export default function CustomSectionDetail() {
         setRecordToDelete(null);
         setViewingRecord(null);
         await loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting custom section data record:", error);
         alert("Error deleting entry: " + error.message);
       }
@@ -312,7 +318,7 @@ export default function CustomSectionDetail() {
             <Settings className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-900 mb-2">Section not found</h3>
             <p className="text-slate-500 mb-4">The custom section you're looking for doesn't exist.</p>
-            <Link href="/CustomSections">
+            <Link href="/customsections">
               <Button variant="outline">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Custom Sections
@@ -328,7 +334,7 @@ export default function CustomSectionDetail() {
     <div className="space-y-6 p-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/CustomSections">
+          <Link href="/customsections">
             <Button variant="outline" size="icon">
               <ArrowLeft className="w-4 h-4" />
             </Button>

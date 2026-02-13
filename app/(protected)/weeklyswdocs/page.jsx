@@ -54,7 +54,7 @@ export default function WeeklySWDocs() {
             console.log("Loading Weekly SW Docs data...");
 
             // Load user first
-            const { data: { user: authUser } } = await supabase.auth.getUser();
+            const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
             let userData = null;
             
             if (authUser) {
@@ -156,8 +156,10 @@ export default function WeeklySWDocs() {
     };
 
     useEffect(() => {
+    if (supabase) {
         loadData();
-    }, []);
+    }
+    }, [supabase]);
 
     const generateWeekDates = (startDate, numWeeks) => {
         const weeks = [];
@@ -249,7 +251,7 @@ export default function WeeklySWDocs() {
             setEditingLog(null);
             setViewingLog(null);
             await loadData();
-        } catch (error) {
+    } catch (error) {
             console.error("❌ Error saving Weekly SW Doc Log:", error);
             alert("Error saving log: " + error.message);
         }
@@ -257,7 +259,7 @@ export default function WeeklySWDocs() {
 
     const handleDelete = useCallback((logData) => {
         setLogToDelete(logData);
-    }, []);
+    }, [supabase]);
 
     const confirmDelete = async () => {
         if (logToDelete) {
@@ -279,7 +281,7 @@ export default function WeeklySWDocs() {
                 setViewingLog(null);
                 setShowForm(false);
                 await loadData();
-            } catch (error) {
+    } catch (error) {
                 console.error("Error deleting weekly SW doc log:", error);
                 alert("Error deleting log entry: " + error.message);
             }

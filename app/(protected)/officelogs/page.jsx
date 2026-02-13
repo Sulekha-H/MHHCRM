@@ -28,8 +28,10 @@ export default function OfficeLogs() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const filterLogs = useCallback(() => {
     let filtered = logs;
@@ -84,14 +86,16 @@ export default function OfficeLogs() {
   }, [logs, searchTerm, activeTab, activeStatusTab, sortOrder]);
 
   useEffect(() => {
-    filterLogs();
+    if (supabase) {
+      filterLogs();
+    }
   }, [filterLogs]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       if (authUser) {
         const { data: userData } = await supabase
           .from('users')
@@ -275,7 +279,7 @@ export default function OfficeLogs() {
         
         console.log(`Office log ${log["ID"] || log.id} soft deleted successfully.`);
         await loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting office log:", error);
         alert("Error deleting office log: " + error.message);
       }

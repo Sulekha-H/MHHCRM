@@ -33,6 +33,7 @@ export default function Properties() {
   // Load data only once on mount
   useEffect(() => {
     let mounted = true;
+    if (supabase) {
 
     const loadData = async () => {
       try {
@@ -41,7 +42,7 @@ export default function Properties() {
         
         // Load current user
         try {
-          const { data: { user: authUser } = {} } = await supabase.auth.getUser(); // Add default empty object for data
+          const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null; // Add default empty object for data
           if (authUser && mounted) {
             const { data, error } = await supabase
               .from('users')
@@ -115,11 +116,12 @@ export default function Properties() {
     };
 
     loadData();
+    }
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [supabase]);
 
   // Update properties with accurate occupancy data - MEMOIZED to prevent infinite loops
   const propertiesWithOccupancy = useMemo(() => {
@@ -202,7 +204,9 @@ export default function Properties() {
   }, [propertiesWithOccupancy, searchTerm, activeTab]);
 
   useEffect(() => {
-    filterProperties();
+    if (supabase) {
+      filterProperties();
+    }
   }, [filterProperties]);
 
   const handleSubmit = async (propertyData) => {

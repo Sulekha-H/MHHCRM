@@ -100,9 +100,10 @@ export default function PropertyOnboardingSupabase() {
   };
 
   useEffect(() => {
+    if (supabase) {
     const loadUserAndData = async () => {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
         
         if (authUser) {
           const { data: userData } = await supabase
@@ -119,9 +120,10 @@ export default function PropertyOnboardingSupabase() {
       
       // Load data regardless of access check
       loadData();
+    }
     };
     loadUserAndData();
-  }, []);
+  }, [supabase]);
 
   const getLoggedByName = useCallback((onboardingCase) => {
     if (onboardingCase.logged_by) {
@@ -159,7 +161,9 @@ export default function PropertyOnboardingSupabase() {
   }, [onboardingCases, searchTerm, activeTab, getLoggedByName]);
 
   useEffect(() => {
-    filterCases();
+    if (supabase) {
+      filterCases();
+    }
   }, [filterCases]);
 
   const loadData = async () => {
@@ -377,7 +381,7 @@ export default function PropertyOnboardingSupabase() {
         setCaseToDelete(null);
         setViewingCase(null);
         await loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting property onboarding case:", error);
         alert("Error deleting property onboarding case: " + error.message);
       }

@@ -37,7 +37,9 @@ export default function Referrals() {
   const [viewingReferral, setViewingReferral] = useState(null);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
+    }
   }, [referralTypeTab]);
 
   const getUserName = useCallback((userId) => {
@@ -91,13 +93,15 @@ export default function Referrals() {
   }, [referrals, searchTerm, statusTab, getUserName, getLoggedByName]);
 
   useEffect(() => {
-    filterReferrals();
+    if (supabase) {
+      filterReferrals();
+    }
   }, [filterReferrals]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       let userData = null;
       
       if (authUser) {

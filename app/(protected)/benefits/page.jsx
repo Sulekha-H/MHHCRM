@@ -45,14 +45,16 @@ export default function Benefits() {
   const [logToDelete, setLogToDelete] = useState(null);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
+      setCurrentUser(authUser);
 
       console.log('🔄 Starting data load...');
       
@@ -159,6 +161,7 @@ export default function Benefits() {
 
   // Debug logging
   useEffect(() => {
+    if (supabase) {
     console.log('🔍 Debug Info:', {
       totalLogs: logs.length,
       activeTab: activeTab,
@@ -202,6 +205,7 @@ export default function Benefits() {
           console.log(`    - ${res.first_name} ${res.last_name} (property_id: ${res.property_id || 'none'})`);
         }
       });
+    }
     }
   }, [activeTab, logs, filteredLogs, residents, properties]);
 

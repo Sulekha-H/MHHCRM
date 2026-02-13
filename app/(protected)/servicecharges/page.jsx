@@ -73,11 +73,13 @@ export default function ServiceChargesSupabase() {
     if (phone && testPatterns.phones.includes(phone)) return true;
 
     return false;
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const getResidentName = useCallback((residentId) => {
     const resident = residents.find(r => (r.ID || r.id) === residentId);
@@ -112,7 +114,7 @@ export default function ServiceChargesSupabase() {
       else if (otherBenefit) paymentDay = otherBenefit.payment_day;
     }
     return paymentDay;
-  }, []);
+  }, [supabase]);
 
   const formatPaymentDay = (day) => {
     if (!day) return '';
@@ -189,18 +191,22 @@ export default function ServiceChargesSupabase() {
   }, [cashLogs, cashSearchTerm, getResidentName, properties, residents, isTestData]);
 
   useEffect(() => {
-    filterCharges();
+    if (supabase) {
+      filterCharges();
+    }
   }, [filterCharges]);
 
   useEffect(() => {
-    filterCashLogs();
+    if (supabase) {
+      filterCashLogs();
+    }
   }, [filterCashLogs]);
 
   const loadData = async () => {
     setLoading(true);
     console.log('🔄 Starting to load Service Charges data...');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       console.log('👤 Current user:', user?.email);
       
       const { data: userData } = await supabase.from('users').select('*').eq('id', user?.id).single();
@@ -524,7 +530,7 @@ export default function ServiceChargesSupabase() {
         setShowCashForm(false);
         setEditingCashLog(null);
         loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting cash log:", error);
         alert("Error deleting cash log: " + error.message);
       }
@@ -544,7 +550,7 @@ export default function ServiceChargesSupabase() {
         
         setViewingCharge(null);
         loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting service charge:", error);
         alert("Error deleting service charge: " + error.message);
       }

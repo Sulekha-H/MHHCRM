@@ -68,7 +68,7 @@ export default function LandlordPortalSupabase() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       let userData = null;
       
       if (authUser) {
@@ -117,10 +117,12 @@ export default function LandlordPortalSupabase() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
+    }
   }, [loadData]);
 
   const filterLogs = useCallback(() => {
@@ -137,7 +139,9 @@ export default function LandlordPortalSupabase() {
   }, [logs, searchTerm]);
 
   useEffect(() => {
-    filterLogs();
+    if (supabase) {
+      filterLogs();
+    }
   }, [filterLogs]);
 
   const handleSubmit = async (logData) => {
@@ -239,7 +243,7 @@ export default function LandlordPortalSupabase() {
         setLogToDelete(null);
         setViewingLog(null);
         loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("❌ Error deleting landlord portal entry:", error);
         alert("Error deleting entry: " + error.message);
       }
@@ -441,7 +445,7 @@ export default function LandlordPortalSupabase() {
 
   const hasFollowUpNeeded = useCallback((log) => {
     return log["Follow Up Action"] && !log["Follow Up Completed"];
-  }, []);
+  }, [supabase]);
 
   return (
     <div className="space-y-6 p-6">

@@ -73,11 +73,15 @@ export default function IncidentsSupabase() {
   }, [incidents, searchTerm, activeTab]);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   useEffect(() => {
-    filterIncidents();
+    if (supabase) {
+      filterIncidents();
+    }
   }, [filterIncidents]);
 
   const loadData = async () => {
@@ -86,7 +90,7 @@ export default function IncidentsSupabase() {
 
     try {
       // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       if (authUser) {
         const { data: userData } = await supabase
           .from('users')
@@ -214,7 +218,7 @@ export default function IncidentsSupabase() {
   const handleDelete = async (incident) => {
     if (window.confirm(`Are you sure you want to delete this incident? It will be moved to deleted entries.`)) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
         
         const { error } = await supabase
           .from('incidents')
@@ -229,7 +233,7 @@ export default function IncidentsSupabase() {
         console.log(`✅ Soft deleted incident ${incident.ID || incident.id}`);
         setViewingIncident(null);
         await loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting incident:", error);
         alert("Error deleting incident: " + error.message);
       }

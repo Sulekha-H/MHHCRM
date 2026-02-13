@@ -123,7 +123,7 @@ export default function TasksPage() {
     
     try {
       // Load current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       if (user) {
         const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
         setCurrentUser(userData);

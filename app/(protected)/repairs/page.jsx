@@ -77,18 +77,22 @@ export default function Repairs() { // Component name changed
   }, [repairs, searchTerm, activeTab, priorityFilter, propertyFilter]);
 
   useEffect(() => {
-    filterRepairs();
+    if (supabase) {
+      filterRepairs();
+    }
   }, [filterRepairs]);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       if (authUser) {
         const { data: userData } = await supabase
           .from('users')
@@ -405,7 +409,7 @@ export default function Repairs() { // Component name changed
         }
         
         loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting repair:", error);
         alert("Error deleting repair: " + error.message);
       }

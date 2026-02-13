@@ -53,8 +53,10 @@ export default function Compliance() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    if (supabase) {
     loadData();
-  }, []);
+    }
+  }, [supabase]);
 
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
@@ -102,7 +104,9 @@ export default function Compliance() {
   }, [complianceLogs, searchTerm, activeTab, getPropertyName]);
 
   useEffect(() => {
-    filterLogs();
+    if (supabase) {
+      filterLogs();
+    }
   }, [filterLogs]);
 
   const getPropertyLogs = (propertyId) => {
@@ -122,8 +126,8 @@ export default function Compliance() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
+      setCurrentUser(authUser);
 
       const [logsResult, propertiesResult, usersResult] = await Promise.all([
         supabase.from('compliance_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('"Expiry Date"', { ascending: false }),
@@ -225,7 +229,7 @@ export default function Compliance() {
         
         setViewingLog(null);
         loadData();
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting compliance record:", error);
         alert("Error deleting compliance record: " + error.message);
       }

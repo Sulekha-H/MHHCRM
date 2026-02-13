@@ -40,6 +40,7 @@ export default function DocumentsSupabase() {
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
+  const [users, setUsers] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -51,8 +52,10 @@ export default function DocumentsSupabase() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase]);
 
   const getLoggedByName = useCallback((record) => {
     if (record.logged_by || record["Logged By"]) {
@@ -61,65 +64,67 @@ export default function DocumentsSupabase() {
     
     const createdBy = record.created_by || record["Created By"];
     if (createdBy) {
-      if (user && user.length > 0) {
-        const user = user.find(u => u.email === createdBy);
-        if (user?.full_name) {
-          return user.full_name;
+      if (users && users.length > 0) {
+        const foundUser = users.find(u => u.email === createdBy);
+        if (foundUser?.full_name) {
+          return foundUser.full_name;
         }
       }
       return createdBy.split('@')[0];
     }
     
     return null;
-  }, [user]);
+  }, [users]);
 
   useEffect(() => {
-    let filtered = documents;
+    if (supabase) {
+      let filtered = documents;
 
-    if (residentFilter !== "all") {
-      filtered = filtered.filter(doc => {
-        const residentId = doc.resident_id || doc["Resident ID"];
-        return residentId === residentFilter;
-      });
+      if (residentFilter !== "all") {
+        filtered = filtered.filter(doc => {
+          const residentId = doc.resident_id || doc["Resident ID"];
+          return residentId === residentFilter;
+        });
+      }
+
+      if (selectedTags.length > 0) {
+        filtered = filtered.filter(doc => {
+          const docTags = doc.tags || doc.Tags || [];
+          return selectedTags.every(selectedTag => docTags.includes(selectedTag));
+        });
+      }
+
+      if (searchTerm) {
+        const lowercasedTerm = searchTerm.toLowerCase();
+        filtered = filtered.filter(doc => {
+          const title = doc.title || doc.Title || '';
+          const description = doc.description || doc.Description || '';
+          const documentType = doc.document_type || doc["Document Type"] || '';
+          const docTags = doc.tags || doc.Tags || [];
+
+          const titleMatch = title.toLowerCase().includes(lowercasedTerm);
+          const descMatch = description.toLowerCase().includes(lowercasedTerm);
+          const typeMatch = documentType.toLowerCase().includes(lowercasedTerm);
+          const tagsMatch = docTags.some(tag => tag.toLowerCase().includes(lowercasedTerm));
+          const loggedByMatch = (getLoggedByName(doc) || '').toLowerCase().includes(lowercasedTerm);
+          return titleMatch || descMatch || typeMatch || tagsMatch || loggedByMatch;
+        });
+      }
+
+      setFilteredDocuments(filtered);
     }
-
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(doc => {
-        const docTags = doc.tags || doc.Tags || [];
-        return selectedTags.every(selectedTag => docTags.includes(selectedTag));
-      });
-    }
-
-    if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(doc => {
-        const title = doc.title || doc.Title || '';
-        const description = doc.description || doc.Description || '';
-        const documentType = doc.document_type || doc["Document Type"] || '';
-        const docTags = doc.tags || doc.Tags || [];
-        
-        const titleMatch = title.toLowerCase().includes(lowercasedTerm);
-        const descMatch = description.toLowerCase().includes(lowercasedTerm);
-        const typeMatch = documentType.toLowerCase().includes(lowercasedTerm);
-        const tagsMatch = docTags.some(tag => tag.toLowerCase().includes(lowercasedTerm));
-        const loggedByMatch = (getLoggedByName(doc) || '').toLowerCase().includes(lowercasedTerm);
-        return titleMatch || descMatch || typeMatch || tagsMatch || loggedByMatch;
-      });
-    }
-
-    setFilteredDocuments(filtered);
-  }, [documents, searchTerm, residentFilter, selectedTags, getLoggedByName]);
+  }, [documents, searchTerm, residentFilter, selectedTags, getLoggedByName, supabase]);
 
   const loadData = async () => {
     setLoading(true);
     console.log('🔄 Starting to load Documents & Assets data...');
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUser = user?.primaryEmailAddress?.emailAddress ? { email: user.primaryEmailAddress.emailAddress } : null;
       console.log('👤 Current user:', authUser?.email);
       
       let userData = null;
       if (authUser) {
-        const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+        const { data } = await supabase.from('users').select('*').eq('email', authUser.email).single();
         userData = data;
         setCurrentUser(userData);
       }
