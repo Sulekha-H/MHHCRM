@@ -77,7 +77,17 @@ useEffect(() => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         resident["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        resident["Key Worker"]?.toLowerCase().includes(s
+       resident["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setResidents(data);              // update the full data
+    setFilteredResidents(filtered);  // update filtered list
+    setLoading(false);
+  }
+
+  loadAndFilterResidents();
+}, [user, session, searchTerm, activeTab]);
 
   const loadData = async () => {
     if (!supabase) return;
