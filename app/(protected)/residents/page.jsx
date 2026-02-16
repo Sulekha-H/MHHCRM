@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession, useUser } from '@clerk/nextjs'
-import { useClerkSupabaseClient } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +19,21 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
+function createClerkSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_KEY,
+    {
+      async accessToken() {
+        return session?.getToken() ?? null
+      },
+    }
+  )
+}
+
 export default function Residents_Supabase() {
   const { session } = useSession()
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -38,13 +49,15 @@ export default function Residents_Supabase() {
   const [viewingResident, setViewingResident] = useState(null);
 
 useEffect(() => {
-  if (!user || !supabase) return; // wait for Clerk user and Supabase client
+  if (!user) return; // wait for Clerk user
+
+  const client = createClerkSupabaseClient();
 
   async function loadAndFilterResidents() {
     setLoading(true);
 
     // Fetch residents from Supabase
-    const { data, error } = await supabase.from("residents").select("*");
+    const { data, error } = await client.from("residents").select("*");
 
     if (!error && data) {
       // Filter the fetched data immediately
@@ -73,8 +86,7 @@ useEffect(() => {
   }
 
   loadAndFilterResidents();
-  loadData();
-}, [user, supabase, activeTab, searchTerm]); // rerun if user, supabase, tab, or search changes
+}, [user, activeTab, searchTerm]); // rerun if user, tab, or search changes
 
   const loadData = async () => {
     if (!supabase) return;

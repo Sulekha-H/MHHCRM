@@ -38,7 +38,7 @@ const normalizeData = (data) => {
 
 export default function SupportPlans_Supabase() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [supportPlans, setSupportPlans] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);

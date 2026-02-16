@@ -31,7 +31,7 @@ const normalizeData = (data) => {
 
 export default function Benefits() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
