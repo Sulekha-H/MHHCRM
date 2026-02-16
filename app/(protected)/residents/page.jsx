@@ -24,7 +24,7 @@ function createClerkSupabaseClient(session) {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_KEY,
     {
-      async getAccessToken() {
+      async AccessToken() {
         return session?.getToken() ?? null;
       },
     }
