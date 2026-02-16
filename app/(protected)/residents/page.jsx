@@ -19,21 +19,22 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function createClerkSupabaseClient() {
+function createClerkSupabaseClient(session) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_KEY,
     {
-      async accessToken() {
-        return session?.getToken() ?? null
+      async getAccessToken() {
+        return session?.getToken() ?? null;
       },
     }
-  )
+  );
 }
 
 export default function Residents_Supabase() {
-  const { session } = useSession()
+  
   const { user } = useUser();
+  const { session } = useSession()
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -49,44 +50,34 @@ export default function Residents_Supabase() {
   const [viewingResident, setViewingResident] = useState(null);
 
 useEffect(() => {
-  if (!user) return; // wait for Clerk user
+  if (!user || !session) return;
 
-  const client = createClerkSupabaseClient();
+  const client = createClerkSupabaseClient(session); // pass session explicitly
 
   async function loadAndFilterResidents() {
     setLoading(true);
 
-    // Fetch residents from Supabase
     const { data, error } = await client.from("residents").select("*");
 
-    if (!error && data) {
-      // Filter the fetched data immediately
-      let filtered = data;
-
-      if (activeTab !== "all") {
-        filtered = filtered.filter(resident => resident.Status === activeTab);
-      }
-
-      if (searchTerm) {
-        filtered = filtered.filter(resident =>
-          `${resident["First Name"]} ${resident["Last Name"]}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          resident["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          resident["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-
-      // 3️⃣ Update state
-      setResidents(data); // raw data
-      setFilteredResidents(filtered); // filtered view
-    } else if (error) {
-      console.error("Error fetching residents:", error);
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
-  }
+    let filtered = data;
 
-  loadAndFilterResidents();
-}, [user, activeTab, searchTerm]); // rerun if user, tab, or search changes
+    if (activeTab !== "all") {
+      filtered = filtered.filter(resident => resident.Status === activeTab);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(resident =>
+        `${resident["First Name"]} ${resident["Last Name"]}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        resident["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        resident["Key Worker"]?.toLowerCase().includes(s
 
   const loadData = async () => {
     if (!supabase) return;
