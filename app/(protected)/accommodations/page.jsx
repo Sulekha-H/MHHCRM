@@ -21,7 +21,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
 
  export default function Accommodations() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);

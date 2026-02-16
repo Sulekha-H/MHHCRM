@@ -182,7 +182,7 @@ export default function LandlordEnquiries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [enquiryToDelete, setEnquiryToDelete] = useState(null);
 

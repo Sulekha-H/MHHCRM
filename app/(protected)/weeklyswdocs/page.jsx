@@ -15,7 +15,7 @@ import WeeklySWDocLogDetailModal from "@/components/weekly-sw-docs/WeeklySWDocLo
 
 export default function WeeklySWDocs() {
     const { user } = useUser();
-    const supabase = useClerkSupabaseClient();
+    const client = useClerkSupabaseClient();
     const [properties, setProperties] = useState([]);
     const [swDocuments, setSwDocuments] = useState([]);
     const [logs, setLogs] = useState([]);

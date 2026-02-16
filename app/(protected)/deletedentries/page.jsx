@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function DeletedEntries() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("residents");

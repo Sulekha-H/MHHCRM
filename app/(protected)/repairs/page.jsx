@@ -26,7 +26,7 @@ export default function Repairs() { // Component name changed
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
 

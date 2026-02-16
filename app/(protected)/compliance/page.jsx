@@ -39,7 +39,7 @@ const normalizeData = (data) => {
 export default function Compliance() {
 
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [complianceLogs, setComplianceLogs] = useState([]);
   const [properties, setProperties] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([]);

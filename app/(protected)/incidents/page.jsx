@@ -17,7 +17,7 @@ export default function IncidentsSupabase() {
   const [incidents, setIncidents] = useState([]);
   const [residents, setResidents] = useState([]);
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [properties, setProperties] = useState([]);
   const [filteredIncidents, setFilteredIncidents] = useState([]);
   const [loading, setLoading] = useState(true);

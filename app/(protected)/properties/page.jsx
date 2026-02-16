@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 
 export default function Properties() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient();
+  const client = useClerkSupabaseClient();
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [residents, setResidents] = useState([]);
