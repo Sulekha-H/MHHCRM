@@ -19,6 +19,13 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_KEY;
+
+console.log("Supabase URL:", SUPABASE_URL);
+console.log("Supabase Key:", SUPABASE_KEY);
+
+
 function createClerkSupabaseClient(session) {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
