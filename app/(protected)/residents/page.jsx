@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession, useUser } from '@clerk/nextjs'
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "lib/supabaseClient.jsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
