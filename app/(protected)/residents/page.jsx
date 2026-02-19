@@ -24,8 +24,10 @@ function createClerkSupabaseClient(session) {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_KEY,
     {
-      async AccessToken() {
-        return session?.getToken() ?? null;
+      global: {
+        headers: async () => ({
+          Authorization: `Bearer ${await session?.getToken()}`,
+        }),
       },
     }
   );
@@ -52,9 +54,9 @@ export default function Residents_Supabase() {
 useEffect(() => {
   if (!user || !session) return;
 
-  const client = createClerkSupabaseClient(session); // pass session explicitly
+  const client = createClerkSupabaseClient(session);
 
-  async function loadAndFilterResidents() {
+  async function loadResidents() {
     setLoading(true);
 
     const { data, error } = await client.from("residents").select("*");
@@ -65,29 +67,32 @@ useEffect(() => {
       return;
     }
 
-    let filtered = data;
-
-    if (activeTab !== "all") {
-      filtered = filtered.filter(resident => resident.Status === activeTab);
-    }
-
-    if (searchTerm) {
-      filtered = filtered.filter(resident =>
-        `${resident["First Name"]} ${resident["Last Name"]}`
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        resident["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       resident["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setResidents(data);              // update the full data
-    setFilteredResidents(filtered);  // update filtered list
+    setResidents(data);
     setLoading(false);
   }
 
-  loadAndFilterResidents();
-}, [user, session, searchTerm, activeTab]);
+  loadResidents();
+}, [user, session]);
+
+  useEffect(() => {
+  let filtered = residents;
+
+  if (activeTab !== "all") {
+    filtered = filtered.filter(r => r.Status === activeTab);
+  }
+
+  if (searchTerm) {
+    filtered = filtered.filter(r =>
+      `${r["First Name"]} ${r["Last Name"]}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      r["Property Address"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  setFilteredResidents(filtered);
+}, [residents, activeTab, searchTerm]);
 
   const loadData = async () => {
     if (!supabase) return;
