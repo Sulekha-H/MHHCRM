@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession, useUser } from '@clerk/nextjs'
-import { createClient } from '@supabase/supabase-js'
+import { useClerkSupabaseClient } from "@lib/supabaseClient"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,24 +18,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function createClerkSupabaseClient(session) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_KEY,
-    {
-      global: {
-        headers: async () => ({
-          Authorization: `Bearer ${await session?.getToken()}`,
-        }),
-      },
-    }
-  );
-}
-
 export default function Residents_Supabase() {
-  
-  const { user } = useUser();
-  const { session } = useSession()
+  const supabase = useClerkSupabaseClient()
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -52,14 +35,12 @@ export default function Residents_Supabase() {
   const [viewingResident, setViewingResident] = useState(null);
 
 useEffect(() => {
-  if (!user || !session) return;
-
-  const client = createClerkSupabaseClient(session);
+  if (!supabase) return;
 
   async function loadResidents() {
     setLoading(true);
 
-    const { data, error } = await client.from("residents").select("*");
+    const { data, error } = await supabase.from("residents").select("*");
 
     if (error) {
       setError(error.message);
@@ -72,7 +53,7 @@ useEffect(() => {
   }
 
   loadResidents();
-}, [user, session]);
+}, [supabase]);
 
   useEffect(() => {
   let filtered = residents;
