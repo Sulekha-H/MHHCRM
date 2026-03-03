@@ -1,7 +1,7 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { useSession, useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,9 @@ import PropertyDetailModal from "@/components/properties/PropertyDetailModal";
 import { format } from 'date-fns';
 
 export default function Properties() {
+  const supabase = useClerkSupabaseClient()
+  const {session} = useSession();
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -32,6 +33,8 @@ export default function Properties() {
 
   // Load data only once on mount
   useEffect(() => {
+    if (!supabase) return;
+  
     let mounted = true;
 
     const loadData = async () => {
@@ -119,7 +122,7 @@ export default function Properties() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [supabase]);
 
   // Update properties with accurate occupancy data - MEMOIZED to prevent infinite loops
   const propertiesWithOccupancy = useMemo(() => {
