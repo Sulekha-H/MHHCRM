@@ -1,6 +1,6 @@
 "use client"
 
-import { useUser } from "@clerk/nextjs";
+import { useSession, useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
