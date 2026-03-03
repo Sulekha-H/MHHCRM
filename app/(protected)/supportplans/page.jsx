@@ -38,7 +38,7 @@ const normalizeData = (data) => {
 
 export default function SupportPlans_Supabase() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient();
   const [supportPlans, setSupportPlans] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -53,67 +53,94 @@ export default function SupportPlans_Supabase() {
   const [activeTab, setActiveTab] = useState("support_notes");
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
+  
+// Load data on mount
+useEffect(() => {
+  if (!supabase) return;
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  let mounted = true;
 
-  const getResidentName = useCallback((residentId) => {
-    const resident = residents.find(r => r.id === residentId);
-    return resident ? `${resident.first_name} ${resident.last_name}` : "Unknown Resident";
-  }, [residents]);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const { data: plansData, error } = await supabase
+        .from("support_plans")
+        .select("*")
+        .order("Created Date", { ascending: false });
 
-  const filterPlans = useCallback(() => {
-    let filtered = supportPlans.filter(plan => {
-      if (!plan || plan.deleted) return false;
-      
-      // Check plan type first
-      if (plan.plan_type !== activeTab && activeTab !== "archive") return false;
-      
-      // For archive tab, only show plans from moved_on residents
-      if (activeTab === "archive") {
-        const resident = residents.find(r => r.id === plan.resident_id);
-        const residentStatus = (resident?.status || resident?.Status || '').toLowerCase().replace(/ /g, '_');
-        return residentStatus === 'moved_on';
-      }
-      
-      // For other tabs, only show plans from active residents
-      const resident = residents.find(r => r.id === plan.resident_id);
-      if (!resident) return true; // Show plans even if resident not found for debugging
-      
-      const residentStatus = (resident?.status || resident?.Status || '').toLowerCase();
-      return residentStatus === 'active';
-    });
-
-    if (searchTerm) {
-      const lowercasedSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(plan => {
-        const residentName = getResidentName(plan.resident_id).toLowerCase();
-        const accommodation = accommodations.find(a => a.id === residents.find(r => r.id === plan.resident_id)?.accommodation_id);
-        const property = accommodation ? properties.find(p => p.id === accommodation.property_id) : null;
-        const accommodationName = property && accommodation ? `${property.name} - ${accommodation.room_number}` : 'unassigned';
-
-        return plan.title?.toLowerCase().includes(lowercasedSearchTerm) ||
-               plan.description?.toLowerCase().includes(lowercasedSearchTerm) ||
-               residentName.includes(lowercasedSearchTerm) ||
-               plan.key_worker?.toLowerCase().includes(lowercasedSearchTerm) ||
-               plan.support_worker_name?.toLowerCase().includes(lowercasedSearchTerm) ||
-               accommodationName.includes(lowercasedSearchTerm);
-      });
+      if (error) throw error;
+      if (mounted) setSupportPlans(plansData || []);
+    } catch (err) {
+      console.error("❌ Error loading support plans:", err);
+      if (mounted) setSupportPlans([]);
+    } finally {
+      if (mounted) setLoading(false);
     }
-    setFilteredPlans(filtered);
-  }, [supportPlans, activeTab, searchTerm, getResidentName, residents, accommodations, properties]);
+  };
 
-  useEffect(() => {
-    filterPlans();
-    console.log('🎯 Filtered Plans:', {
-      activeTab,
-      totalSupportPlans: supportPlans.length,
-      filteredCount: filteredPlans.length,
-      supportNotesCount: supportPlans.filter(p => p.plan_type === 'support_notes').length
+  loadData();
+
+  return () => {
+    mounted = false;
+  };
+}, [supabase]);
+
+// Helper: Get resident full name
+const getResidentName = useCallback((residentId) => {
+  const resident = residents.find(r => r.id === residentId);
+  return resident ? `${resident.first_name} ${resident.last_name}` : "Unknown Resident";
+}, [residents]);
+
+// Filter plans based on tab, search, and resident status
+const filterPlans = useCallback(() => {
+  let current = Array.isArray(supportPlans) ? [...supportPlans] : [];
+
+  current = current.filter(plan => {
+    if (!plan || plan.deleted) return false;
+
+    const resident = residents.find(r => r.id === plan.resident_id);
+    const residentStatus = (resident?.status || resident?.Status || '').toLowerCase().replace(/ /g, '_');
+
+    // Archive tab shows only moved_on residents
+    if (activeTab === "archive") return residentStatus === 'moved_on';
+
+    // Other tabs filter by plan type and active residents
+    if (plan.plan_type !== activeTab && activeTab !== "archive") return false;
+    return residentStatus === 'active' || !resident;
+  });
+
+  // Search filter
+  if (searchTerm) {
+    const search = searchTerm.toLowerCase();
+    current = current.filter(plan => {
+      const residentName = getResidentName(plan.resident_id).toLowerCase();
+      const accommodation = accommodations.find(a => a.id === residents.find(r => r.id === plan.resident_id)?.accommodation_id);
+      const property = accommodation ? properties.find(p => p.id === accommodation.property_id) : null;
+      const accommodationName = property && accommodation ? `${property.name} - ${accommodation.room_number}` : 'unassigned';
+
+      return plan.title?.toLowerCase().includes(search) ||
+             plan.description?.toLowerCase().includes(search) ||
+             residentName.includes(search) ||
+             plan.key_worker?.toLowerCase().includes(search) ||
+             plan.support_worker_name?.toLowerCase().includes(search) ||
+             accommodationName.includes(search);
     });
-  }, [filterPlans]);
+  }
 
+  setFilteredPlans(current);
+}, [supportPlans, activeTab, searchTerm, getResidentName, residents, accommodations, properties]);
+
+// Apply filters whenever dependencies change
+useEffect(() => {
+  filterPlans();
+  console.log('🎯 Filtered Plans:', {
+    activeTab,
+    totalSupportPlans: supportPlans.length,
+    filteredCount: filteredPlans.length,
+    supportNotesCount: supportPlans.filter(p => p.plan_type === 'support_notes').length
+  });
+}, [filterPlans]);
+  
   const loadData = async () => {
     setLoading(true);
     try {
