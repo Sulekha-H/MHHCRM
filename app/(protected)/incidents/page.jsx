@@ -388,6 +388,11 @@ export default function IncidentsSupabase() {
     return colors[normalizedSeverity] || colors.medium;
   };
 
+  const normalizeStatusForFilter = (status) => {
+  if (!status) return 'open';
+  return status.toLowerCase().replace(/ /g, '_');
+};
+
   const getStatusColor = (status) => {
     const normalizedStatus = normalizeStatusForFilter(status);
     const colors = {
