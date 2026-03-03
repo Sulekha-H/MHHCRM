@@ -59,9 +59,9 @@ const loadData = async () => {
 
     // Load properties
     const { data: propertiesData, error: propsError } = await supabase
-      supabase.from('properties').select('*')
-    
-    if (propsError) throw propsError;
+  .from('properties')
+  .select('*');
+if (propsError) throw propsError;
 
     const activeProperties = (propertiesData || []).filter(p =>
       p['Status'] === 'Active' && !p['Name']?.toLowerCase().includes('ryland')
@@ -70,10 +70,11 @@ const loadData = async () => {
     console.log(`✅ Loaded ${activeProperties.length} active properties`);
 
     // Load SW documents
-    const { data: swDocumentsData, error: docsError } = await supabase
-      supabase.from('sw_documents').select('*')
-    
-    if (docsError) throw docsError;
+const { data: swDocumentsData, error: docsError } = await supabase
+  .from('sw_documents')
+  .select('*');
+if (docsError) throw docsError;
+
 
     const normalizedDocs = (swDocumentsData || []).map(d => ({
       id: d.ID,
@@ -85,12 +86,12 @@ const loadData = async () => {
     setSwDocuments(normalizedDocs);
     console.log(`✅ Loaded ${normalizedDocs.length} SW documents`);
 
-    // Load weekly SW doc logs
-    const { data: logsData, error: logsError } = await supabase
-      supabase.from('weekly_sw_doc_logs').select('*')
-    
-    if (logsError) throw logsError;
-
+  // Load weekly SW doc logs
+const { data: logsData, error: logsError } = await supabase
+  .from('weekly_sw_doc_logs')
+  .select('*');
+if (logsError) throw logsError;
+      
     const statusMap = {
       'Completed': 'completed',
       'Issue Raised': 'issue_raised',
