@@ -14,10 +14,10 @@ import IncidentCard from "@/components/Incidents/IncidentCard";
 import IncidentDetailModal from "@/components/Incidents/IncidentDetailModal";
 
 export default function IncidentsSupabase() {
+  const supabase = useClerkSupabaseClient()
   const [incidents, setIncidents] = useState([]);
   const [residents, setResidents] = useState([]);
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
   const [properties, setProperties] = useState([]);
   const [filteredIncidents, setFilteredIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,57 +29,78 @@ export default function IncidentsSupabase() {
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
 
-  // Transform status from any format to database format
-  const transformStatus = (status) => {
-    if (!status) return 'Open';
-    const statusMap = {
-      'open': 'Open',
-      'Open': 'Open',
-      'under_investigation': 'Under Investigation',
-      'Under Investigation': 'Under Investigation',
-      'resolved': 'Resolved',
-      'Resolved': 'Resolved',
-      'closed': 'Closed',
-      'Closed': 'Closed'
-    };
-    return statusMap[status] || 'Open';
-  };
+  useEffect(() => {
+  if (!supabase) return;
 
-  // Transform status for filtering (lowercase with underscores)
-  const normalizeStatusForFilter = (status) => {
-    if (!status) return 'open';
-    return status.toLowerCase().replace(/ /g, '_');
-  };
+  let mounted = true;
 
-  const filterIncidents = useCallback(() => {
-    let filtered = incidents;
+  const loadIncidentsData = async () => {
+    try {
+      setLoading(true);
+      console.log("🔄 Loading incidents data...");
 
-    if (activeTab !== "all") {
-      filtered = filtered.filter(incident => {
-        const incidentStatus = normalizeStatusForFilter(incident.Status || incident.status);
-        return incidentStatus === activeTab;
+      // Fetch incidents
+      const { data: incidentsData, error: incidentsError } = await supabase
+        .from("incidents")
+        .select("*")
+        .or("Deleted.is.null,Deleted.eq.false")
+        .order("Created Date", { ascending: false });
+
+      if (incidentsError) throw incidentsError;
+
+      if (!mounted) return;
+
+      // Filter based on active tab
+      let filtered = Array.isArray(incidentsData) ? [...incidentsData] : [];
+      const lowerSearchTerm = searchTerm?.toLowerCase() || "";
+
+      if (activeTab !== "all") {
+        filtered = filtered.filter(incident => {
+          const status = (incident.Status || incident.status || "open").toLowerCase().replace(/ /g, "_");
+          return status === activeTab;
+        });
+      }
+
+      // Filter by search term
+      if (lowerSearchTerm) {
+        filtered = filtered.filter(incident => {
+          const description = (incident.Description || incident.description || "").toLowerCase();
+          const type = (incident.Incident_Type || incident.incident_type || "").toLowerCase();
+          const location = (incident.Location || incident.location || "").toLowerCase();
+          return description.includes(lowerSearchTerm) || type.includes(lowerSearchTerm) || location.includes(lowerSearchTerm);
+        });
+      }
+
+      // Optional: sort by created date descending
+      filtered.sort((a, b) => {
+        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+        return dateB - dateA;
       });
+
+      if (mounted) {
+        setIncidents(incidentsData || []);
+        setFilteredIncidents(filtered);
+        console.log(`✅ Loaded ${incidentsData?.length || 0} incidents`);
+      }
+    } catch (error) {
+      console.error("❌ Error loading incidents:", error);
+      if (mounted) {
+        setIncidents([]);
+        setFilteredIncidents([]);
+      }
+    } finally {
+      if (mounted) setLoading(false);
     }
+  };
 
-    if (searchTerm) {
-      filtered = filtered.filter(incident =>
-        (incident.Description || incident.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (incident.Incident_Type || incident.incident_type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (incident.Location || incident.location || '').toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+  loadIncidentsData();
 
-    setFilteredIncidents(filtered);
-  }, [incidents, searchTerm, activeTab]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    filterIncidents();
-  }, [filterIncidents]);
-
+  return () => {
+    mounted = false;
+  };
+}, [supabase, activeTab, searchTerm]);
+  
   const loadData = async () => {
     setLoading(true);
     console.log("🔵 Starting to load incidents from Supabase...");
