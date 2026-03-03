@@ -58,7 +58,7 @@ const loadData = async () => {
     console.log("✅ User loaded");
 
     // Load properties
-    const { data: propertiesData, error: propsError } = await retryApiCall(() =>
+    const { data: propertiesData, error: propsError } = await supabase(() =>
       supabase.from('properties').select('*')
     );
     if (propsError) throw propsError;
@@ -70,7 +70,7 @@ const loadData = async () => {
     console.log(`✅ Loaded ${activeProperties.length} active properties`);
 
     // Load SW documents
-    const { data: swDocumentsData, error: docsError } = await retryApiCall(() =>
+    const { data: swDocumentsData, error: docsError } = await supabase(() =>
       supabase.from('sw_documents').select('*')
     );
     if (docsError) throw docsError;
@@ -86,7 +86,7 @@ const loadData = async () => {
     console.log(`✅ Loaded ${normalizedDocs.length} SW documents`);
 
     // Load weekly SW doc logs
-    const { data: logsData, error: logsError } = await retryApiCall(() =>
+    const { data: logsData, error: logsError } = await supabase(() =>
       supabase.from('weekly_sw_doc_logs').select('*')
     );
     if (logsError) throw logsError;
@@ -181,7 +181,7 @@ useEffect(() => {
 
             if (logData.id) {
                 console.log("✏️ Updating existing log:", logData.id);
-                const { error } = await retryApiCall(() =>
+                const { error } = await supabase(() =>
                     supabase
                         .from('weekly_sw_doc_logs')
                         .update({
@@ -211,7 +211,7 @@ useEffect(() => {
                     'Created By': currentUser?.Email || 'Unknown'
                 };
                 console.log("📤 Inserting log:", newLog);
-                const { error } = await retryApiCall(() =>
+                const { error } = await supabase(() =>
                     supabase
                         .from('weekly_sw_doc_logs')
                         .insert([newLog])
@@ -236,7 +236,7 @@ useEffect(() => {
     const confirmDelete = async () => {
         if (logToDelete) {
             try {
-                const { error } = await retryApiCall(() =>
+                const { error } = await supbase(() =>
                     supabase
                         .from('weekly_sw_doc_logs')
                         .update({
