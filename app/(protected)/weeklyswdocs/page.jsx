@@ -29,13 +29,12 @@ export default function WeeklySWDocs() {
     const [viewingLog, setViewingLog] = useState(null);
     const [logToDelete, setLogToDelete] = useState(null);
 
-// Load Weekly SW Docs data on mount
 useEffect(() => {
   if (!supabase) return; // Ensure Supabase client is ready
 
   let mounted = true;
 
-  const loadData = async () => {
+  async function loadData() {
     setLoading(true);
     setError(null);
 
@@ -129,7 +128,7 @@ useEffect(() => {
     } finally {
       if (mounted) setLoading(false);
     }
-  };
+  }
 
   loadData();
 
@@ -137,7 +136,6 @@ useEffect(() => {
     mounted = false;
   };
 }, [supabase]);
-
     const generateWeekDates = (startDate, numWeeks) => {
         const weeks = [];
         let currentDate = new Date(startDate);
