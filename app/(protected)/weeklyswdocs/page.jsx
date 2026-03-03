@@ -58,7 +58,7 @@ const loadData = async () => {
     console.log("✅ User loaded");
 
     // Load properties
-    const { data: propertiesData, error: propsError } = await supabase(() =>
+    const { data: propertiesData, error: propsError } = await supabase(() 
       supabase.from('properties').select('*')
     );
     if (propsError) throw propsError;
@@ -70,7 +70,7 @@ const loadData = async () => {
     console.log(`✅ Loaded ${activeProperties.length} active properties`);
 
     // Load SW documents
-    const { data: swDocumentsData, error: docsError } = await supabase(() =>
+    const { data: swDocumentsData, error: docsError } = await supabase(()
       supabase.from('sw_documents').select('*')
     );
     if (docsError) throw docsError;
@@ -86,7 +86,7 @@ const loadData = async () => {
     console.log(`✅ Loaded ${normalizedDocs.length} SW documents`);
 
     // Load weekly SW doc logs
-    const { data: logsData, error: logsError } = await supabase(() =>
+    const { data: logsData, error: logsError } = await supabase(() 
       supabase.from('weekly_sw_doc_logs').select('*')
     );
     if (logsError) throw logsError;
