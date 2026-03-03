@@ -31,7 +31,7 @@ const normalizeData = (data) => {
 
 export default function Benefits() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -44,167 +44,71 @@ export default function Benefits() {
   const [activeTab, setActiveTab] = useState("housing_benefit");
   const [logToDelete, setLogToDelete] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+ // 1️⃣ Define loadData BEFORE useEffect
+const loadData = async () => {
+  setLoading(true);
+  setError(null);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+  try {
+    console.log("🔄 Loading Benefits page data...");
 
-      console.log('🔄 Starting data load...');
-      
-      // Load residents and properties
-      const [residentsResponse, propertiesResponse] = await Promise.all([
-        supabase.from('residents').select('*'),
-        supabase.from('properties').select('*')
-      ]);
+    // --- Load current user safely ---
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const authUser = userData?.user ?? null;
+    if (userError) console.error("❌ Auth user error:", userError);
+    setCurrentUser(authUser);
 
-      if (residentsResponse.error) console.error('❌ Residents error:', residentsResponse.error);
-      if (propertiesResponse.error) console.error('❌ Properties error:', propertiesResponse.error);
+    // --- Load residents & properties in parallel ---
+    const [residentsRes, propertiesRes] = await Promise.all([
+      supabase.from('residents').select('*'),
+      supabase.from('properties').select('*')
+    ]);
 
-      const residentsData = normalizeData(residentsResponse.data || []);
-      const propertiesData = normalizeData(propertiesResponse.data || []);
+    if (residentsRes.error) console.error("❌ Residents error:", residentsRes.error);
+    if (propertiesRes.error) console.error("❌ Properties error:", propertiesRes.error);
 
-      console.log('✅ Residents loaded:', residentsData.length);
-      console.log('✅ Properties loaded:', propertiesData.length);
-      if (residentsData.length > 0) {
-        console.log('📊 Sample resident:', residentsData[0]);
-      }
+    const residentsData = residentsRes.data || [];
+    const propertiesData = propertiesRes.data || [];
 
-      // Load both HB and UC logs - exclude deleted (or where deleted is null)
-      const [hbResponse, ucResponse] = await Promise.all([
-        supabase.from('housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
-        supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
-      ]);
+    setResidents(residentsData);
+    setProperties(propertiesData);
 
-      if (hbResponse.error) console.error('❌ HB Logs error:', hbResponse.error);
-      if (ucResponse.error) console.error('❌ UC Logs error:', ucResponse.error);
+    console.log(`✅ Loaded ${residentsData.length} residents`);
+    console.log(`✅ Loaded ${propertiesData.length} properties`);
 
-      const hbLogs = hbResponse.data || [];
-      const ucLogs = ucResponse.data || [];
+    // --- Load Housing Benefit & Universal Credit logs in parallel ---
+    const [hbRes, ucRes] = await Promise.all([
+      supabase.from('housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
+      supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
+    ]);
 
-      console.log('✅ HB Logs loaded:', hbLogs.length);
-      console.log('✅ UC Logs loaded:', ucLogs.length);
-      if (ucLogs.length > 0) {
-        console.log('📊 First UC log from DB:', JSON.stringify(ucLogs[0], null, 2));
-      }
+    if (hbRes.error) console.error("❌ HB logs error:", hbRes.error);
+    if (ucRes.error) console.error("❌ UC logs error:", ucRes.error);
 
-      // Normalize and combine logs
-      const normalizedHBLogs = normalizeData(hbLogs);
-      const normalizedUCLogs = normalizeData(ucLogs);
-      
-      console.log('✅ After normalization - UC count:', normalizedUCLogs.length);
-      if (normalizedUCLogs.length > 0) {
-        console.log('📊 First normalized UC log:', JSON.stringify(normalizedUCLogs[0], null, 2));
-      }
-      
-      // Assign benefit_type to distinguish them after combination
-      const typedHBLogs = normalizedHBLogs.map(log => ({ ...log, benefit_type: log.benefit_type || 'housing_benefit' }));
-      const typedUCLogs = normalizedUCLogs.map(log => ({ ...log, benefit_type: log.benefit_type || 'universal_credit' }));
+    const hbLogs = (hbRes.data || []).map(log => ({ ...log, benefit_type: 'housing_benefit' }));
+    const ucLogs = (ucRes.data || []).map(log => ({ ...log, benefit_type: 'universal_credit' }));
 
-      console.log('✅ After typing - UC count:', typedUCLogs.length);
-      if (typedUCLogs.length > 0) {
-        console.log('📊 First typed UC log:', JSON.stringify(typedUCLogs[0], null, 2));
-      }
+    const combinedLogs = [...hbLogs, ...ucLogs]
+      .filter(log => !log.Deleted)
+      .sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
 
-      const allLogs = [...typedHBLogs, ...typedUCLogs]
-        .filter(log => !log.deleted)
-        .sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
+    setLogs(combinedLogs);
 
-      console.log('✅ Total logs after combining:', allLogs.length);
-      console.log('📊 UC logs in combined:', allLogs.filter(l => {
-        const bt = l.benefit_type?.toLowerCase().replace(/\s+/g, '_');
-        return bt === 'universal_credit';
-      }).length);
-      
-      setResidents(residentsData);
-      setProperties(propertiesData);
-      setLogs(allLogs);
+    console.log(`✅ Loaded ${hbLogs.length} HB logs and ${ucLogs.length} UC logs`);
+    console.log(`✅ Combined logs count: ${combinedLogs.length}`);
 
-      console.log('✅ All data normalized and loaded');
-    } catch (error) {
-      console.error('❌ Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error("❌ Error loading Benefits page data:", error);
+    setError(error.message || "Failed to load data.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const getResidentName = useCallback((residentId) => {
-    const resident = residents.find(r => r.id === residentId);
-    return resident ? `${resident.first_name} ${resident.last_name}` : "Unknown Resident";
-  }, [residents]);
-
-  const filteredLogs = logs.filter(log => {
-    // Normalize benefit_type for comparison - handle both "Housing Benefit" and "housing_benefit" formats
-    const logBenefitType = log.benefit_type || 'housing_benefit';
-    const normalizedBenefitType = logBenefitType.toLowerCase().replace(/\s+/g, '_');
-    const matchesBenefitType = normalizedBenefitType === activeTab;
-
-    if (!searchTerm) return matchesBenefitType;
-
-    const searchLower = searchTerm.toLowerCase();
-    const residentName = getResidentName(log.resident_id).toLowerCase();
-    const title = (log.title || "").toLowerCase();
-    const description = (log.description || "").toLowerCase();
-
-    return matchesBenefitType && (
-      residentName.includes(searchLower) ||
-      title.includes(searchLower) ||
-      description.includes(searchLower)
-    );
-  });
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 Debug Info:', {
-      totalLogs: logs.length,
-      activeTab: activeTab,
-      filteredLogsCount: filteredLogs.length,
-      sampleLogBenefitType: logs[0]?.benefit_type,
-      sampleLogLogType: logs[0]?.log_type,
-      normalizedSampleType: logs[0]?.benefit_type?.toLowerCase().replace(/\s+/g, '_')
-    });
-
-    if (activeTab === 'universal_credit') {
-      const ucLogs = logs.filter(l => l.benefit_type === 'universal_credit');
-      const activeResidents = residents.filter(r => r.status === 'active');
-      const residentsWithProperty = activeResidents.filter(r => r.property_id);
-      const residentsWithoutProperty = activeResidents.filter(r => !r.property_id);
-      
-      console.log('🔍 UC TAB DETAILED DEBUG:');
-      console.log('  - Total logs in state:', logs.length);
-      console.log('  - UC logs count:', ucLogs.length);
-      console.log('  - Filtered UC logs count:', filteredLogs.length);
-      console.log('  - Total residents:', residents.length);
-      console.log('  - Active residents:', activeResidents.length);
-      console.log('  - Active residents WITH property:', residentsWithProperty.length);
-      console.log('  - Active residents WITHOUT property:', residentsWithoutProperty.length);
-      console.log('  - Properties count:', properties.length);
-      
-      if (ucLogs.length > 0) {
-        console.log('  - Sample UC log:', JSON.stringify(ucLogs[0], null, 2));
-      }
-      
-      if (filteredLogs.length > 0) {
-        console.log('  - Sample filtered log:', JSON.stringify(filteredLogs[0], null, 2));
-      }
-
-      // Check which residents have UC logs
-      const residentsWithUCLogs = ucLogs.map(log => log.resident_id).filter((v, i, a) => a.indexOf(v) === i);
-      console.log('  - Residents with UC logs (IDs):', residentsWithUCLogs);
-      
-      residentsWithUCLogs.forEach(resId => {
-        const res = residents.find(r => r.id === resId);
-        if (res) {
-          console.log(`    - ${res.first_name} ${res.last_name} (property_id: ${res.property_id || 'none'})`);
-        }
-      });
-    }
-  }, [activeTab, logs, filteredLogs, residents, properties]);
-
+// 2️⃣ Call loadData safely on mount
+useEffect(() => {
+  loadData();
+}, []); // only once on mount
 
   const handleSubmit = async (logData) => {
     try {
