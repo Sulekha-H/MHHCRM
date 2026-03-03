@@ -1,7 +1,7 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-import { useUser } from "@clerk/nextjs";
+//export const dynamic = "force-dynamic";
+import { useSession, useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,9 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
 
 
  export default function Accommodations() {
+  const supabase = useClerkSupabaseClient()
+  const {session} = useSession();
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -34,10 +35,16 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingAccommodation, setViewingAccommodation] = useState(null);
 
-  const loadData = async () => {
+useEffect(() => {
+  if (!supabase) return;
+
+  let mounted = true;
+
+  const wrappedLoadData = async () => {
     try {
+      setLoading(true);
       console.log("🔄 [SUPABASE] Loading accommodations data...");
-      
+
       const [accommodationsRes, propertiesRes, residentsRes] = await Promise.all([
         supabase.from('accommodations').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false }),
         supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'),
@@ -48,9 +55,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
       if (propertiesRes.error) throw propertiesRes.error;
       if (residentsRes.error) throw residentsRes.error;
 
-      console.log("✅ [SUPABASE] Loaded accommodations:", accommodationsRes.data?.length);
-      console.log("✅ [SUPABASE] Loaded properties:", propertiesRes.data?.length);
-      console.log("✅ [SUPABASE] Loaded residents:", residentsRes.data?.length);
+      if (!mounted) return;
 
       const propertiesData = (propertiesRes.data || []).sort((a, b) => {
         const aIsRyland = a.Name?.toLowerCase().includes('ryland');
@@ -59,29 +64,34 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
         if (!aIsRyland && bIsRyland) return -1;
         return a.Name?.localeCompare(b.Name) || 0;
       });
-      
+
       const activeProperties = propertiesData.filter(property => property.Status === 'Active');
-      
+
       setAccommodations(accommodationsRes.data || []);
       setProperties(activeProperties);
       setResidents(residentsRes.data || []);
       setExpandedProperties(new Set(activeProperties.map(p => p.ID)));
-      
+
       console.log("✅ [SUPABASE] All data loaded successfully");
     } catch (error) {
       console.error("❌ [SUPABASE] Error loading data:", error);
-      setAccommodations([]);
-      setProperties([]);
-      setResidents([]);
+      if (mounted) {
+        setAccommodations([]);
+        setProperties([]);
+        setResidents([]);
+      }
     } finally {
-      setLoading(false);
+      if (mounted) setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  wrappedLoadData();
 
+  return () => {
+    mounted = false;
+  };
+}, [supabase]);
+  
   const accommodationsWithOccupancy = useMemo(() => {
     console.log("🔄 [SUPABASE] Calculating occupancy for accommodations...");
     console.log("   Total accommodations:", accommodations.length);
