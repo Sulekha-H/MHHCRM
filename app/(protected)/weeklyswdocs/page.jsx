@@ -29,113 +29,110 @@ export default function WeeklySWDocs() {
     const [viewingLog, setViewingLog] = useState(null);
     const [logToDelete, setLogToDelete] = useState(null);
 
-useEffect(() => {
-  if (!supabase) return; // Ensure Supabase client is ready
+// First, define loadData at the top of your component
+const loadData = async () => {
+  if (!supabase) return; // ensure Supabase client is ready
 
-  let mounted = true;
+  setLoading(true);
+  setError(null);
 
-  async function loadData() {
-    setLoading(true);
-    setError(null);
+  try {
+    console.log("🔄 Loading Weekly SW Docs data...");
 
+    // Load current user
+    let userData = null;
     try {
-      console.log("🔄 Loading Weekly SW Docs data...");
-
-      // Load current user
-      let userData = null;
-      try {
-        const { data: { user: authUser } = {} } = await supabase.auth.getUser();
-        if (authUser) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', authUser.email)
-            .single();
-          userData = data;
-        }
-      } catch (userError) {
-        console.error("⚠️ Error loading user:", userError);
+      const { data: { user: authUser } = {} } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', authUser.email)
+          .single();
+        userData = data;
       }
-      if (mounted) setCurrentUser(userData);
-      console.log("✅ User loaded");
-
-      // Load properties
-      const { data: propertiesData, error: propsError } = await retryApiCall(() =>
-        supabase.from('properties').select('*')
-      );
-      if (propsError) throw propsError;
-
-      const activeProperties = (propertiesData || []).filter(p => 
-        p['Status'] === 'Active' && !p['Name']?.toLowerCase().includes('ryland')
-      );
-      if (mounted) setProperties(activeProperties);
-      console.log(`✅ Loaded ${activeProperties.length} active properties`);
-
-      // Load SW documents
-      const { data: swDocumentsData, error: docsError } = await retryApiCall(() =>
-        supabase.from('sw_documents').select('*')
-      );
-      if (docsError) throw docsError;
-
-      const normalizedDocs = (swDocumentsData || []).map(d => ({
-        id: d.ID,
-        name: d.Name,
-        category: d.Category,
-        description: d.Description,
-        is_active: d['Is Active']
-      })).sort((a, b) => a.name.localeCompare(b.name));
-      if (mounted) setSwDocuments(normalizedDocs);
-      console.log(`✅ Loaded ${normalizedDocs.length} SW documents`);
-
-      // Load weekly SW doc logs
-      const { data: logsData, error: logsError } = await retryApiCall(() =>
-        supabase.from('weekly_sw_doc_logs').select('*')
-      );
-      if (logsError) throw logsError;
-
-      const statusMap = {
-        'Completed': 'completed',
-        'Issue Raised': 'issue_raised',
-        'Incomplete': 'incomplete'
-      };
-
-      const normalizedLogs = (logsData || [])
-        .filter(l => !l.Deleted)
-        .map(l => ({
-          id: l.ID,
-          property_id: l['Property ID'],
-          sw_document_id: l['SW Document ID'],
-          week_start_date: l['Week Start Date'],
-          log_date: l['Log Date'],
-          status: statusMap[l.Status] || l.Status?.toLowerCase() || 'incomplete',
-          notes: l.Notes,
-          staff_member: l['Staff Member'],
-          file_url: l['File URL'],
-          deleted: l.Deleted,
-          deleted_date: l['Deleted Date'],
-          deleted_by: l['Deleted By'],
-          created_date: l['Created Date'],
-          updated_date: l['Updated Date'],
-          created_by: l['Created By']
-        }));
-      if (mounted) setLogs(normalizedLogs);
-      console.log(`✅ Loaded ${normalizedLogs.length} logs`);
-
-      console.log("✅ All data loaded successfully");
-    } catch (error) {
-      console.error("❌ Error loading Weekly SW Docs data:", error);
-      if (mounted) setError(error.message || "Failed to load data.");
-    } finally {
-      if (mounted) setLoading(false);
+    } catch (userError) {
+      console.error("⚠️ Error loading user:", userError);
     }
+    setCurrentUser(userData);
+    console.log("✅ User loaded");
+
+    // Load properties
+    const { data: propertiesData, error: propsError } = await retryApiCall(() =>
+      supabase.from('properties').select('*')
+    );
+    if (propsError) throw propsError;
+
+    const activeProperties = (propertiesData || []).filter(p =>
+      p['Status'] === 'Active' && !p['Name']?.toLowerCase().includes('ryland')
+    );
+    setProperties(activeProperties);
+    console.log(`✅ Loaded ${activeProperties.length} active properties`);
+
+    // Load SW documents
+    const { data: swDocumentsData, error: docsError } = await retryApiCall(() =>
+      supabase.from('sw_documents').select('*')
+    );
+    if (docsError) throw docsError;
+
+    const normalizedDocs = (swDocumentsData || []).map(d => ({
+      id: d.ID,
+      name: d.Name,
+      category: d.Category,
+      description: d.Description,
+      is_active: d['Is Active']
+    })).sort((a, b) => a.name.localeCompare(b.name));
+    setSwDocuments(normalizedDocs);
+    console.log(`✅ Loaded ${normalizedDocs.length} SW documents`);
+
+    // Load weekly SW doc logs
+    const { data: logsData, error: logsError } = await retryApiCall(() =>
+      supabase.from('weekly_sw_doc_logs').select('*')
+    );
+    if (logsError) throw logsError;
+
+    const statusMap = {
+      'Completed': 'completed',
+      'Issue Raised': 'issue_raised',
+      'Incomplete': 'incomplete'
+    };
+
+    const normalizedLogs = (logsData || [])
+      .filter(l => !l.Deleted)
+      .map(l => ({
+        id: l.ID,
+        property_id: l['Property ID'],
+        sw_document_id: l['SW Document ID'],
+        week_start_date: l['Week Start Date'],
+        log_date: l['Log Date'],
+        status: statusMap[l.Status] || l.Status?.toLowerCase() || 'incomplete',
+        notes: l.Notes,
+        staff_member: l['Staff Member'],
+        file_url: l['File URL'],
+        deleted: l.Deleted,
+        deleted_date: l['Deleted Date'],
+        deleted_by: l['Deleted By'],
+        created_date: l['Created Date'],
+        updated_date: l['Updated Date'],
+        created_by: l['Created By']
+      }));
+    setLogs(normalizedLogs);
+    console.log(`✅ Loaded ${normalizedLogs.length} logs`);
+
+    console.log("✅ All data loaded successfully");
+  } catch (error) {
+    console.error("❌ Error loading Weekly SW Docs data:", error);
+    setError(error.message || "Failed to load data.");
+  } finally {
+    setLoading(false);
   }
+};
 
+// Then use useEffect to call it once on mount
+useEffect(() => {
   loadData();
-
-  return () => {
-    mounted = false;
-  };
-}, [supabase]);
+}, [supabase]); // only run when supabase client is ready
+    
     const generateWeekDates = (startDate, numWeeks) => {
         const weeks = [];
         let currentDate = new Date(startDate);
