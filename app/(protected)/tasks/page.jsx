@@ -11,15 +11,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function TasksPage() {
+  const supabase = useClerkSupabaseClient()
+  const {session} = useSession();
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -33,89 +33,117 @@ export default function TasksPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [sortOrder, setSortOrder] = useState("newest");
 
-  const filterTasks = useCallback(() => {
-    let currentFiltered = Array.isArray(tasks) ? [...tasks] : [];
-    const now = new Date();
+useEffect(() => {
+  if (!supabase) return;
 
-    if (filters.assignee !== "all") {
-      currentFiltered = currentFiltered.filter(task => (task["Assigned To User ID"] || "Unassigned") === filters.assignee);
-    }
+  let mounted = true;
 
-    if (filters.status === "overdue") {
-      // Check for overdue: Status != completed AND Due Date is in the past
-      currentFiltered = currentFiltered.filter(t => {
-        const status = (t.Status || t.status || '').toLowerCase();
-        const isNotCompleted = status !== 'completed';
-        const dueDate = t["Due Date"] || t.due_date;
-        const isDueDateSet = !!dueDate;
-        const isPastDue = dueDate ? new Date(dueDate) < now : false;
-        
-        return isNotCompleted && isDueDateSet && isPastDue;
-      });
-    } else if (filters.status !== "all") {
-      // Handle status filtering: Convert both to lowercase with underscores for comparison
-      currentFiltered = currentFiltered.filter(task => {
-        const taskStatus = (task.Status || task.status || '').toLowerCase().replace(/ /g, '_');
-        const filterStatusLower = filters.status.toLowerCase().replace(/ /g, '_');
-        return taskStatus === filterStatusLower;
-      });
-    }
+  const loadTasksData = async () => {
+    try {
+      setLoading(true);
+      console.log("🔄 Loading tasks data...");
 
-    if (filters.priority !== "all_priority") {
-      currentFiltered = currentFiltered.filter(task => {
-        const taskPriority = (task.Priority || task.priority || '').toLowerCase();
-        return taskPriority === filters.priority.toLowerCase();
-      });
-    }
+      // Fetch tasks
+      const { data: tasksData, error: tasksError } = await supabase
+        .from("tasks")
+        .select("*")
+        .or("Deleted.is.null,Deleted.eq.false");
 
-    if (filters.search) {
-      const lowercasedSearchTerm = filters.search.toLowerCase();
-      currentFiltered = currentFiltered.filter(task => {
-        const userName = task["Assigned To User ID"] || "unassigned";
-        const title = task.Title || task.title || "";
-        const description = task.Description || task.description || "";
-        const createdBy = task["Created By"] || task.created_by || "";
-        
-        return title.toLowerCase().includes(lowercasedSearchTerm) ||
-               description.toLowerCase().includes(lowercasedSearchTerm) ||
-               userName.toLowerCase().includes(lowercasedSearchTerm) ||
-               createdBy.toLowerCase().includes(lowercasedSearchTerm);
-      });
-    }
+      if (tasksError) throw tasksError;
 
-    currentFiltered = currentFiltered.sort((a, b) => {
-      if (sortOrder === "newest") {
-        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-        return dateB.getTime() - dateA.getTime();
-      } else if (sortOrder === "oldest") {
-        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-        return dateA.getTime() - dateB.getTime();
-      } else {
-        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-        const aPriority = (a.Priority || a.priority || 'medium').toLowerCase();
-        const bPriority = (b.Priority || b.priority || 'medium').toLowerCase();
-        const priorityDiff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
-        
-        if (priorityDiff !== 0) return priorityDiff;
-        
-        const dueDateA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
-        const dueDateB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
-        return dueDateA.getTime() - dueDateB.getTime();
+      if (!mounted) return;
+
+      // Apply filters
+      let filtered = Array.isArray(tasksData) ? [...tasksData] : [];
+      const now = new Date();
+
+      if (filters.assignee !== "all") {
+        filtered = filtered.filter(
+          t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee
+        );
       }
-    });
 
-    setFilteredTasks(currentFiltered);
-  }, [tasks, filters.search, filters.status, filters.priority, filters.assignee, sortOrder]);
+      if (filters.status === "overdue") {
+        filtered = filtered.filter(t => {
+          const status = (t.Status || t.status || "").toLowerCase();
+          const dueDate = t["Due Date"] || t.due_date;
+          return status !== "completed" && dueDate && new Date(dueDate) < now;
+        });
+      } else if (filters.status !== "all") {
+        const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
+        filtered = filtered.filter(t => {
+          const taskStatus = (t.Status || t.status || "").toLowerCase().replace(/ /g, "_");
+          return taskStatus === filterStatusLower;
+        });
+      }
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
+      if (filters.priority !== "all_priority") {
+        filtered = filtered.filter(
+          t => ((t.Priority || t.priority || "").toLowerCase()) === filters.priority.toLowerCase()
+        );
+      }
 
-  useEffect(() => {
-    filterTasks();
-  }, [filterTasks]);
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        filtered = filtered.filter(t => {
+          const title = t.Title || t.title || "";
+          const desc = t.Description || t.description || "";
+          const assigned = t["Assigned To User ID"] || "unassigned";
+          const createdBy = t["Created By"] || t.created_by || "";
+          return (
+            title.toLowerCase().includes(searchTerm) ||
+            desc.toLowerCase().includes(searchTerm) ||
+            assigned.toLowerCase().includes(searchTerm) ||
+            createdBy.toLowerCase().includes(searchTerm)
+          );
+        });
+      }
+
+      // Sorting
+      filtered.sort((a, b) => {
+        if (sortOrder === "newest") {
+          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+          return dateB - dateA;
+        } else if (sortOrder === "oldest") {
+          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+          return dateA - dateB;
+        } else {
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+          const aPriority = (a.Priority || a.priority || "medium").toLowerCase();
+          const bPriority = (b.Priority || b.priority || "medium").toLowerCase();
+          const diff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
+          if (diff !== 0) return diff;
+          const dueA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
+          const dueB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
+          return dueA - dueB;
+        }
+      });
+
+      // Set state
+      if (mounted) {
+        setTasks(tasksData || []);
+        setFilteredTasks(filtered);
+        console.log(`✅ Loaded ${tasksData?.length || 0} tasks`);
+      }
+    } catch (error) {
+      console.error("❌ Error loading tasks:", error);
+      if (mounted) {
+        setTasks([]);
+        setFilteredTasks([]);
+      }
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  };
+
+  loadTasksData();
+
+  return () => {
+    mounted = false;
+  };
+}, [supabase, filters, sortOrder]);
 
   const loadTasks = async () => {
     setLoading(true);
