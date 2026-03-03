@@ -15,6 +15,7 @@ import RepairCard from "@/components/repairs/RepairCard";
 import RepairDetailModal from "@/components/repairs/RepairDetailModal"; // New import
 
 export default function Repairs() { // Component name changed
+  const supabase = useClerkSupabaseClient();
   const [repairs, setRepairs] = useState([]);
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
@@ -30,59 +31,90 @@ export default function Repairs() { // Component name changed
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
 
-  const filterRepairs = useCallback(() => {
-    let filtered = repairs;
+  // Load data on mount
+useEffect(() => {
+  if (!supabase) return; // Ensure Supabase client is ready
 
-    // Filter by status tab - Handle both PostgreSQL format (with spaces) and base44 format
-    if (activeTab !== "all") {
-      filtered = filtered.filter(repair => {
-        const status = (repair["Status"] || repair.status || "").toLowerCase().replace(/ /g, '_');
-        return status === activeTab.toLowerCase().replace(/ /g, '_');
-      });
+  let mounted = true;
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("repairs")
+        .select("*")
+        .order("Created Date", { ascending: false });
+
+      if (error) throw error;
+      if (mounted) setRepairs(data || []);
+    } catch (err) {
+      console.error("❌ Error loading repairs:", err);
+      if (mounted) setRepairs([]);
+    } finally {
+      if (mounted) setLoading(false);
     }
+  };
 
-    // Filter by priority
-    if (priorityFilter !== "all") {
-      filtered = filtered.filter(repair => {
-        const priority = (repair["Priority"] || repair.priority || "").toLowerCase();
-        return priority === priorityFilter.toLowerCase();
-      });
-    }
+  loadData();
 
-    // Filter by property
-    if (propertyFilter !== "all") {
-      filtered = filtered.filter(repair => {
-        const propertyId = repair["Property ID"] || repair.property_id;
-        return propertyId === propertyFilter;
-      });
-    }
+  return () => {
+    mounted = false;
+  };
+}, [supabase]);
 
-    // Filter by search term
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(repair => {
-        const title = (repair["Title"] || repair.title || "").toLowerCase();
-        const description = (repair["Description"] || repair.description || "").toLowerCase();
-        const reportedBy = (repair["Reported By"] || repair.reported_by || "").toLowerCase();
-        const contractor = (repair["Contractor"] || repair.contractor || "").toLowerCase();
-        
-        return title.includes(searchLower) ||
-               description.includes(searchLower) ||
-               reportedBy.includes(searchLower) ||
-               contractor.includes(searchLower);
-      });
-    }
+// Filter and sort repairs
+const filterRepairs = useCallback(() => {
+  let current = Array.isArray(repairs) ? [...repairs] : [];
 
-    setFilteredRepairs(filtered);
-  }, [repairs, searchTerm, activeTab, priorityFilter, propertyFilter]);
+  // Filter by status
+  if (activeTab !== "all") {
+    current = current.filter(repair => {
+      const status = (repair["Status"] || repair.status || "")
+        .toLowerCase()
+        .replace(/ /g, "_");
+      return status === activeTab.toLowerCase().replace(/ /g, "_");
+    });
+  }
 
-  useEffect(() => {
-    filterRepairs();
-  }, [filterRepairs]);
+  // Filter by priority
+  if (priorityFilter !== "all") {
+    current = current.filter(repair => {
+      const priority = (repair["Priority"] || repair.priority || "").toLowerCase();
+      return priority === priorityFilter.toLowerCase();
+    });
+  }
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Filter by property
+  if (propertyFilter !== "all") {
+    current = current.filter(repair => {
+      const propertyId = repair["Property ID"] || repair.property_id;
+      return propertyId === propertyFilter;
+    });
+  }
+
+  // Filter by search term
+  if (searchTerm) {
+    const search = searchTerm.toLowerCase();
+    current = current.filter(repair => {
+      const title = (repair["Title"] || repair.title || "").toLowerCase();
+      const description = (repair["Description"] || repair.description || "").toLowerCase();
+      const reportedBy = (repair["Reported By"] || repair.reported_by || "").toLowerCase();
+      const contractor = (repair["Contractor"] || repair.contractor || "").toLowerCase();
+
+      return title.includes(search) ||
+             description.includes(search) ||
+             reportedBy.includes(search) ||
+             contractor.includes(search);
+    });
+  }
+
+  setFilteredRepairs(current);
+}, [repairs, searchTerm, activeTab, priorityFilter, propertyFilter]);
+
+// Apply filters whenever dependencies change
+useEffect(() => {
+  filterRepairs();
+}, [filterRepairs]);
 
   const loadData = async () => {
     setLoading(true);
