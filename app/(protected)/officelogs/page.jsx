@@ -14,8 +14,8 @@ import OfficeLogForm from "@/components/office-logs/OfficeLogForm";
 import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
 export default function OfficeLogs() {
+  const supabase = useClerkSupabaseClient()
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,66 +27,91 @@ export default function OfficeLogs() {
   const [sortOrder, setSortOrder] = useState("newest");
   const [users, setUsers] = useState([]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+// Load data on mount
+useEffect(() => {
+  if (!supabase) return;
 
-  const filterLogs = useCallback(() => {
-    let filtered = logs;
+  let mounted = true;
 
-    // Filter by status tab - Handle both PostgreSQL format (with spaces) and base44 format
-    if (activeStatusTab !== "all_status") {
-      filtered = filtered.filter(log => {
-        const status = (log["Status"] || log.status || "").toString().trim().toLowerCase().replace(/ /g, '_');
-        const compareStatus = activeStatusTab.toLowerCase().replace(/ /g, '_');
-        return status === compareStatus;
-      });
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("office_logs")
+        .select("*")
+        .order("Date Time", { ascending: false });
+
+      if (error) throw error;
+      if (mounted) setLogs(data || []);
+    } catch (err) {
+      console.error("❌ Error loading office logs:", err);
+      if (mounted) setLogs([]);
+    } finally {
+      if (mounted) setLoading(false);
     }
+  };
 
-    // Filter by log type/tab - Handle both PostgreSQL format (with spaces) and base44 format
-    if (activeTab !== "all") {
-      filtered = filtered.filter(log => {
-        const logType = (log["Log Type"] || log.log_type || "").toString().trim().toLowerCase().replace(/ /g, '_');
-        const compareType = activeTab.toLowerCase().replace(/ /g, '_');
-        return logType === compareType;
-      });
-    }
+  loadData();
 
-    // Filter by search term
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(log => {
-        const title = (log["Title"] || log.title || "").toLowerCase();
-        const description = (log["Description"] || log.description || "").toLowerCase();
-        const personInvolved = (log["Person Involved"] || log.person_involved || "").toLowerCase();
-        const staffMember = (log["Staff Member"] || log.staff_member || "").toLowerCase();
-        
-        return title.includes(searchLower) ||
-               description.includes(searchLower) ||
-               personInvolved.includes(searchLower) ||
-               staffMember.includes(searchLower);
-      });
-    }
+  return () => {
+    mounted = false;
+  };
+}, [supabase]);
 
-    // Sort by date
-    filtered = [...filtered].sort((a, b) => {
-      const dateA = new Date(a["Date Time"] || a.date_time);
-      const dateB = new Date(b["Date Time"] || b.date_time);
-      
-      if (sortOrder === "newest") {
-        return dateB.getTime() - dateA.getTime();
-      } else {
-        return dateA.getTime() - dateB.getTime();
-      }
+// Filter and sort logs
+const filterLogs = useCallback(() => {
+  let current = Array.isArray(logs) ? [...logs] : [];
+
+  // Status filter
+  if (activeStatusTab !== "all_status") {
+    current = current.filter(log => {
+      const status = (log["Status"] || log.status || "")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/ /g, "_");
+      return status === activeStatusTab.toLowerCase().replace(/ /g, "_");
     });
+  }
 
-    setFilteredLogs(filtered);
-  }, [logs, searchTerm, activeTab, activeStatusTab, sortOrder]);
+  // Log type filter
+  if (activeTab !== "all") {
+    current = current.filter(log => {
+      const type = (log["Log Type"] || log.log_type || "")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/ /g, "_");
+      return type === activeTab.toLowerCase().replace(/ /g, "_");
+    });
+  }
 
-  useEffect(() => {
-    filterLogs();
-  }, [filterLogs]);
+  // Search filter
+  if (searchTerm) {
+    const search = searchTerm.toLowerCase();
+    current = current.filter(log => {
+      const title = (log["Title"] || log.title || "").toLowerCase();
+      const description = (log["Description"] || log.description || "").toLowerCase();
+      const person = (log["Person Involved"] || log.person_involved || "").toLowerCase();
+      const staff = (log["Staff Member"] || log.staff_member || "").toLowerCase();
+      return title.includes(search) || description.includes(search) || person.includes(search) || staff.includes(search);
+    });
+  }
 
+  // Sort by date
+  current.sort((a, b) => {
+    const dateA = new Date(a["Date Time"] || a.date_time || 0);
+    const dateB = new Date(b["Date Time"] || b.date_time || 0);
+    return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+  });
+
+  setFilteredLogs(current);
+}, [logs, searchTerm, activeTab, activeStatusTab, sortOrder]);
+
+// Apply filtering whenever dependencies change
+useEffect(() => {
+  filterLogs();
+}, [filterLogs]);
   const loadData = async () => {
     setLoading(true);
     try {
