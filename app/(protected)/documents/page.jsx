@@ -31,7 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function DocumentsSupabase() {
   
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [activeTab, setActiveTab] = useState("documents");
   const [documents, setDocuments] = useState([]);
   const [warranties, setWarranties] = useState([]);
@@ -51,27 +51,27 @@ export default function DocumentsSupabase() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    loadData();
-  }, []);
+  if (!supabase) return;
 
-  const getLoggedByName = useCallback((record) => {
-    if (record.logged_by || record["Logged By"]) {
-      return record.logged_by || record["Logged By"];
+  async function loadDocuments() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("documents")
+      .select("*"); // fetch everything
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
     }
-    
-    const createdBy = record.created_by || record["Created By"];
-    if (createdBy) {
-      if (user && user.length > 0) {
-        const user = user.find(u => u.email === createdBy);
-        if (user?.full_name) {
-          return user.full_name;
-        }
-      }
-      return createdBy.split('@')[0];
-    }
-    
-    return null;
-  }, [user]);
+
+    setDocuments(data || []);
+    setLoading(false);
+  }
+
+  loadDocuments();
+}, [supabase]);
 
   useEffect(() => {
     let filtered = documents;
