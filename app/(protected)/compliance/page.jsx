@@ -51,7 +51,34 @@ export default function Compliance() {
   const [activeTab, setActiveTab] = useState("all");
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
+  const [error, setError] = useState(null);
+useEffect(() => {
+  async function loadCompliance() {
+    setLoading(true);
 
+    const { data, error } = await supabase.from("compliance_logs").select("*");
+    if (error) {
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+
+    const normalizedLogs = (data || []).map(log => ({
+      ...log,
+      property_id: log["Property ID"], // normalize key
+      certificate_name: log["Certificate Name"],
+      contractor_company: log["Contractor Company"],
+      certificate_number: log["Certificate Number"],
+      logged_by: log["Logged By"],
+      created_by: log["Created By"],
+    }));
+
+    setComplianceLogs(normalizedLogs);
+    setLoading(false);
+  }
+
+  loadCompliance();
+}, [supabase]);
 useEffect(() => {
   if (!supabase) return;
 
