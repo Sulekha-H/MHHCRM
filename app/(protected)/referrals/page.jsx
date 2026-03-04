@@ -146,8 +146,9 @@ useEffect(() => {
       const { data: referralsData, error } = await supabase
         .from(tableName)
         .select('*')
-        //.eq('"Deleted"', false)
+        .eq('"Deleted"', false)
         .order('"Referral Date"', { ascending: false });
+      console.log("Raw Supabase response:", referralsData);
 
       if (error) {
         console.error(`Error loading from ${tableName}:`, error);
