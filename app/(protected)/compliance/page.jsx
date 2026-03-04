@@ -101,32 +101,7 @@ useEffect(() => {
 
   loadCompliance();
 }, [supabase]);
-
   
-  
-useEffect(() => {
-  if (!supabase) return;
-
-  async function loadCompliance() {
-    setLoading(true);
-
-    const { data, error } = await supabase
-      .from("compliance_logs")  // replace with your actual table name
-      .select("*");
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setComplianceLogs(data || []);
-    setLoading(false);
-  }
-
-  loadCompliance();
-}, [supabase]);
-
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
     return property?.name || "Unknown Property";
