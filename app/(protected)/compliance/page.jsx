@@ -39,7 +39,7 @@ const normalizeData = (data) => {
 export default function Compliance() {
 
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [complianceLogs, setComplianceLogs] = useState([]);
   const [properties, setProperties] = useState([])
   const [filteredLogs, setFilteredLogs] = useState([]);
@@ -52,9 +52,28 @@ export default function Compliance() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+useEffect(() => {
+  if (!supabase) return;
+
+  async function loadCompliance() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("compliance_logs")  // replace with your actual table name
+      .select("*");
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setComplianceLogs(data || []);
+    setLoading(false);
+  }
+
+  loadCompliance();
+}, [supabase]);
 
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
