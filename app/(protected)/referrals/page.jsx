@@ -23,7 +23,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Referrals() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [referrals, setReferrals] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredReferrals, setFilteredReferrals] = useState([]);
@@ -35,31 +35,33 @@ export default function Referrals() {
   const [referralTypeTab, setReferralTypeTab] = useState("organisation");
   const [currentUser, setCurrentUser] = useState(null);
   const [viewingReferral, setViewingReferral] = useState(null);
+useEffect(() => {
+  if (!supabase) return;
 
-  useEffect(() => {
-    loadData();
-  }, [referralTypeTab]);
+  async function loadReferrals() {
+    setLoading(true);
 
-  const getUserName = useCallback((userId) => {
-    const user = users.find(u => u.id === userId);
-    return user?.full_name || userId || "Unassigned";
-  }, [users]);
+    let query = supabase.from("referrals").select("*");
 
-  const getLoggedByName = useCallback((referral) => {
-    if (referral.logged_by) {
-      return referral.logged_by;
+    // Optional: filter by referralTypeTab if needed
+    if (referralTypeTab) {
+      query = query.eq("type", referralTypeTab);
     }
 
-    if (referral.created_by) {
-      const user = users.find(u => u.email === referral.created_by);
-      if (user?.full_name) {
-        return user.full_name;
-      }
-      return referral.created_by.split('@')[0];
+    const { data, error } = await query;
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
     }
 
-    return 'Unknown';
-  }, [users]);
+    setReferrals(data);
+    setLoading(false);
+  }
+
+  loadReferrals();
+}, [supabase, referralTypeTab]);
 
   const filterReferrals = useCallback(() => {
     let filtered = referrals;
