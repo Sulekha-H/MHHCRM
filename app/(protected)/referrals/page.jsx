@@ -146,7 +146,7 @@ useEffect(() => {
       const { data: referralsData, error } = await supabase
         .from(tableName)
         .select('*')
-        .eq('"Deleted"', false)
+        //.eq('"Deleted"', false)
         .order('"Referral Date"', { ascending: false });
 
       if (error) {
