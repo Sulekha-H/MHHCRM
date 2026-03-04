@@ -35,6 +35,7 @@ export default function Referrals() {
   const [referralTypeTab, setReferralTypeTab] = useState("organisation");
   const [currentUser, setCurrentUser] = useState(null);
   const [viewingReferral, setViewingReferral] = useState(null);
+  const [error, setError] = useState(null);
   
 useEffect(() => {
   if (!supabase) return;
