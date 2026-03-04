@@ -49,6 +49,27 @@ export default function DocumentsSupabase() {
   const [residentFilter, setResidentFilter] = useState("all");
   const [selectedTags, setSelectedTags] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
+  const getLoggedByName = useCallback((record) => {
+  // Use the 'logged_by' field if present
+  if (record.logged_by || record["Logged By"]) {
+    return record.logged_by || record["Logged By"];
+  }
+
+  // Otherwise, fall back to 'created_by'
+  const createdBy = record.created_by || record["Created By"];
+  if (createdBy) {
+    // If you have a list of users in 'user' state, match by email
+    if (user && user.length > 0) {
+      const matchedUser = user.find(u => u.email === createdBy);
+      if (matchedUser?.full_name) return matchedUser.full_name;
+    }
+
+    // Otherwise, just return the email name before '@'
+    return createdBy.split('@')[0];
+  }
+
+  return null;
+}, [user]);
 
   useEffect(() => {
   if (!supabase) return;
