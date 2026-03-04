@@ -71,27 +71,44 @@ export default function DocumentsSupabase() {
   return null;
 }, [user]);
 
-  useEffect(() => {
+useEffect(() => {
   if (!supabase) return;
 
-  async function loadDocuments() {
+  async function loadAllTables() {
     setLoading(true);
 
-    const { data, error } = await supabase
+    // Documents
+    const { data: documentsData, error: documentsError } = await supabase
       .from("documents")
-      .select("*"); // fetch everything
+      .select("*");
+    if (documentsError) return setError(documentsError.message);
+    setDocuments(documentsData || []);
 
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
+    // Warranties
+    const { data: warrantiesData, error: warrantiesError } = await supabase
+      .from("warranties")
+      .select("*");
+    if (warrantiesError) return setError(warrantiesError.message);
+    setWarranties(warrantiesData || []);
 
-    setDocuments(data || []);
+    // Insurances
+    const { data: insurancesData, error: insurancesError } = await supabase
+      .from("insurances")
+      .select("*");
+    if (insurancesError) return setError(insurancesError.message);
+    setInsurances(insurancesData || []);
+
+    // Appliances
+    const { data: appliancesData, error: appliancesError } = await supabase
+      .from("appliances")
+      .select("*");
+    if (appliancesError) return setError(appliancesError.message);
+    setAppliances(appliancesData || []);
+
     setLoading(false);
   }
 
-  loadDocuments();
+  loadAllTables();
 }, [supabase]);
 
   useEffect(() => {
