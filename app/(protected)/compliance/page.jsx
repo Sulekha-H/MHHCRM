@@ -62,7 +62,7 @@ useEffect(() => {
     const { data, error } = await supabase
       .from("compliance_logs")
       .select("*")
-      .eq("Deleted", false); // optional: ignore deleted logs
+      //.eq("Deleted", false); // optional: ignore deleted logs
 
     if (error) {
       console.error("Error loading compliance logs:", error);
