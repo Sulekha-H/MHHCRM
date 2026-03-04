@@ -35,6 +35,7 @@ export default function Referrals() {
   const [referralTypeTab, setReferralTypeTab] = useState("organisation");
   const [currentUser, setCurrentUser] = useState(null);
   const [viewingReferral, setViewingReferral] = useState(null);
+  
 useEffect(() => {
   if (!supabase) return;
 
@@ -62,6 +63,27 @@ useEffect(() => {
 
   loadReferrals();
 }, [supabase, referralTypeTab]);
+
+  const getUserName = useCallback((userId) => {
+    const user = users.find(u => u.id === userId);
+    return user?.full_name || userId || "Unassigned";
+  }, [users]);
+
+  const getLoggedByName = useCallback((referral) => {
+    if (referral.logged_by) {
+      return referral.logged_by;
+    }
+
+    if (referral.created_by) {
+      const user = users.find(u => u.email === referral.created_by);
+      if (user?.full_name) {
+        return user.full_name;
+      }
+      return referral.created_by.split('@')[0];
+    }
+
+    return 'Unknown';
+  }, [users]);
 
   const filterReferrals = useCallback(() => {
     let filtered = referrals;
