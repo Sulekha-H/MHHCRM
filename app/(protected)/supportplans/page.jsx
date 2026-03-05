@@ -53,6 +53,7 @@ export default function SupportPlans_Supabase() {
   const [activeTab, setActiveTab] = useState("support_notes");
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
+  const [quarterlyReviews, setQuarterlyReviews] = useState([]);
   
 useEffect(() => {
   if (!supabase) return;
