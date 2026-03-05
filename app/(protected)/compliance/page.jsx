@@ -56,9 +56,8 @@ export default function Compliance() {
 
 
   useEffect(() => {
-  if (!supabase) return {
+  if (!supabase) return 
     loadData();
-  
 }, [supabase]);
   
   const getPropertyName = useCallback((propertyId) => {
