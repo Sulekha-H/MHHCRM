@@ -54,36 +54,116 @@ export default function SupportPlans_Supabase() {
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
   
-// Load data on mount
-useEffect(() => {
-  if (!supabase) return;
-
-  let mounted = true;
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!supabase || !user) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data: plansData, error } = await supabase
-        .from("support_plans")
-        .select("*")
-        .order("Created Date", { ascending: false });
+      console.log("🔄 Loading Support Plans page data...");
+      setCurrentUser(user);
 
-      if (error) throw error;
-      if (mounted) setSupportPlans(plansData || []);
-    } catch (err) {
-      console.error("❌ Error loading support plans:", err);
-      if (mounted) setSupportPlans([]);
+      const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
+        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('residents').select('*').eq('Deleted', false),
+        supabase.from('properties').select('*').eq('Deleted', false),
+        supabase.from('accommodations').select('*').eq('Deleted', false),
+        supabase.from('users').select('*')
+      ]);
+
+      if (supportNotesResult.error) console.error('❌ Support notes error:', supportNotesResult.error);
+      if (quarterlyReviewsResult.error) console.error('❌ Quarterly reviews error:', quarterlyReviewsResult.error);
+      if (residentsResult.error) console.error('❌ Residents error:', residentsResult.error);
+      if (propertiesResult.error) console.error('❌ Properties error:', propertiesResult.error);
+      if (accommodationsResult.error) console.error('❌ Accommodations error:', accommodationsResult.error);
+      if (usersResult.error) console.error('❌ Users error:', usersResult.error);
+
+      // Helper function to normalize boolean values from database
+      const normalizeBool = (value) => {
+        if (value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1') return true;
+        if (value === false || value === 'false' || value === 'FALSE' || value === 0 || value === '0') return false;
+        return false;
+      };
+
+      const supportNotesWithType = (supportNotesResult.data || [])
+        .filter(note => note.Deleted !== true && note.Deleted !== 'true')
+        .map(note => {
+          const normalizeStatus = (status) => {
+            if (!status) return 'document_combined_uploaded';
+            return status.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
+          };
+
+          return {
+            id: note.ID,
+            resident_id: note['Resident ID'],
+            plan_type: 'support_notes',
+            title: note.Title,
+            description: note.Description,
+            log_date: note['Log Date'],
+            date_logged_by_office: note['Date Logged by Office'],
+            key_worker: note['Key Worker'],
+            status: normalizeStatus(note.Status),
+            file_url: note['File URL'],
+            attended_in_person: normalizeBool(note['Attended In Person']),
+            attended_telephone: normalizeBool(note['Attended Telephone']),
+            did_not_attend: normalizeBool(note['Did Not Attend']),
+            authorised_absence: normalizeBool(note['Authorised Absence']),
+            signature_page_missing: normalizeBool(note['Signature Page Missing']),
+            signature_page_missing_comments: note['Signature Page Missing Comments'],
+            support_hours: note['Support Hours'],
+            deleted: note.Deleted,
+            deleted_date: note['Deleted Date'],
+            deleted_by: note['Deleted By'],
+            created_date: note['Created Date'],
+            updated_date: note['Updated Date'],
+            created_by: note['Created By']
+          };
+        });
+
+      const quarterlyReviewsWithType = (quarterlyReviewsResult.data || [])
+        .filter(review => review.Deleted !== true && review.Deleted !== 'true')
+        .map(review => ({
+          id: review.ID,
+          resident_id: review['Resident ID'],
+          plan_type: 'quarterly_reviews',
+          title: review.Title,
+          description: review.Description,
+          log_date: review['Log Date'],
+          date_logged_by_office: review['Date Logged by Office'],
+          key_worker: review['Key Worker'],
+          status: review.Status?.toLowerCase() || 'up_to_date',
+          file_url: review['File URL'],
+          next_review_date: review['Next Review Date'],
+          review_completed_date: review['Review Completed Date'],
+          support_worker_name: review['Support Worker Name'],
+          goals_discussed: review['Goals Discussed'],
+          action_points: review['Action Points'],
+          resident_feedback: review['Resident Feedback'],
+          deleted: review.Deleted,
+          deleted_date: review['Deleted Date'],
+          deleted_by: review['Deleted By'],
+          created_date: review['Created Date'],
+          updated_date: review['Updated Date'],
+          created_by: review['Created By']
+        }));
+
+      setSupportPlans([...supportNotesWithType, ...quarterlyReviewsWithType]);
+      setResidents(normalizeData(residentsResult.data) || []);
+      setProperties(normalizeData(propertiesResult.data) || []);
+      setAccommodations(normalizeData(accommodationsResult.data) || []);
+      setUsers(normalizeData(usersResult.data) || []);
+
+    } catch (error) {
+      console.error("❌ Error loading data:", error);
     } finally {
-      if (mounted) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, [supabase, user]);
 
-  loadData();
-
-  return () => {
-    mounted = false;
-  };
-}, [supabase]);
+  useEffect(() => {
+    if (supabase && user) {
+      loadData();
+    }
+  }, [supabase, user, loadData]);
 
 // Helper: Get resident full name
 const getResidentName = useCallback((residentId) => {
@@ -133,158 +213,7 @@ const filterPlans = useCallback(() => {
 // Apply filters whenever dependencies change
 useEffect(() => {
   filterPlans();
-  console.log('🎯 Filtered Plans:', {
-    activeTab,
-    totalSupportPlans: supportPlans.length,
-    filteredCount: filteredPlans.length,
-    supportNotesCount: supportPlans.filter(p => p.plan_type === 'support_notes').length
-  });
 }, [filterPlans]);
-  
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-
-      const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
-        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('residents').select('*').eq('Deleted', false),
-        supabase.from('properties').select('*').eq('Deleted', false),
-        supabase.from('accommodations').select('*').eq('Deleted', false),
-        supabase.from('users').select('*')
-      ]);
-
-      console.log('✅ Support notes loaded:', supportNotesResult.data?.length || 0);
-      console.log('📋 Raw support notes data sample:', supportNotesResult.data?.[0]);
-      console.log('✅ Quarterly reviews loaded:', quarterlyReviewsResult.data?.length || 0);
-      console.log('✅ Residents loaded:', residentsResult.data?.length || 0);
-      console.log('📋 Raw residents data sample:', residentsResult.data?.[0]);
-      console.log('✅ Properties loaded:', propertiesResult.data?.length || 0);
-      console.log('✅ Accommodations loaded:', accommodationsResult.data?.length || 0);
-      console.log('✅ Users loaded:', usersResult.data?.length || 0);
-      
-      if (supportNotesResult.error) console.error('❌ Support notes error:', supportNotesResult.error);
-      if (quarterlyReviewsResult.error) console.error('❌ Quarterly reviews error:', quarterlyReviewsResult.error);
-      if (residentsResult.error) console.error('❌ Residents error:', residentsResult.error);
-      if (propertiesResult.error) console.error('❌ Properties error:', propertiesResult.error);
-      if (accommodationsResult.error) console.error('❌ Accommodations error:', accommodationsResult.error);
-      if (usersResult.error) console.error('❌ Users error:', usersResult.error);
-
-      // Combine support notes and quarterly reviews, adding plan_type field and normalizing
-      // Helper function to normalize boolean values from database
-      const normalizeBool = (value) => {
-        if (value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1') return true;
-        if (value === false || value === 'false' || value === 'FALSE' || value === 0 || value === '0') return false;
-        return false; // Default to false for null/undefined
-      };
-
-      const supportNotesWithType = (supportNotesResult.data || [])
-        .filter(note => note.Deleted !== true && note.Deleted !== 'true')
-        .map(note => {
-        // Normalize status from database format to snake_case
-        const normalizeStatus = (status) => {
-          if (!status) return 'document_combined_uploaded';
-          const statusLower = status.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
-          return statusLower;
-        };
-        
-        const mapped = {
-          id: note.ID,
-          resident_id: note['Resident ID'],
-          plan_type: 'support_notes',
-          title: note.Title,
-          description: note.Description,
-          log_date: note['Log Date'],
-          date_logged_by_office: note['Date Logged by Office'],
-          key_worker: note['Key Worker'],
-          status: normalizeStatus(note.Status),
-          file_url: note['File URL'],
-          attended_in_person: normalizeBool(note['Attended In Person']),
-          attended_telephone: normalizeBool(note['Attended Telephone']),
-          did_not_attend: normalizeBool(note['Did Not Attend']),
-          authorised_absence: normalizeBool(note['Authorised Absence']),
-          signature_page_missing: normalizeBool(note['Signature Page Missing']),
-          signature_page_missing_comments: note['Signature Page Missing Comments'],
-          support_hours: note['Support Hours'],
-          deleted: note.Deleted,
-          deleted_date: note['Deleted Date'],
-          deleted_by: note['Deleted By'],
-          created_date: note['Created Date'],
-          updated_date: note['Updated Date'],
-          created_by: note['Created By']
-        };
-        
-        console.log('📋 Support Note Mapping:', note.ID, {
-          rawAttendedInPerson: note['Attended In Person'],
-          rawAttendedTelephone: note['Attended Telephone'],
-          rawDidNotAttend: note['Did Not Attend'],
-          rawSignatureMissing: note['Signature Page Missing'],
-          status: mapped.status,
-          attended_in_person: mapped.attended_in_person,
-          attended_telephone: mapped.attended_telephone,
-          did_not_attend: mapped.did_not_attend,
-          signature_page_missing: mapped.signature_page_missing
-        });
-        
-        return mapped;
-      });
-
-      const quarterlyReviewsWithType = (quarterlyReviewsResult.data || [])
-        .filter(review => review.Deleted !== true && review.Deleted !== 'true')
-        .map(review => ({
-        id: review.ID,
-        resident_id: review['Resident ID'],
-        plan_type: 'quarterly_reviews',
-        title: review.Title,
-        description: review.Description,
-        log_date: review['Log Date'],
-        date_logged_by_office: review['Date Logged by Office'],
-        key_worker: review['Key Worker'],
-        status: review.Status?.toLowerCase() || 'up_to_date',
-        file_url: review['File URL'],
-        next_review_date: review['Next Review Date'],
-        review_completed_date: review['Review Completed Date'],
-        support_worker_name: review['Support Worker Name'],
-        goals_discussed: review['Goals Discussed'],
-        action_points: review['Action Points'],
-        resident_feedback: review['Resident Feedback'],
-        deleted: review.Deleted,
-        deleted_date: review['Deleted Date'],
-        deleted_by: review['Deleted By'],
-        created_date: review['Created Date'],
-        updated_date: review['Updated Date'],
-        created_by: review['Created By']
-      }));
-
-      const combinedPlans = [
-        ...supportNotesWithType,
-        ...quarterlyReviewsWithType
-      ];
-      
-      console.log('🔥 Combined Plans Sample:', combinedPlans?.[0]);
-      console.log('🔥 Total Combined Plans:', combinedPlans.length);
-      console.log('🔥 Support Notes with resident_id:', supportNotesWithType.filter(n => n.resident_id).map(n => ({ id: n.id, resident_id: n.resident_id })));
-      
-      setSupportPlans(combinedPlans);
-      
-      const normalizedResidents = normalizeData(residentsResult.data) || [];
-      console.log('🔥 Normalized Residents Sample:', normalizedResidents?.[0]);
-      console.log('🔥 Resident IDs:', normalizedResidents.map(r => ({ name: r.first_name, id: r.id })));
-      
-      setResidents(normalizedResidents);
-      setProperties(normalizeData(propertiesResult.data) || []);
-      setAccommodations(normalizeData(accommodationsResult.data) || []);
-      setUsers(normalizeData(usersResult.data) || []);
-
-
-    } catch (error) {
-      console.error("❌ Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (planData) => {
     try {
