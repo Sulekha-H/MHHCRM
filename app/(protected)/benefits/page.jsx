@@ -45,7 +45,11 @@ export default function Benefits() {
   const [logToDelete, setLogToDelete] = useState(null);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [error, setError] = useState(null);
-  const [users, setUsers] = useState([]);
+
+  const getResidentName = useCallback((residentId) => {
+    const resident = residents.find(r => r.id === residentId || r.ID === residentId);
+    return resident ? `${resident.first_name || resident["First Name"]} ${resident.last_name || resident["Last Name"]}` : "Unknown Resident";
+  }, [residents]);
 
  // 1️⃣ Define loadData BEFORE useEffect
 const loadData = async () => {
@@ -55,6 +59,8 @@ const loadData = async () => {
 
   try {
     console.log("🔄 Loading Benefits page data...");
+
+    // --- Load current user safely ---
     setCurrentUser(user);
 
     // --- Load residents & properties in parallel ---
@@ -66,8 +72,8 @@ const loadData = async () => {
     if (residentsRes.error) console.error("❌ Residents error:", residentsRes.error);
     if (propertiesRes.error) console.error("❌ Properties error:", propertiesRes.error);
 
-    const residentsData = residentsRes.data || [];
-    const propertiesData = propertiesRes.data || [];
+    const residentsData = normalizeData(residentsRes.data || []);
+    const propertiesData = normalizeData(propertiesRes.data || []);
 
     setResidents(residentsData);
     setProperties(propertiesData);
@@ -84,11 +90,11 @@ const loadData = async () => {
     if (hbRes.error) console.error("❌ HB logs error:", hbRes.error);
     if (ucRes.error) console.error("❌ UC logs error:", ucRes.error);
 
-    const hbLogs = (hbRes.data || []).map(log => ({ ...log, benefit_type: 'housing_benefit' }));
-    const ucLogs = (ucRes.data || []).map(log => ({ ...log, benefit_type: 'universal_credit' }));
+    const hbLogs = normalizeData(hbRes.data || []).map(log => ({ ...log, benefit_type: 'housing_benefit' }));
+    const ucLogs = normalizeData(ucRes.data || []).map(log => ({ ...log, benefit_type: 'universal_credit' }));
 
     const combinedLogs = [...hbLogs, ...ucLogs]
-      .filter(log => !log.Deleted)
+      .filter(log => !log.deleted)
       .sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
 
     setLogs(combinedLogs);
@@ -103,12 +109,28 @@ const loadData = async () => {
     setLoading(false);
   }
 };
+
+// 2️⃣ Call loadData safely on mount
 useEffect(() => {
   if (supabase && user) {
     loadData();
   }
 }, [supabase, user]);
 
+useEffect(() => {
+  let filtered = logs.filter(log => log.benefit_type === activeTab);
+
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    filtered = filtered.filter(log =>
+      log.title?.toLowerCase().includes(searchLower) ||
+      log.description?.toLowerCase().includes(searchLower) ||
+      getResidentName(log.resident_id).toLowerCase().includes(searchLower)
+    );
+  }
+
+  setFilteredLogs(filtered);
+}, [logs, activeTab, searchTerm, getResidentName]);
 
   const handleSubmit = async (logData) => {
     try {
