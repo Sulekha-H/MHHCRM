@@ -45,6 +45,7 @@ export default function Benefits() {
   const [logToDelete, setLogToDelete] = useState(null);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
 
  // 1️⃣ Define loadData BEFORE useEffect
 const loadData = async () => {
@@ -106,11 +107,12 @@ const loadData = async () => {
     setLoading(false);
   }
 };
-
-// 2️⃣ Call loadData safely on mount
 useEffect(() => {
-  loadData();
-}, []); // only once on mount
+  if (supabase && user) {
+    loadData();
+  }
+}, [supabase, user]);
+
 
   const handleSubmit = async (logData) => {
     try {
