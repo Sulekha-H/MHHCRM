@@ -52,13 +52,15 @@ export default function Compliance() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]); // Add this line
 
+  
 useEffect(() => {
-  if (supabase && user) {
+  if (supabase) {
     loadData();
   }
-}, [supabase, user]);
+}, [supabase]);
+
   
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
@@ -124,11 +126,11 @@ useEffect(() => {
   };
 
   const loadData = async () => {
-    if (!supabase || !user) return;
-    setLoading(true);
-    try {
-      setCurrentUser(user);
+ if (!supabase || !user) return; // Keep the guard as requested
+    
+   setCurrentUser(user);
 
+    
       const [logsResult, propertiesResult, usersResult] = await Promise.all([
         supabase.from('compliance_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('"Expiry Date"', { ascending: false }),
         supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'),
