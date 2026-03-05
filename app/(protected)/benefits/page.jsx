@@ -45,11 +45,7 @@ export default function Benefits() {
   const [logToDelete, setLogToDelete] = useState(null);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [error, setError] = useState(null);
-
-  const getResidentName = useCallback((residentId) => {
-    const resident = residents.find(r => r.id === residentId || r.ID === residentId);
-    return resident ? `${resident.first_name || resident["First Name"]} ${resident.last_name || resident["Last Name"]}` : "Unknown Resident";
-  }, [residents]);
+  const [users, setUsers] = useState([]);
 
  // 1️⃣ Define loadData BEFORE useEffect
 const loadData = async () => {
@@ -59,8 +55,6 @@ const loadData = async () => {
 
   try {
     console.log("🔄 Loading Benefits page data...");
-
-    // --- Load current user safely ---
     setCurrentUser(user);
 
     // --- Load residents & properties in parallel ---
@@ -109,28 +103,12 @@ const loadData = async () => {
     setLoading(false);
   }
 };
-
-// 2️⃣ Call loadData safely on mount
 useEffect(() => {
   if (supabase && user) {
     loadData();
   }
 }, [supabase, user]);
 
-useEffect(() => {
-  let filtered = logs.filter(log => log.benefit_type === activeTab);
-
-  if (searchTerm) {
-    const searchLower = searchTerm.toLowerCase();
-    filtered = filtered.filter(log =>
-      log.title?.toLowerCase().includes(searchLower) ||
-      log.description?.toLowerCase().includes(searchLower) ||
-      getResidentName(log.resident_id).toLowerCase().includes(searchLower)
-    );
-  }
-
-  setFilteredLogs(filtered);
-}, [logs, activeTab, searchTerm, getResidentName]);
 
   const handleSubmit = async (logData) => {
     try {
