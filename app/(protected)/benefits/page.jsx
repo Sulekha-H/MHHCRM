@@ -43,6 +43,7 @@ export default function Benefits() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("housing_benefit");
   const [logToDelete, setLogToDelete] = useState(null);
+  const [filteredLogs, setFilteredLogs] = useState([]);
 
  // 1️⃣ Define loadData BEFORE useEffect
 const loadData = async () => {
