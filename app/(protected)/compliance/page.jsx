@@ -124,11 +124,11 @@ export default function Compliance() {
   };
 
   const loadData = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
+ if (!supabase || !user) return; // Keep the guard as requested
+    
+   setCurrentUser(user);
 
+    
       const [logsResult, propertiesResult, usersResult] = await Promise.all([
         supabase.from('compliance_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('"Expiry Date"', { ascending: false }),
         supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'),
