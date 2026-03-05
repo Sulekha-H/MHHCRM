@@ -43,9 +43,17 @@ export default function Benefits() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("housing_benefit");
   const [logToDelete, setLogToDelete] = useState(null);
+  const [filteredLogs, setFilteredLogs] = useState([]);
+  const [error, setError] = useState(null);
+
+  const getResidentName = useCallback((residentId) => {
+    const resident = residents.find(r => r.id === residentId || r.ID === residentId);
+    return resident ? `${resident.first_name || resident["First Name"]} ${resident.last_name || resident["Last Name"]}` : "Unknown Resident";
+  }, [residents]);
 
  // 1️⃣ Define loadData BEFORE useEffect
 const loadData = async () => {
+  if (!supabase || !user) return;
   setLoading(true);
   setError(null);
 
@@ -53,10 +61,7 @@ const loadData = async () => {
     console.log("🔄 Loading Benefits page data...");
 
     // --- Load current user safely ---
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    const authUser = userData?.user ?? null;
-    if (userError) console.error("❌ Auth user error:", userError);
-    setCurrentUser(authUser);
+    setCurrentUser(user);
 
     // --- Load residents & properties in parallel ---
     const [residentsRes, propertiesRes] = await Promise.all([
@@ -107,8 +112,25 @@ const loadData = async () => {
 
 // 2️⃣ Call loadData safely on mount
 useEffect(() => {
-  loadData();
-}, []); // only once on mount
+  if (supabase && user) {
+    loadData();
+  }
+}, [supabase, user]);
+
+useEffect(() => {
+  let filtered = logs.filter(log => log.benefit_type === activeTab);
+
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    filtered = filtered.filter(log =>
+      log.title?.toLowerCase().includes(searchLower) ||
+      log.description?.toLowerCase().includes(searchLower) ||
+      getResidentName(log.resident_id).toLowerCase().includes(searchLower)
+    );
+  }
+
+  setFilteredLogs(filtered);
+}, [logs, activeTab, searchTerm, getResidentName]);
 
   const handleSubmit = async (logData) => {
     try {
