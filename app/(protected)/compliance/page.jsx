@@ -53,17 +53,27 @@ export default function Compliance() {
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]); // Add this line
-
+  
 useEffect(() => {
-  if (!supabase) return;
+  if (!supabase) return; // exit early if supabase not ready
 
-  // Wrap async call inside a function
+  // wrap async function
   const fetchData = async () => {
-    await loadData();
+    setLoading(true); // optional loading indicator
+    try {
+      await loadData(); // your async load
+      console.log('✅ All data normalized and loaded');
+    } catch (error) {
+      console.error("❌ Error loading data:", error);
+    } finally {
+      setLoading(false); // always runs
+    }
   };
 
-  fetchData();
+  fetchData(); // call the async wrapper
 }, [supabase]);
+
+  
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
     return property?.name || "Unknown Property";
