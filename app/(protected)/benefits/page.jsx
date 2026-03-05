@@ -54,12 +54,7 @@ const loadData = async () => {
 
   try {
     console.log("🔄 Loading Benefits page data...");
-
-    // --- Load current user safely ---
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    const authUser = userData?.user ?? null;
-    if (userError) console.error("❌ Auth user error:", userError);
-    setCurrentUser(authUser);
+    setCurrentUser(user);
 
     // --- Load residents & properties in parallel ---
     const [residentsRes, propertiesRes] = await Promise.all([
