@@ -89,7 +89,20 @@ useEffect(() => {
       } else if (activeTab === "expiring") {
         filtered = filtered.filter(log => log.status === "expiring_soon" && !log.actioned);
       } else {
-        filtered = filtered.filter(log => log.compliance_type === activeTab);
+        const typeMap = {
+          'gas_safety': 'Gas Safety',
+          'emergency_lighting': 'Emergency Lighting',
+          'eicr': 'EICR',
+          'pat_tests': 'PAT Tests',
+          'fire_detection_alarm_system': 'Fire Detection & Alarm System',
+          'fire_risk_assessment': 'Fire Risk Assessment',
+          'energy_performance': 'EPC',
+          'legionella_risk': 'Legionella',
+          'asbestos_survey': 'Asbestos',
+          'other': 'Other'
+        };
+        const dbValue = typeMap[activeTab] || activeTab;
+        filtered = filtered.filter(log => log.compliance_type === dbValue);
       }
     }
 
@@ -261,16 +274,16 @@ useEffect(() => {
 
   const getComplianceTypeLabel = (type) => {
     const labels = {
-      gas_safety: "Gas Safety",
-      emergency_lighting: "Emergency Lighting",
-      eicr: "EICR",
-      pat_tests: "PAT Tests",
-      fire_detection_alarm_system: "Fire Detection & Alarm",
-      fire_risk_assessment: "Fire Risk Assessment",
-      energy_performance: "EPC",
-      legionella_risk: "Legionella",
-      asbestos_survey: "Asbestos",
-      other: "Other"
+      'gas_safety': "Gas Safety",
+      'emergency_lighting': "Emergency Lighting",
+      'eicr': "EICR",
+      'pat_tests': "PAT Tests",
+      'fire_detection_alarm_system': "Fire Detection & Alarm System",
+      'fire_risk_assessment': "Fire Risk Assessment",
+      'energy_performance': "EPC",
+      'legionella_risk': "Legionella",
+      'asbestos_survey': "Asbestos",
+      'other': "Other"
     };
     return labels[type] || type?.replace(/_/g, ' ');
   };
