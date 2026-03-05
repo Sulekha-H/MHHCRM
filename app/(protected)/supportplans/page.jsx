@@ -64,7 +64,22 @@ useEffect(() => {
     try {
       setLoading(true);
       const { data: plansData, error } = await supabase
-        .from("support_plans")
+        .from("support_notes")
+        .select("*")
+        .order("Created Date", { ascending: false });
+
+      if (error) throw error;
+      if (mounted) setSupportPlans(plansData || []);
+    } catch (err) {
+      console.error("❌ Error loading support plans:", err);
+      if (mounted) setSupportPlans([]);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  };
+  
+ const { data: plansData, error } = await supabase
+        .from("quarterly_reviews")
         .select("*")
         .order("Created Date", { ascending: false });
 
