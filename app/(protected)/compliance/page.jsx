@@ -54,12 +54,16 @@ export default function Compliance() {
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]); // Add this line
 
+useEffect(() => {
+  if (!supabase) return;
 
-  useEffect(() => {
-  if (!supabase) return 
-    loadData();
+  // Wrap async call inside a function
+  const fetchData = async () => {
+    await loadData();
+  };
+
+  fetchData();
 }, [supabase]);
-  
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
     return property?.name || "Unknown Property";
