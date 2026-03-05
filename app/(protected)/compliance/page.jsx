@@ -52,55 +52,13 @@ export default function Compliance() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
 
 useEffect(() => {
-  if (!supabase) return;
-
-  async function loadCompliance() {
-    setLoading(true);
-
-    const { data, error } = await supabase
-      .from("compliance_logs")
-      .select("*")
-      //.eq("Deleted", false); // optional: ignore deleted logs
-
-    if (error) {
-      console.error("Error loading compliance logs:", error);
-      setLoading(false);
-      return;
-    }
-
-    // Normalize column names for easier use in React
-    const normalizedLogs = (data || []).map(log => ({
-      id: log.ID,
-      property_id: log["Property ID"],
-      property_name: log["Property Name"],
-      property_address: log["Property Address"],
-      compliance_type: log["Compliance Type"],
-      certificate_name: log["Certificate Name"],
-      issued_date: log["Issued Date"],
-      expiry_date: log["Expiry Date"],
-      status: log.Status,
-      actioned: log.Actioned,
-      actioned_date: log["Actioned Date"],
-      actioned_notes: log["Actioned Notes"],
-      contractor_company: log["Contractor Company"],
-      certificate_number: log["Certificate Number"],
-      cost: log.Cost,
-      next_action_due: log["Next Action Due"],
-      file_url: log["File URL"],
-      notes: log.Notes,
-      priority: log.Priority,
-      logged_by: log["Logged By"],
-      created_by: log["Created By"],
-    }));
-
-    setComplianceLogs(normalizedLogs);
-    setLoading(false);
+  if (supabase && user) {
+    loadData();
   }
-
-  loadCompliance();
-}, [supabase]);
+}, [supabase, user]);
   
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
@@ -166,9 +124,9 @@ useEffect(() => {
   };
 
   const loadData = async () => {
+    if (!supabase || !user) return;
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
 
       const [logsResult, propertiesResult, usersResult] = await Promise.all([
