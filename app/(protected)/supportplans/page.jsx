@@ -54,40 +54,41 @@ export default function SupportPlans_Supabase() {
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
   
-// Load data on mount
 useEffect(() => {
   if (!supabase) return;
 
   let mounted = true;
 
   const loadData = async () => {
+    if (!mounted) return;
+
+    setLoading(true);
+
     try {
-      setLoading(true);
-      const { data: plansData, error } = await supabase
+      // Query support_notes
+      const { data: supportNotesData, error: supportNotesError } = await supabase
         .from("support_notes")
         .select("*")
         .order("Created Date", { ascending: false });
 
-      if (error) throw error;
-      if (mounted) setSupportPlans(plansData || []);
-    } catch (err) {
-      console.error("❌ Error loading support plans:", err);
-      if (mounted) setSupportPlans([]);
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  };
-  
- const { data: plansData, error } = await supabase
+      if (supportNotesError) throw supportNotesError;
+      if (mounted) setSupportPlans(supportNotesData || []);
+
+      // Query quarterly_reviews
+      const { data: quarterlyReviewsData, error: quarterlyReviewsError } = await supabase
         .from("quarterly_reviews")
         .select("*")
         .order("Created Date", { ascending: false });
 
-      if (error) throw error;
-      if (mounted) setSupportPlans(plansData || []);
+      if (quarterlyReviewsError) throw quarterlyReviewsError;
+      if (mounted) setQuarterlyReviews(quarterlyReviewsData || []);
+
     } catch (err) {
-      console.error("❌ Error loading support plans:", err);
-      if (mounted) setSupportPlans([]);
+      console.error("❌ Error loading data:", err);
+      if (mounted) {
+        setSupportPlans([]);
+        setQuarterlyReviews([]);
+      }
     } finally {
       if (mounted) setLoading(false);
     }
