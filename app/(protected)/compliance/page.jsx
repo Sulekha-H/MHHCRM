@@ -53,24 +53,12 @@ export default function Compliance() {
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]); // Add this line
+
   
 useEffect(() => {
-  if (!supabase) return; // exit early if supabase not ready
-
-  // wrap async function
-  const fetchData = async () => {
-    setLoading(true); // optional loading indicator
-    try {
-      await loadData(); // your async load
-      console.log('✅ All data normalized and loaded');
-    } catch (error) {
-      console.error("❌ Error loading data:", error);
-    } finally {
-      setLoading(false); // always runs
-    }
-  };
-
-  fetchData(); // call the async wrapper
+  if (supabase) {
+    loadData();
+  }
 }, [supabase]);
 
   
