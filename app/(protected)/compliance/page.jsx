@@ -52,15 +52,13 @@ export default function Compliance() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState(null);
-  const [users, setUsers] = useState([]); // Add this line
+  const [users, setUsers] = useState([]);
 
-  
 useEffect(() => {
-  if (supabase) {
+  if (supabase && user) {
     loadData();
   }
-}, [supabase]);
-
+}, [supabase, user]);
   
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
@@ -125,27 +123,22 @@ useEffect(() => {
     return actionDueDates.length > 0 ? actionDueDates[0] : null;
   };
 
-  const loadData = async () => {
- if (!supabase || !user) return; // Keep the guard as requested
-    
-   setCurrentUser(user);
+  const loadData = useCallback(async () => {
+    if (!supabase || !user) return;
+    setLoading(true);
+    try {
+      setCurrentUser(user);
 
-    
       const [logsResult, propertiesResult, usersResult] = await Promise.all([
         supabase.from('compliance_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('"Expiry Date"', { ascending: false }),
         supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'),
         supabase.from('users').select('*')
       ]);
 
-      console.log('✅ Compliance logs loaded:', logsResult.data?.length || 0);
-      console.log('✅ Properties loaded:', propertiesResult.data?.length || 0);
-      console.log('✅ Users loaded:', usersResult.data?.length || 0);
-      
-      if (logsResult.error) console.error('❌ Logs error:', logsResult.error);
-      if (propertiesResult.error) console.error('❌ Properties error:', propertiesResult.error);
-      if (usersResult.error) console.error('❌ Users error:', usersResult.error);
+      if (logsResult.error) console.error('Logs error:', logsResult.error);
+      if (propertiesResult.error) console.error('Properties error:', propertiesResult.error);
+      if (usersResult.error) console.error('Users error:', usersResult.error);
 
-      // Normalize and add status to logs
       const normalizedLogs = normalizeData(logsResult.data || []).map(log => {
         if (log.expiry_date) {
           const daysUntilExpiry = differenceInDays(new Date(log.expiry_date), new Date());
@@ -163,26 +156,21 @@ useEffect(() => {
       const normalizedProperties = normalizeData(propertiesResult.data || []).sort((a, b) => {
         const aIsRyland = a.name?.toLowerCase().includes('ryland');
         const bIsRyland = b.name?.toLowerCase().includes('ryland');
-        
         if (aIsRyland && !bIsRyland) return 1;
         if (!aIsRyland && bIsRyland) return -1;
-        
         return a.name?.localeCompare(b.name) || 0;
       });
 
       setComplianceLogs(normalizedLogs);
       setProperties(normalizedProperties);
       setUsers(normalizeData(usersResult.data) || []);
-      
       setExpandedProperties(new Set(normalizedProperties.map(p => p.id)));
-      
-      console.log('✅ All data normalized and loaded');
-    } catch (error) {
-      console.error("❌ Error loading data:", error);
+    } catch (err) {
+      console.error("Error loading data:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, user]);
 
   const handleSubmit = async (logData) => {
     try {
