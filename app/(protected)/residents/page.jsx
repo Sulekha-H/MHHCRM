@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSession, useUser } from '@clerk/nextjs'
 import { useClerkSupabaseClient } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Residents_Supabase() {
   const supabase = useClerkSupabaseClient()
-  const { session } = useSession()
+  const { user } = useUser()
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [filteredResidents, setFilteredResidents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState('')
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingResident, setEditingResident] = useState(null);
@@ -36,26 +35,52 @@ export default function Residents_Supabase() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
 
-useEffect(() => {
-  if (!supabase) return;
+  const loadData = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      setLoading(true);
+      setError(null);
 
-  async function loadResidents() {
-    setLoading(true);
+      const [residentsResult, accommodationsResult, propertiesResult] = await Promise.all([
+        supabase.from('residents').select('*').order('Created Date', { ascending: false }),
+        supabase.from('accommodations').select('*'),
+        supabase.from('properties').select('*')
+      ]);
 
-    const { data, error } = await supabase.from("residents").select("*");
+      if (residentsResult.error) throw residentsResult.error;
+      if (accommodationsResult.error) throw accommodationsResult.error;
+      if (propertiesResult.error) throw propertiesResult.error;
 
-    if (error) {
-      setError(error.message);
+      // Filter out soft-deleted residents
+      const activeResidents = (residentsResult.data || []).filter(r => !r.Deleted && !r["Deleted"]);
+
+      const propertiesData = (propertiesResult.data || []).sort((a, b) => {
+        const nameA = a.Name?.toLowerCase();
+        const nameB = b.Name?.toLowerCase();
+
+        if (nameA && nameA.includes('ryland') && (!nameB || !nameB.includes('ryland'))) return 1;
+        if (nameB && nameB.includes('ryland') && (!nameA || !nameA.includes('ryland'))) return -1;
+        return nameA?.localeCompare(nameB) || 0;
+      });
+
+      setResidents(activeResidents);
+      setAccommodations(accommodationsResult.data || []);
+      setProperties(propertiesData);
+      setExpandedProperties(new Set(propertiesData.map(p => p.ID).concat('unassigned')));
+
+    } catch (error) {
+      console.error("❌ Error loading data:", error);
+      setError(error.message || "Failed to load data. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
+  }, [supabase]);
 
-    setResidents(data);
-    setLoading(false);
-  }
-
-  loadResidents();
-}, [supabase]);
+  useEffect(() => {
+    if (supabase) {
+      loadData();
+    }
+  }, [supabase, loadData]);
 
   useEffect(() => {
   let filtered = residents;
@@ -76,59 +101,6 @@ useEffect(() => {
 
   setFilteredResidents(filtered);
 }, [residents, activeTab, searchTerm]);
-
-  const loadData = async () => {
-    if (!supabase) return;
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data: residentsData, error: residentsError } = await supabase
-        .from('residents')
-        .select('*')
-        .order('Created Date', { ascending: false });
-
-      if (residentsError) throw residentsError;
-      
-      // Filter out soft-deleted residents
-      const activeResidents = (residentsData || []).filter(r => !r.Deleted && !r["Deleted"]);
-      console.log("✅ Loaded residents:", activeResidents.length, `(filtered out ${(residentsData?.length || 0) - activeResidents.length} deleted)`);
-
-      const { data: accommodationsData, error: accommodationsError } = await supabase
-        .from('accommodations')
-        .select('*');
-
-      if (accommodationsError) throw accommodationsError;
-      console.log("✅ Loaded accommodations:", accommodationsData?.length);
-
-      const { data: propertiesDataRaw, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*');
-
-      if (propertiesError) throw propertiesError;
-      console.log("✅ Loaded properties:", propertiesDataRaw?.length);
-
-      const propertiesData = (propertiesDataRaw || []).sort((a, b) => {
-        const nameA = a.Name?.toLowerCase();
-        const nameB = b.Name?.toLowerCase();
-
-        if (nameA && nameA.includes('ryland') && (!nameB || !nameB.includes('ryland'))) return 1;
-        if (nameB && nameB.includes('ryland') && (!nameA || !nameA.includes('ryland'))) return -1;
-        return nameA?.localeCompare(nameB) || 0;
-      });
-
-      setResidents(activeResidents);
-      setAccommodations(accommodationsData || []);
-      setProperties(propertiesData);
-      setExpandedProperties(new Set(propertiesData.map(p => p.ID).concat('unassigned')));
-
-    } catch (error) {
-      console.error("❌ Error loading data:", error);
-      setError(error.message || "Failed to load data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getResidentPropertyId = (resident) => {
     if (resident["Property ID"]) {
@@ -596,9 +568,6 @@ useEffect(() => {
         resident["Deleted By"] || ""
       ]);
 
-      console.log("Headers:", headers.length);
-      console.log("Rows:", rows.length);
-
       const escapeCSV = (value) => {
         if (value === null || value === undefined) return '';
         const stringValue = String(value);
@@ -612,8 +581,6 @@ useEffect(() => {
         headers.map(escapeCSV).join(','),
         ...rows.map(row => row.map(escapeCSV).join(','))
       ].join('\n');
-
-      console.log("CSV content length:", csvContent.length);
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -708,6 +675,15 @@ useEffect(() => {
           <p className="text-slate-600">Manage supported housing residents and their information</p>
         </div>
         <div className="flex gap-3">
+          <Button
+            onClick={exportToCSV}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={loading || filteredResidents.length === 0}
+          >
+            <Download className="w-4 h-4" />
+            Export to CSV
+          </Button>
           <Button
             onClick={() => setShowForm(true)}
             className="bg-blue-600 hover:bg-blue-700 shadow-sm"
