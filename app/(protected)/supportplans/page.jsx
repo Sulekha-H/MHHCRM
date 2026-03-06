@@ -101,54 +101,54 @@ export default function SupportPlans_Supabase() {
 
         return {
           id: note.ID,
-          resident_id: note['Resident ID'],
+          resident_id: note['Resident ID'] || note.resident_id,
           plan_type: 'support_notes',
-          title: note.Title,
-          description: note.Description,
-          log_date: note['Log Date'],
-          date_logged_by_office: note['Date Logged by Office'],
-          key_worker: note['Key Worker'],
-          status: normalizeStatus(note.Status),
-          file_url: note['File URL'],
-          attended_in_person: normalizeBool(note['Attended In Person']),
-          attended_telephone: normalizeBool(note['Attended Telephone']),
-          did_not_attend: normalizeBool(note['Did Not Attend']),
-          authorised_absence: normalizeBool(note['Authorised Absence']),
-          signature_page_missing: normalizeBool(note['Signature Page Missing']),
-          signature_page_missing_comments: note['Signature Page Missing Comments'],
-          support_hours: note['Support Hours'],
-          deleted: normalizeBool(note.Deleted),
-          deleted_date: note['Deleted Date'],
-          deleted_by: note['Deleted By'],
-          created_date: note['Created Date'],
-          updated_date: note['Updated Date'],
-          created_by: note['Created By']
+          title: note.Title || note.title,
+          description: note.Description || note.description,
+          log_date: note['Log Date'] || note.log_date,
+          date_logged_by_office: note['Date Logged by Office'] || note.date_logged_by_office,
+          key_worker: note['Key Worker'] || note.key_worker,
+          status: normalizeStatus(note.Status || note.status),
+          file_url: note['File URL'] || note.file_url,
+          attended_in_person: normalizeBool(note['Attended In Person'] || note.attended_in_person),
+          attended_telephone: normalizeBool(note['Attended Telephone'] || note.attended_telephone),
+          did_not_attend: normalizeBool(note['Did Not Attend'] || note.did_not_attend),
+          authorised_absence: normalizeBool(note['Authorised Absence'] || note.authorised_absence),
+          signature_page_missing: normalizeBool(note['Signature Page Missing'] || note.signature_page_missing),
+          signature_page_missing_comments: note['Signature Page Missing Comments'] || note.signature_page_missing_comments,
+          support_hours: note['Support Hours'] || note.support_hours,
+          deleted: normalizeBool(note.Deleted || note.deleted),
+          deleted_date: note['Deleted Date'] || note.deleted_date,
+          deleted_by: note['Deleted By'] || note.deleted_by,
+          created_date: note['Created Date'] || note.created_date,
+          updated_date: note['Updated Date'] || note.updated_date,
+          created_by: note['Created By'] || note.created_by
         };
       });
 
       const quarterlyReviewsWithType = (quarterlyReviewsResult.data || []).map(review => ({
         id: review.ID,
-        resident_id: review['Resident ID'],
+        resident_id: review['Resident ID'] || review.resident_id,
         plan_type: 'quarterly_reviews',
-        title: review.Title,
-        description: review.Description,
-        log_date: review['Log Date'],
-        date_logged_by_office: review['Date Logged by Office'],
-        key_worker: review['Key Worker'],
-        status: review.Status?.toLowerCase().replace(/ /g, '_') || 'up_to_date',
-        file_url: review['File URL'],
-        next_review_date: review['Next Review Date'],
-        review_completed_date: review['Review Completed Date'],
-        support_worker_name: review['Support Worker Name'],
-        goals_discussed: review['Goals Discussed'],
-        action_points: review['Action Points'],
-        resident_feedback: review['Resident Feedback'],
-        deleted: normalizeBool(review.Deleted),
-        deleted_date: review['Deleted Date'],
-        deleted_by: review['Deleted By'],
-        created_date: review['Created Date'],
-        updated_date: review['Updated Date'],
-        created_by: review['Created By']
+        title: review.Title || review.title,
+        description: review.Description || review.description,
+        log_date: review['Log Date'] || review.log_date,
+        date_logged_by_office: review['Date Logged by Office'] || review.date_logged_by_office,
+        key_worker: review['Key Worker'] || review.key_worker,
+        status: (review.Status || review.status)?.toLowerCase().replace(/ /g, '_') || 'up_to_date',
+        file_url: review['File URL'] || review.file_url,
+        next_review_date: review['Next Review Date'] || review.next_review_date,
+        review_completed_date: review['Review Completed Date'] || review.review_completed_date,
+        support_worker_name: review['Support Worker Name'] || review.support_worker_name,
+        goals_discussed: review['Goals Discussed'] || review.goals_discussed,
+        action_points: review['Action Points'] || review.action_points,
+        resident_feedback: review['Resident Feedback'] || review.resident_feedback,
+        deleted: normalizeBool(review.Deleted || review.deleted),
+        deleted_date: review['Deleted Date'] || review.deleted_date,
+        deleted_by: review['Deleted By'] || review.deleted_by,
+        created_date: review['Created Date'] || review.created_date,
+        updated_date: review['Updated Date'] || review.updated_date,
+        created_by: review['Created By'] || review.created_by
       }));
 
       if (mounted.current) {
@@ -173,7 +173,8 @@ export default function SupportPlans_Supabase() {
 
 // Helper: Get resident full name
 const getResidentName = useCallback((residentId) => {
-  const resident = residents.find(r => r.id === residentId);
+  const resId = String(residentId);
+  const resident = residents.find(r => String(r.id) === resId);
   return resident ? `${resident.first_name} ${resident.last_name}` : "Unknown Resident";
 }, [residents]);
 
@@ -184,8 +185,9 @@ const filterPlans = useCallback(() => {
   current = current.filter(plan => {
     if (!plan || plan.deleted) return false;
 
-    const resident = residents.find(r => r.id === plan.resident_id);
-    const residentStatus = (resident?.status || resident?.Status || '').toLowerCase().replace(/ /g, '_');
+    const resId = String(plan.resident_id);
+    const resident = residents.find(r => String(r.id) === resId);
+    const residentStatus = (resident?.status || '').toLowerCase().replace(/ /g, '_');
 
     // Archive tab shows only moved_on residents
     if (activeTab === "archive") return residentStatus === 'moved_on';
@@ -200,16 +202,18 @@ const filterPlans = useCallback(() => {
     const search = searchTerm.toLowerCase();
     current = current.filter(plan => {
       const residentName = getResidentName(plan.resident_id).toLowerCase();
-      const accommodation = accommodations.find(a => a.id === residents.find(r => r.id === plan.resident_id)?.accommodation_id);
-      const property = accommodation ? properties.find(p => p.id === accommodation.property_id) : null;
+      const resId = String(plan.resident_id);
+      const resident = residents.find(r => String(r.id) === resId);
+      const accommodation = accommodations.find(a => String(a.id) === String(resident?.accommodation_id));
+      const property = accommodation ? properties.find(p => String(p.id) === String(accommodation.property_id)) : null;
       const accommodationName = property && accommodation ? `${property.name} - ${accommodation.room_number}` : 'unassigned';
 
-      return plan.title?.toLowerCase().includes(search) ||
-             plan.description?.toLowerCase().includes(search) ||
+      return (plan.title || "").toLowerCase().includes(search) ||
+             (plan.description || "").toLowerCase().includes(search) ||
              residentName.includes(search) ||
-             plan.key_worker?.toLowerCase().includes(search) ||
-             plan.support_worker_name?.toLowerCase().includes(search) ||
-             accommodationName.includes(search);
+             (plan.key_worker || "").toLowerCase().includes(search) ||
+             (plan.support_worker_name || "").toLowerCase().includes(search) ||
+             accommodationName.toLowerCase().includes(search);
     });
   }
 
@@ -241,7 +245,7 @@ useEffect(() => {
       
       let result;
       if (editingPlan && editingPlan.id) {
-        result = await supabase.from(tableName).update(planData).eq('"ID"', editingPlan.id);
+        result = await supabase.from(tableName).update(planData).eq('ID', editingPlan.id);
       } else {
         // Ensure ID is present before insert
         if (!planData.ID) {
@@ -292,8 +296,8 @@ useEffect(() => {
         await supabase.from(tableName).update({
           "Deleted": true,
           "Deleted Date": new Date().toISOString(),
-          "Deleted By": currentUser?.primaryEmailAddress?.emailAddress || "Unknown User"
-        }).eq('"ID"', planToDelete.id);
+          "Deleted By": user?.primaryEmailAddress?.emailAddress || "Unknown User"
+        }).eq('ID', planToDelete.id);
         
         setPlanToDelete(null);
         setViewingPlan(null);
@@ -325,7 +329,7 @@ useEffect(() => {
       plan.plan_type === 'support_notes' && 
       !plan.deleted && 
       plan.resident_id && 
-      plan.resident_id.trim() !== ''
+      String(plan.resident_id).trim() !== ''
     );
     
     const formatDate = (dateString) => {
@@ -353,23 +357,26 @@ useEffect(() => {
     };
 
     const getResidentNameForCSV = (residentId) => {
-      const resident = residents.find(r => r.id === residentId);
+      const resId = String(residentId);
+      const resident = residents.find(r => String(r.id) === resId);
       return resident ? `${resident.first_name} ${resident.last_name}` : null;
     };
 
     const getPropertyName = (residentId) => {
-      const resident = residents.find(r => r.id === residentId);
+      const resId = String(residentId);
+      const resident = residents.find(r => String(r.id) === resId);
       if (!resident?.accommodation_id) return null;
-      const accommodation = accommodations.find(a => a.id === resident.accommodation_id);
+      const accommodation = accommodations.find(a => String(a.id) === String(resident.accommodation_id));
       if (!accommodation?.property_id) return null;
-      const property = properties.find(p => p.id === accommodation.property_id);
+      const property = properties.find(p => String(p.id) === String(accommodation.property_id));
       return property?.name || null;
     };
 
     const getRoomNumber = (residentId) => {
-      const resident = residents.find(r => r.id === residentId);
+      const resId = String(residentId);
+      const resident = residents.find(r => String(r.id) === resId);
       if (!resident?.accommodation_id) return null;
-      const accommodation = accommodations.find(a => a.id === resident.accommodation_id);
+      const accommodation = accommodations.find(a => String(a.id) === String(resident.accommodation_id));
       return accommodation?.room_number || null;
     };
 
@@ -457,7 +464,7 @@ useEffect(() => {
       plan.plan_type === 'quarterly_reviews' && 
       !plan.deleted && 
       plan.resident_id && 
-      plan.resident_id.trim() !== ''
+      String(plan.resident_id).trim() !== ''
     );
 
     const formatDate = (dateString) => {
@@ -485,23 +492,26 @@ useEffect(() => {
     };
 
     const getResidentNameForCSV = (residentId) => {
-      const resident = residents.find(r => r.id === residentId);
+      const resId = String(residentId);
+      const resident = residents.find(r => String(r.id) === resId);
       return resident ? `${resident.first_name} ${resident.last_name}` : null;
     };
 
     const getPropertyName = (residentId) => {
-      const resident = residents.find(r => r.id === residentId);
+      const resId = String(residentId);
+      const resident = residents.find(r => String(r.id) === resId);
       if (!resident?.accommodation_id) return null;
-      const accommodation = accommodations.find(a => a.id === resident.accommodation_id);
+      const accommodation = accommodations.find(a => String(a.id) === String(resident.accommodation_id));
       if (!accommodation?.property_id) return null;
-      const property = properties.find(p => p.id === accommodation.property_id);
+      const property = properties.find(p => String(p.id) === String(accommodation.property_id));
       return property?.name || null;
     };
 
     const getRoomNumber = (residentId) => {
-      const resident = residents.find(r => r.id === residentId);
+      const resId = String(residentId);
+      const resident = residents.find(r => String(r.id) === resId);
       if (!resident?.accommodation_id) return null;
-      const accommodation = accommodations.find(a => a.id === resident.accommodation_id);
+      const accommodation = accommodations.find(a => String(a.id) === String(resident.accommodation_id));
       return accommodation?.room_number || null;
     };
 
@@ -762,7 +772,7 @@ useEffect(() => {
               )}
               {!loading && properties.length > 0 && (
                 properties.map(property => {
-                  const residentsInThisProperty = residents.filter(r => r.property_id === property.id);
+                  const residentsInThisProperty = residents.filter(r => String(r.property_id) === String(property.id));
                   
                   let residentsToDisplayForProperty = [];
 
@@ -770,18 +780,18 @@ useEffect(() => {
                     const lowercasedTerm = searchTerm.toLowerCase();
                     residentsToDisplayForProperty = residentsInThisProperty.filter(resident => {
                       const residentName = getResidentName(resident.id).toLowerCase();
-                      const claimRef = resident.claim_reference_number?.toLowerCase() || '';
+                      const claimRef = (resident.claim_reference_number || '').toLowerCase();
                       if (residentName.includes(lowercasedTerm) || claimRef.includes(lowercasedTerm)) {
                         return true;
                       }
                       const hasMatchingNote = filteredPlans.some(
-                        plan => plan.resident_id === resident.id && plan.plan_type === 'support_notes'
+                        plan => String(plan.resident_id) === String(resident.id) && plan.plan_type === 'support_notes'
                       );
                       return hasMatchingNote;
                     });
                   } else {
                     residentsToDisplayForProperty = residentsInThisProperty.filter(r => {
-                      const status = (r.status || r.Status || '').toLowerCase();
+                      const status = (r.status || '').toLowerCase();
                       return status === 'active';
                     });
                   }
@@ -790,7 +800,7 @@ useEffect(() => {
                     return null;
                   }
 
-                  residentsToDisplayForProperty.sort((a, b) => a.first_name.localeCompare(b.first_name));
+                  residentsToDisplayForProperty.sort((a, b) => (a.first_name || "").localeCompare(b.first_name || ""));
 
                   const generateWeekDates = (startDate, numWeeks) => {
                     const weeks = [];
@@ -818,7 +828,7 @@ useEffect(() => {
                         </TableHeader>
                         <TableBody>
                           {residentsToDisplayForProperty.map(resident => {
-                            const residentPlans = filteredPlans.filter(p => p.resident_id === resident.id && p.plan_type === 'support_notes');
+                            const residentPlans = filteredPlans.filter(p => String(p.resident_id) === String(resident.id) && p.plan_type === 'support_notes');
                             
                             const residentMoveInDate = resident.move_in_date ? new Date(resident.move_in_date) : null;
                             if (residentMoveInDate) {
@@ -1028,27 +1038,27 @@ useEffect(() => {
                   <TableBody>
                     {(() => {
                       const activeResidents = residents.filter(r => {
-                        const status = (r.status || r.Status || '').toLowerCase();
+                        const status = (r.status || '').toLowerCase();
                         if (status !== 'active') return false;
                         if (!r.accommodation_id) return false;
-                        const accommodation = accommodations.find(a => a.id === r.accommodation_id);
+                        const accommodation = accommodations.find(a => String(a.id) === String(r.accommodation_id));
                         if (!accommodation?.property_id) return false;
-                        const property = properties.find(p => p.id === accommodation.property_id);
-                        const isRylandProperty = property?.name?.toLowerCase().includes('ryland');
+                        const property = properties.find(p => String(p.id) === String(accommodation.property_id));
+                        const isRylandProperty = (property?.name || "").toLowerCase().includes('ryland');
                         return !isRylandProperty;
                       });
                       
                       const residentsToDisplay = activeResidents
                         .filter(resident => {
-                          const hasFilteredReviews = filteredPlans.some(p => p.resident_id === resident.id && p.plan_type === 'quarterly_reviews');
-                          const hasNoReviewsAtAll = !supportPlans.some(p => p.resident_id === resident.id && p.plan_type === 'quarterly_reviews');
+                          const hasFilteredReviews = filteredPlans.some(p => String(p.resident_id) === String(resident.id) && p.plan_type === 'quarterly_reviews');
+                          const hasNoReviewsAtAll = !supportPlans.some(p => String(p.resident_id) === String(resident.id) && p.plan_type === 'quarterly_reviews');
                           
                           if(searchTerm) {
                             return hasFilteredReviews;
                           }
                           return hasFilteredReviews || hasNoReviewsAtAll;
                         })
-                        .sort((a, b) => a.first_name.localeCompare(b.first_name));
+                        .sort((a, b) => (a.first_name || "").localeCompare(b.first_name || ""));
 
                       if (residentsToDisplay.length === 0 && !loading) {
                         return (
@@ -1064,11 +1074,11 @@ useEffect(() => {
 
                       return residentsToDisplay.map((resident) => {
                         const residentReviews = supportPlans
-                          .filter(p => p.resident_id === resident.id && p.plan_type === 'quarterly_reviews' && !p.deleted)
+                          .filter(p => String(p.resident_id) === String(resident.id) && p.plan_type === 'quarterly_reviews' && !p.deleted)
                           .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime());
 
-                        const accommodation = accommodations.find(a => a.id === resident.accommodation_id);
-                        const property = accommodation ? properties.find(p => p.id === accommodation.property_id) : null;
+                        const accommodation = accommodations.find(a => String(a.id) === String(resident.accommodation_id));
+                        const property = accommodation ? properties.find(p => String(p.id) === String(accommodation.property_id)) : null;
                         const accommodationName = property && accommodation
                           ? `${property.name} - ${accommodation.room_number}`
                           : 'Unassigned';
