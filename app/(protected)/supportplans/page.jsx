@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@clerk/nextjs";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,52 +53,115 @@ export default function SupportPlans_Supabase() {
   const [activeTab, setActiveTab] = useState("support_notes");
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
-  const [quarterlyReviews, setQuarterlyReviews] = useState([]);
   
-useEffect(() => {
-  if (!supabase) return;
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const loadData = useCallback(async () => {
+    if (!supabase || !user) return;
+
+    setLoading(true);
+    try {
+      setCurrentUser(user);
 
       const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
         supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
         supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('residents').select('*').eq('Deleted', false),
-        supabase.from('properties').select('*').eq('Deleted', false),
-        supabase.from('accommodations').select('*').eq('Deleted', false),
+        supabase.from('residents').select('*').eq('"Deleted"', false),
+        supabase.from('properties').select('*').eq('"Deleted"', false),
+        supabase.from('accommodations').select('*').eq('"Deleted"', false),
         supabase.from('users').select('*')
       ]);
 
-  const loadData = async () => {
-    if (!mounted) return;
+      if (supportNotesResult.error) console.error('❌ Support notes error:', supportNotesResult.error);
+      if (quarterlyReviewsResult.error) console.error('❌ Quarterly reviews error:', quarterlyReviewsResult.error);
+      if (residentsResult.error) console.error('❌ Residents error:', residentsResult.error);
+      if (propertiesResult.error) console.error('❌ Properties error:', propertiesResult.error);
+      if (accommodationsResult.error) console.error('❌ Accommodations error:', accommodationsResult.error);
+      if (usersResult.error) console.error('❌ Users error:', usersResult.error);
 
-    setLoading(true);
+      // Helper function to normalize boolean values from database
+      const normalizeBool = (value) => {
+        if (value === true || value === 'true' || value === 'TRUE' || value === 1 || value === '1') return true;
+        if (value === false || value === 'false' || value === 'FALSE' || value === 0 || value === '0') return false;
+        return false;
+      };
 
-    try {
-      // Query support_notes
-      const { data: supportNotesData, error: supportNotesError } = await supabase
-        .from("support_notes")
-        .select("*")
-        .order("Created Date", { ascending: false });
+      const supportNotesWithType = (supportNotesResult.data || []).map(note => {
+        const normalizeStatus = (status) => {
+          if (!status) return 'document_combined_uploaded';
+          const statusLower = status.toLowerCase().replace(/ /g, '_').replace(/\//g, '_');
+          return statusLower;
+        };
 
-      if (supportNotesError) throw supportNotesError;
-      if (mounted) setSupportPlans(supportNotesData || []);
+        return {
+          id: note.ID,
+          resident_id: note['Resident ID'],
+          plan_type: 'support_notes',
+          title: note.Title,
+          description: note.Description,
+          log_date: note['Log Date'],
+          date_logged_by_office: note['Date Logged by Office'],
+          key_worker: note['Key Worker'],
+          status: normalizeStatus(note.Status),
+          file_url: note['File URL'],
+          attended_in_person: normalizeBool(note['Attended In Person']),
+          attended_telephone: normalizeBool(note['Attended Telephone']),
+          did_not_attend: normalizeBool(note['Did Not Attend']),
+          authorised_absence: normalizeBool(note['Authorised Absence']),
+          signature_page_missing: normalizeBool(note['Signature Page Missing']),
+          signature_page_missing_comments: note['Signature Page Missing Comments'],
+          support_hours: note['Support Hours'],
+          deleted: normalizeBool(note.Deleted),
+          deleted_date: note['Deleted Date'],
+          deleted_by: note['Deleted By'],
+          created_date: note['Created Date'],
+          updated_date: note['Updated Date'],
+          created_by: note['Created By']
+        };
+      });
 
-      // Query quarterly_reviews
-      const { data: quarterlyReviewsData, error: quarterlyReviewsError } = await supabase
-        .from("quarterly_reviews")
-        .select("*")
-        .order("Created Date", { ascending: false });
+      const quarterlyReviewsWithType = (quarterlyReviewsResult.data || []).map(review => ({
+        id: review.ID,
+        resident_id: review['Resident ID'],
+        plan_type: 'quarterly_reviews',
+        title: review.Title,
+        description: review.Description,
+        log_date: review['Log Date'],
+        date_logged_by_office: review['Date Logged by Office'],
+        key_worker: review['Key Worker'],
+        status: review.Status?.toLowerCase().replace(/ /g, '_') || 'up_to_date',
+        file_url: review['File URL'],
+        next_review_date: review['Next Review Date'],
+        review_completed_date: review['Review Completed Date'],
+        support_worker_name: review['Support Worker Name'],
+        goals_discussed: review['Goals Discussed'],
+        action_points: review['Action Points'],
+        resident_feedback: review['Resident Feedback'],
+        deleted: normalizeBool(review.Deleted),
+        deleted_date: review['Deleted Date'],
+        deleted_by: review['Deleted By'],
+        created_date: review['Created Date'],
+        updated_date: review['Updated Date'],
+        created_by: review['Created By']
+      }));
 
-      if (quarterlyReviewsError) throw quarterlyReviewsError;
-      if (mounted) setQuarterlyReviews(quarterlyReviewsData || []);
-
-    } catch (err) {
-      console.error("❌ Error loading data:", err);
-      if (mounted) {
-        setSupportPlans([]);
-        setQuarterlyReviews([]);
+      if (mounted.current) {
+        setSupportPlans([...supportNotesWithType, ...quarterlyReviewsWithType]);
+        setResidents(normalizeData(residentsResult.data) || []);
+        setProperties(normalizeData(propertiesResult.data) || []);
+        setAccommodations(normalizeData(accommodationsResult.data) || []);
+        setUsers(normalizeData(usersResult.data) || []);
       }
+    } catch (error) {
+      console.error("❌ Error loading data:", error);
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, [supabase, user]);
 
@@ -157,6 +220,16 @@ const filterPlans = useCallback(() => {
 useEffect(() => {
   filterPlans();
 }, [filterPlans]);
+
+// User's requested debug log
+useEffect(() => {
+  console.log('🎯 Filtered Plans:', {
+    activeTab,
+    totalSupportPlans: supportPlans.length,
+    filteredCount: filteredPlans.length,
+    supportNotesCount: supportPlans.filter(p => p.plan_type === 'support_notes').length
+  });
+}, [filteredPlans, activeTab, supportPlans]);
 
   const handleSubmit = async (planData) => {
     try {
@@ -219,7 +292,7 @@ useEffect(() => {
         await supabase.from(tableName).update({
           "Deleted": true,
           "Deleted Date": new Date().toISOString(),
-          "Deleted By": currentUser?.email || "Unknown User"
+          "Deleted By": currentUser?.primaryEmailAddress?.emailAddress || "Unknown User"
         }).eq('"ID"', planToDelete.id);
         
         setPlanToDelete(null);
@@ -747,19 +820,6 @@ useEffect(() => {
                           {residentsToDisplayForProperty.map(resident => {
                             const residentPlans = filteredPlans.filter(p => p.resident_id === resident.id && p.plan_type === 'support_notes');
                             
-                            console.log(`🔍 Resident ${resident.first_name} ${resident.last_name}:`, {
-                              totalPlans: residentPlans.length,
-                              plans: residentPlans.map(p => ({
-                                id: p.id,
-                                log_date: p.log_date,
-                                status: p.status,
-                                attended_in_person: p.attended_in_person,
-                                attended_telephone: p.attended_telephone,
-                                did_not_attend: p.did_not_attend,
-                                signature_page_missing: p.signature_page_missing
-                              }))
-                            });
-                            
                             const residentMoveInDate = resident.move_in_date ? new Date(resident.move_in_date) : null;
                             if (residentMoveInDate) {
                               residentMoveInDate.setHours(0, 0, 0, 0);
@@ -783,20 +843,6 @@ useEffect(() => {
                                     const weekEnd = new Date(weekEndDate.getFullYear(), weekEndDate.getMonth(), weekEndDate.getDate());
                                     const matches = planLogDate >= weekStart && planLogDate < weekEnd;
                                     
-                                    if (matches) {
-                                      console.log('🎯 Found plan for week:', {
-                                        resident: resident.first_name,
-                                        weekStart: weekStart.toISOString(),
-                                        planLogDate: planLogDate.toISOString(),
-                                        planId: p.id,
-                                        attended_in_person: p.attended_in_person,
-                                        attended_telephone: p.attended_telephone,
-                                        did_not_attend: p.did_not_attend,
-                                        signature_page_missing: p.signature_page_missing,
-                                        status: p.status
-                                      });
-                                    }
-                                    
                                     return matches;
                                   });
 
@@ -812,8 +858,6 @@ useEffect(() => {
 
                                   let iconToShow;
                                   if (planForWeek) {
-                                    // Priority order: status flags first, then attendance flags
-                                    // Values are now normalized to proper booleans in loadData
                                     if (planForWeek.status === 'document_missing') {
                                       iconToShow = <XCircle className="w-5 h-5 text-red-500" />;
                                     } else if (planForWeek.status === 'signature_missing' || planForWeek.signature_page_missing === true) {
@@ -825,11 +869,9 @@ useEffect(() => {
                                     } else if (planForWeek.attended_in_person === true) {
                                       iconToShow = <CheckCircle className="w-5 h-5 text-green-500" />;
                                     } else {
-                                      // Default: if plan exists but no specific flag is set, show green checkmark
                                       iconToShow = <CheckCircle className="w-5 h-5 text-green-500" />;
                                     }
                                   } else {
-                                    // No plan for this week - show plus icon to add one
                                     iconToShow = <PlusCircle className="w-5 h-5 text-slate-400 hover:text-slate-600" />;
                                   }
 
@@ -847,7 +889,7 @@ useEffect(() => {
                                               resident_id: resident.id,
                                               plan_type: 'support_notes',
                                               log_date: new Date(weekStartDate.getTime() + (12 * 60 * 60 * 1000)).toISOString().slice(0, 16),
-                                              key_worker: currentUser?.email || "",
+                                              key_worker: currentUser?.primaryEmailAddress?.emailAddress || "",
                                               status: 'document_combined_uploaded',
                                               title: `Weekly Note for ${resident.first_name} ${resident.last_name} - W/C ${format(weekStartDate, 'dd/MM/yy')}`
                                             };
@@ -1055,7 +1097,7 @@ useEffect(() => {
                                       log_date: new Date().toISOString().slice(0, 16),
                                       status: 'up_to_date',
                                       title: `Quarterly Review - ${resident.first_name} ${resident.last_name}`,
-                                      key_worker: currentUser?.email || ""
+                                      key_worker: currentUser?.primaryEmailAddress?.emailAddress || ""
                                     };
                                     handleEdit(newReview);
                                   }}
@@ -1069,9 +1111,7 @@ useEffect(() => {
                         }
 
                         return residentReviews.map((review, index) => {
-                          // Use the stored status from the database
                           let displayStatus = review.status || 'up_to_date';
-
                           const displayStatusText = displayStatus.replace(/_/g, ' '); 
 
                           return (
@@ -1087,7 +1127,7 @@ useEffect(() => {
                                 {index === 0 ? `${resident.first_name} ${resident.last_name}` : ''}
                               </TableCell>
                               <TableCell>
-                                {format(new Date(review.log_date), 'dd/MM/yyyy')}
+                                {review.log_date ? format(new Date(review.log_date), 'dd/MM/yyyy') : '-'}
                               </TableCell>
                               <TableCell className="max-w-xs truncate">
                                 {review.title}
@@ -1096,7 +1136,7 @@ useEffect(() => {
                                 {review.support_worker_name || '-'}
                               </TableCell>
                               <TableCell>
-                                {review.created_by}
+                                {review.created_by || '-'}
                               </TableCell>
                               <TableCell>
                                 <Badge className={`${getStatusColor(displayStatus)} capitalize`}>
@@ -1126,7 +1166,7 @@ useEffect(() => {
                               log_date: new Date().toISOString().slice(0, 16),
                               status: 'up_to_date',
                               title: '',
-                              key_worker: currentUser?.email || ""
+                              key_worker: currentUser?.primaryEmailAddress?.emailAddress || ""
                             };
                             handleEdit(newReview);
                           }}
