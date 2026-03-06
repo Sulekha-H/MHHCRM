@@ -13,8 +13,8 @@ import { X, Save, FileText, Calendar } from "lucide-react";
 import { format } from 'date-fns';
 
 export default function SupportPlanForm_Supabase({ plan, residents, users, currentUser, activePlanType, onSubmit, onCancel }) {
+  const supabase = useClerkSupabaseClient();
   const getInitialDateTime = () => {
-    const client = useClerkSupabaseClient();
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -532,12 +532,13 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
 
 // New component to display quarterly review history
 function QuarterlyReviewHistory({ residentId }) {
+  const supabase = useClerkSupabaseClient();
   const [reviewHistory, setReviewHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadReviewHistory = async () => {
-      if (!residentId) {
+      if (!residentId || !supabase) {
         setReviewHistory([]);
         setLoading(false);
         return;

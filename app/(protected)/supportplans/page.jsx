@@ -56,11 +56,16 @@ export default function SupportPlans_Supabase() {
   const [quarterlyReviews, setQuarterlyReviews] = useState([]);
   
   const loadData = useCallback(async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      console.log("⏳ Supabase client not ready yet, skipping loadData");
+      return;
+    }
 
+    console.log("🚀 Starting loadData for Support Plans...");
     setLoading(true);
 
     try {
+      console.log("📡 Fetching data from Supabase...");
       const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
         supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
         supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
@@ -96,6 +101,7 @@ export default function SupportPlans_Supabase() {
         const found = normalizedUsers.find(u => u.email === user.primaryEmailAddress.emailAddress);
         setCurrentUser(found || { email: user.primaryEmailAddress.emailAddress });
       }
+      console.log("✅ loadData completed successfully");
     } catch (err) {
       console.error("❌ Error loading data:", err);
     } finally {
