@@ -55,48 +55,49 @@ export default function SupportPlans_Supabase() {
   const [planToDelete, setPlanToDelete] = useState(null);
   const [quarterlyReviews, setQuarterlyReviews] = useState([]);
   
-useEffect(() => {
-  if (!supabase) return;
-
-      const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
-        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('residents').select('*').eq('Deleted', false),
-        supabase.from('properties').select('*').eq('Deleted', false),
-        supabase.from('accommodations').select('*').eq('Deleted', false),
-        supabase.from('users').select('*')
-      ]);
-
-  const loadData = async () => {
-    if (!mounted) return;
+  const loadData = useCallback(async () => {
+    if (!supabase) return;
 
     setLoading(true);
 
     try {
-      // Query support_notes
-      const { data: supportNotesData, error: supportNotesError } = await supabase
-        .from("support_notes")
-        .select("*")
-        .order("Created Date", { ascending: false });
+      const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
+        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('residents').select('*').eq('"Deleted"', false),
+        supabase.from('properties').select('*').eq('"Deleted"', false),
+        supabase.from('accommodations').select('*').eq('"Deleted"', false),
+        supabase.from('users').select('*')
+      ]);
 
-      if (supportNotesError) throw supportNotesError;
-      if (mounted) setSupportPlans(supportNotesData || []);
+      if (supportNotesResult.error) throw supportNotesResult.error;
+      if (quarterlyReviewsResult.error) throw quarterlyReviewsResult.error;
+      if (residentsResult.error) throw residentsResult.error;
+      if (propertiesResult.error) throw propertiesResult.error;
+      if (accommodationsResult.error) throw accommodationsResult.error;
+      if (usersResult.error) throw usersResult.error;
 
-      // Query quarterly_reviews
-      const { data: quarterlyReviewsData, error: quarterlyReviewsError } = await supabase
-        .from("quarterly_reviews")
-        .select("*")
-        .order("Created Date", { ascending: false });
+      // Normalize and add plan_type discriminator
+      const normalizedNotes = (normalizeData(supportNotesResult.data) || []).map(p => ({ ...p, plan_type: 'support_notes' }));
+      const normalizedReviews = (normalizeData(quarterlyReviewsResult.data) || []).map(p => ({ ...p, plan_type: 'quarterly_reviews' }));
 
-      if (quarterlyReviewsError) throw quarterlyReviewsError;
-      if (mounted) setQuarterlyReviews(quarterlyReviewsData || []);
+      // Combine for supportPlans state (which seems to be used for the list)
+      setSupportPlans([...normalizedNotes, ...normalizedReviews]);
+      setQuarterlyReviews(normalizedReviews);
 
+      setResidents(normalizeData(residentsResult.data) || []);
+      setProperties(normalizeData(propertiesResult.data) || []);
+      setAccommodations(normalizeData(accommodationsResult.data) || []);
+
+      const normalizedUsers = normalizeData(usersResult.data) || [];
+      setUsers(normalizedUsers);
+
+      if (user?.primaryEmailAddress?.emailAddress) {
+        const found = normalizedUsers.find(u => u.email === user.primaryEmailAddress.emailAddress);
+        setCurrentUser(found || { email: user.primaryEmailAddress.emailAddress });
+      }
     } catch (err) {
       console.error("❌ Error loading data:", err);
-      if (mounted) {
-        setSupportPlans([]);
-        setQuarterlyReviews([]);
-      }
     } finally {
       setLoading(false);
     }
