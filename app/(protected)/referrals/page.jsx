@@ -102,6 +102,8 @@ useEffect(() => {
     setLoading(true);
     try {
       setCurrentUser(user);
+      
+const { data: usersData } = await supabase.from('users').select('*');
 
       // Load from the appropriate table based on referralTypeTab
       const tableName = referralTypeTab === 'organisation' ? 'organisation_referrals' : 'self_referrals';
