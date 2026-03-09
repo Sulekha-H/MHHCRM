@@ -54,52 +54,10 @@ export default function SupportPlans_Supabase() {
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
   const [quarterlyReviews, setQuarterlyReviews] = useState([]);
-  
-useEffect(() => {
+
+  useEffect(() => {
   if (!supabase) return;
-
-  let mounted = true;
-
-  const loadData = async () => {
-    if (!mounted) return;
-
-    setLoading(true);
-
-    try {
-      // Query support_notes
-      const { data: supportNotesData, error: supportNotesError } = await supabase
-        .from("support_notes")
-        .select("*")
-        .order("Created Date", { ascending: false });
-
-      if (supportNotesError) throw supportNotesError;
-      if (mounted) setSupportPlans(supportNotesData || []);
-
-      // Query quarterly_reviews
-      const { data: quarterlyReviewsData, error: quarterlyReviewsError } = await supabase
-        .from("quarterly_reviews")
-        .select("*")
-        .order("Created Date", { ascending: false });
-
-      if (quarterlyReviewsError) throw quarterlyReviewsError;
-      if (mounted) setQuarterlyReviews(quarterlyReviewsData || []);
-
-    } catch (err) {
-      console.error("❌ Error loading data:", err);
-      if (mounted) {
-        setSupportPlans([]);
-        setQuarterlyReviews([]);
-      }
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  };
-
   loadData();
-
-  return () => {
-    mounted = false;
-  };
 }, [supabase]);
 
 // Helper: Get resident full name
