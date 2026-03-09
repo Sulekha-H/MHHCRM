@@ -58,6 +58,9 @@ useEffect(() => {
 }, [supabase]);
 
   useEffect(() => {
+      console.log("Residents loaded:", residents);
+  console.log("First resident:", residents?.[0]);
+    
   let filtered = residents;
 
   if (activeTab !== "all") {
