@@ -36,26 +36,9 @@ export default function Residents_Supabase() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
 
-useEffect(() => {
-  if (!supabase) return;
-
-  async function loadResidents() {
-    setLoading(true);
-
-    const { data, error } = await supabase.from("residents").select("*");
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setResidents(data);
-    setLoading(false);
-  }
-
-  loadResidents();
-}, [supabase]);
+  useEffect(() => {
+  loadData();
+}, []);
 
 useEffect(() => {
   if (!residents || residents.length === 0) return;
