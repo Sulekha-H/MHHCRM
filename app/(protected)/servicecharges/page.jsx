@@ -28,7 +28,7 @@ import {
 
 export default function ServiceChargesSupabase() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [serviceCharges, setServiceCharges] = useState([]);
   const [cashLogs, setCashLogs] = useState([]);
   const [residents, setResidents] = useState([]);
