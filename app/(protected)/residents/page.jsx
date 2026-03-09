@@ -64,7 +64,9 @@ useEffect(() => {
   let filtered = residents;
 
   if (activeTab !== "all") {
-    filtered = filtered.filter(r => r.Status === activeTab);
+   filtered = filtered.filter(
+  r => r.Status?.toLowerCase() === activeTab.toLowerCase()
+);
   }
 
   if (searchTerm) {
