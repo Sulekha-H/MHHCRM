@@ -58,18 +58,13 @@ useEffect(() => {
 }, [supabase]);
 
 useEffect(() => {
-  console.log("Residents loaded:", residents);
-  console.log("First resident:", residents?.[0]);
-  console.log("Active tab:", activeTab);
+  if (!residents || residents.length === 0) return;
 
   let filtered = residents;
 
-  if (activeTab !== "all") {
+  if (activeTab.toLowerCase() !== "all") {
     filtered = filtered.filter(
-      r =>
-        r.Status
-          ?.toLowerCase()
-          .replace(/\s/g, "_") === activeTab.toLowerCase()
+      r => r.Status?.toLowerCase() === activeTab.toLowerCase()
     );
   }
 
@@ -82,6 +77,7 @@ useEffect(() => {
       r["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
+
   setFilteredResidents(filtered);
 }, [residents, activeTab, searchTerm]);
 
