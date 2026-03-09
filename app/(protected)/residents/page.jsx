@@ -57,16 +57,20 @@ useEffect(() => {
   loadResidents();
 }, [supabase]);
 
-  useEffect(() => {
-      console.log("Residents loaded:", residents);
+useEffect(() => {
+  console.log("Residents loaded:", residents);
   console.log("First resident:", residents?.[0]);
-    
+  console.log("Active tab:", activeTab);
+
   let filtered = residents;
 
   if (activeTab !== "all") {
-   filtered = filtered.filter(
-  r => r.Status?.toLowerCase() === activeTab.toLowerCase()
-);
+    filtered = filtered.filter(
+      r =>
+        r.Status
+          ?.toLowerCase()
+          .replace(/\s/g, "_") === activeTab.toLowerCase()
+    );
   }
 
   if (searchTerm) {
@@ -78,7 +82,6 @@ useEffect(() => {
       r["Key Worker"]?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }
-
   setFilteredResidents(filtered);
 }, [residents, activeTab, searchTerm]);
 
