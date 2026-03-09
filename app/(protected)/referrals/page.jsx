@@ -39,30 +39,7 @@ export default function Referrals() {
   
 useEffect(() => {
   if (!supabase) return;
-
-  async function loadReferrals() {
-    setLoading(true);
-
-    let query = supabase.from("referrals").select("*");
-
-    // Optional: filter by referralTypeTab if needed
-    if (referralTypeTab) {
-      query = query.eq("type", referralTypeTab);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setReferrals(data);
-    setLoading(false);
-  }
-
-  loadReferrals();
+  loadData();
 }, [supabase, referralTypeTab]);
 
   const getUserName = useCallback((userId) => {
@@ -121,24 +98,10 @@ useEffect(() => {
 
   const loadData = async () => {
     setLoading(true);
+    if (!supabase || !user) return;
+    setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      let userData = null;
-      
-      if (authUser) {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('"ID"', authUser.id)
-          .single();
-        userData = data;
-        setCurrentUser(userData);
-        console.log("Current user:", userData?.full_name || userData?.email);
-      }
-
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('*');
+      setCurrentUser(user);
 
       // Load from the appropriate table based on referralTypeTab
       const tableName = referralTypeTab === 'organisation' ? 'organisation_referrals' : 'self_referrals';
