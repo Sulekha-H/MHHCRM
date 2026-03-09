@@ -54,7 +54,7 @@ const getDaySuffix = (day) => {
 
 export default function ResidentForm_Supabase({ resident, accommodations, onSubmit, onCancel }) {
   const [properties, setProperties] = useState([]);
-  const client = useClerkSupabaseClient();
+    const supabase = useClerkSupabaseClient()
   const [formData, setFormData] = useState(resident || {
     "First Name": "",
     "Last Name": "",
