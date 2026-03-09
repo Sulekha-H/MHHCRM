@@ -75,9 +75,10 @@ export default function ServiceChargesSupabase() {
     return false;
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+useEffect(() => {
+  if (!supabase || !user) return;
+  loadData();
+}, [supabase, user]);
 
   const getResidentName = useCallback((residentId) => {
     const resident = residents.find(r => (r.ID || r.id) === residentId);
@@ -198,14 +199,12 @@ export default function ServiceChargesSupabase() {
 
   const loadData = async () => {
     setLoading(true);
-    console.log('🔄 Starting to load Service Charges data...');
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('👤 Current user:', user?.email);
-      
-      const { data: userData } = await supabase.from('users').select('*').eq('id', user?.id).single();
-      setCurrentUser(userData || user);
-
+if (!supabase || !user) return;
+setLoading(true);
+try {
+  const { data: userData } = await supabase.from('users').select('*').eq('id', user?.id).single();
+  setCurrentUser(userData || user);
+  
       const [
         { data: chargesData, error: chargesError },
         { data: cashLogsData, error: cashLogsError },
