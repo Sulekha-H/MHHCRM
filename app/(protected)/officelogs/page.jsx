@@ -294,7 +294,7 @@ useEffect(() => {
             "Deleted Date": new Date().toISOString(),
             "Deleted By": user?.email || user?.Email || "Unknown"
           })
-          .eq('"ID"', log["ID"] || log.id);
+         .eq('ID', log["ID"] || log.id);
 
         if (error) throw error;
         
