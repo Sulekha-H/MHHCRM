@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Plus, Upload, FileText, Trash2, User, Link2, Camera, XCircle, X, Save, UserPlus } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Upload, FileText, Trash2, User, Link2, Camera, XCircle, X, Save, UserPlus, Home } from "lucide-react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 
 const convertToDirectImageUrl = (url) => {
