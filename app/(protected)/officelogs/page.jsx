@@ -284,28 +284,26 @@ useEffect(() => {
   };
 
   const handleDelete = async (log) => {
-    const logTitle = log["Title"] || log.title;
-    if (window.confirm(`Are you sure you want to delete "${logTitle}"?`)) {
-      try {
-        const { error } = await supabase
-          .from('office_logs')
-          .update({
-            "Deleted": true,
-            "Deleted Date": new Date().toISOString(),
-            "Deleted By": user?.email || user?.Email || "Unknown"
-          })
-         .eq('ID', log["ID"] || log.id);
+  const logTitle = log["Title"] || log.title;
 
-        if (error) throw error;
-        
-        console.log(`Office log ${log["ID"] || log.id} soft deleted successfully.`);
-        await loadData();
-      } catch (error) {
-        console.error("Error deleting office log:", error);
-        alert("Error deleting office log: " + error.message);
-      }
+  if (window.confirm(`Are you sure you want to permanently delete "${logTitle}"? This cannot be undone.`)) {
+    try {
+      const { error } = await supabase
+        .from('office_logs')
+        .delete()
+        .eq('ID', log["ID"] || log.id);
+
+      if (error) throw error;
+
+      console.log(`Office log ${log["ID"] || log.id} deleted permanently.`);
+      await loadData();
+
+    } catch (error) {
+      console.error("Error deleting office log:", error);
+      alert("Error deleting office log: " + error.message);
     }
-  };
+  }
+};
 
   const exportToCSV = () => {
     const formatDate = (dateString) => {
