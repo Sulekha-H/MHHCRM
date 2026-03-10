@@ -37,9 +37,11 @@ export default function Residents_Supabase() {
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
 
-  useEffect(() => {
-  loadData();
-}, []);
+useEffect(() => {
+  if (supabase) { // Ensure supabase client is available
+    loadData();
+  }
+}, [supabase]); // Now loadData will run when supabase is ready
 
 useEffect(() => {
   if (!residents || residents.length === 0) return;
