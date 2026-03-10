@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Residents_Supabase() {
   const supabase = useClerkSupabaseClient()
+  const { user } = useUser();
   const { session } = useSession()
   const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
