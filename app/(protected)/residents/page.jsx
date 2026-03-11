@@ -227,8 +227,8 @@ useEffect(() => {
             .update({
               "Availability Status": 'Available',
               "Current Resident ID": null,
-              "Lease Start Date": null,
-              "Lease End Date": residentData["Move-out Date"] || now
+              //"Lease Start Date": null,
+              //"Lease End Date": residentData["Move-out Date"] || now
             })
             .eq('ID', originalAccommodationId);
         }
