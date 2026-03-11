@@ -379,6 +379,8 @@ useEffect(() => {
         console.log("✅ New resident created:", savedResident.ID);
         
         // Mark accommodation as occupied if assigned
+        console.log("New Resident Status for accommodation update:", savedResident.Status); // <--- ADD THIS
+      console.log("New Resident Accommodation ID for accommodation update:", savedResident["Accommodation ID"]); // <--- ADD THIS
         if (savedResident.Status === 'Active' && savedResident["Accommodation ID"]) {
           console.log("📍 Marking accommodation as occupied:", savedResident["Accommodation ID"]);
           await supabase
