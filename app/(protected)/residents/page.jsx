@@ -134,6 +134,7 @@ useEffect(() => {
   };
 
   const handleSubmit = async (residentData) => {
+    console.log("handleSubmit called with residentData:", residentData); // <--- ADD THIS LINE HERE
     if (!supabase) {
       alert("Authentication client not initialized");
       return;
@@ -218,6 +219,8 @@ useEffect(() => {
         // Handle accommodation updates
         if (newStatus === 'Moved On' && originalStatus === 'Active' && originalAccommodationId) {
           console.log("📍 Marking old accommodation as available:", originalAccommodationId);
+          console.log("  - originalResident status:", originalResident?.Status); // <--- ADD THIS LINE HERE
+          console.log("  - originalAccommodationId:", originalAccommodationId); // <--- ADD THIS LINE HERE
           // Mark old accommodation as available
           await supabase
             .from('accommodations')
