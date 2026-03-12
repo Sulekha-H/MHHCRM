@@ -397,7 +397,7 @@ useEffect(() => {
             .update({
               "Availability Status": 'Occupied',
               "Current Resident ID": savedResident.ID,
-              "Lease Start Date": savedResident["Move-in Date"] || now
+              "Lease Start Date": savedResident["Move-in Date"] || now,
                "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}`
             })
             .eq('ID', savedResident["Accommodation ID"]);
