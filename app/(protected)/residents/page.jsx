@@ -261,7 +261,7 @@ useEffect(() => {
                 "Availability Status": 'Available',
                 "Current Resident ID": null,
                 "Lease Start Date": null,
-                "Lease End Date": now
+                "Lease End Date": now,
                 "Current Resident Name": null
               })
               .eq('ID', originalAccommodationId);
