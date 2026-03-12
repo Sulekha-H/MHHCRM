@@ -228,7 +228,7 @@ useEffect(() => {
               "Availability Status": 'Available',
               "Current Resident ID": null,
               "Lease Start Date": null,
-              "Lease End Date": residentData["Move-out Date"] || now
+              "Lease End Date": residentData["Move-out Date"] || now,
               "Current Resident Name": null
             })
             .eq('ID', originalAccommodationId);
@@ -241,7 +241,7 @@ useEffect(() => {
             .update({
               "Availability Status": 'Occupied',
               "Current Resident ID": editingResident.ID,
-              "Lease Start Date": residentData["Move-in Date"] || now
+              "Lease Start Date": residentData["Move-in Date"] || now,
               "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
             })
             .eq('ID', newAccommodationId);
@@ -275,7 +275,7 @@ useEffect(() => {
               .update({
                 "Availability Status": 'Occupied',
                 "Current Resident ID": editingResident.ID,
-                "Lease Start Date": residentData["Move-in Date"] || now
+                "Lease Start Date": residentData["Move-in Date"] || now,
                  "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}`
               })
               .eq('ID', newAccommodationId);
@@ -294,7 +294,7 @@ useEffect(() => {
                 "Availability Status": 'Available',
                 "Current Resident ID": null,
                 "Lease Start Date": null,
-                "Lease End Date": latestTransfer.move_out_date || latestTransfer.transfer_date || now
+                "Lease End Date": latestTransfer.move_out_date || latestTransfer.transfer_date || now,
                 "Current Resident Name": null
               })
               .eq('ID', latestTransfer.from_accommodation_id);
@@ -308,7 +308,7 @@ useEffect(() => {
               .update({
                 "Availability Status": 'Occupied',
                 "Current Resident ID": editingResident.ID,
-                "Lease Start Date": latestTransfer.transfer_date || now
+                "Lease Start Date": latestTransfer.transfer_date || now,
                   "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
               })
               .eq('ID', latestTransfer.to_accommodation_id);
@@ -327,7 +327,7 @@ useEffect(() => {
                 "Availability Status": 'Available',
                 "Current Resident ID": null,
                 "Lease Start Date": null,
-                "Lease End Date": latestRoomTransfer.transfer_date || now
+                "Lease End Date": latestRoomTransfer.transfer_date || now,
                 "Current Resident Name": null
               })
               .eq('ID', latestRoomTransfer.from_accommodation_id);
@@ -341,7 +341,7 @@ useEffect(() => {
               .update({
                 "Availability Status": 'Occupied',
                 "Current Resident ID": editingResident.ID,
-                "Lease Start Date": latestRoomTransfer.transfer_date || now
+                "Lease Start Date": latestRoomTransfer.transfer_date || now,
                  "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
               })
               .eq('ID', latestRoomTransfer.to_accommodation_id);
@@ -356,7 +356,7 @@ useEffect(() => {
               "Availability Status": 'Available',
               "Current Resident ID": null,
               "Lease Start Date": null,
-              "Lease End Date": residentData["Move-out Date"] || now
+              "Lease End Date": residentData["Move-out Date"] || now,
               "Current Resident Name": null
             })
             .eq('ID', originalAccommodationId);
