@@ -229,6 +229,7 @@ useEffect(() => {
               "Current Resident ID": null,
               "Lease Start Date": null,
               "Lease End Date": residentData["Move-out Date"] || now
+              "Current Resident Name": null
             })
             .eq('ID', originalAccommodationId);
         }
@@ -241,6 +242,7 @@ useEffect(() => {
               "Availability Status": 'Occupied',
               "Current Resident ID": editingResident.ID,
               "Lease Start Date": residentData["Move-in Date"] || now
+              "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
             })
             .eq('ID', newAccommodationId);
         }
@@ -260,6 +262,7 @@ useEffect(() => {
                 "Current Resident ID": null,
                 "Lease Start Date": null,
                 "Lease End Date": now
+                "Current Resident Name": null
               })
               .eq('ID', originalAccommodationId);
           }
@@ -273,6 +276,7 @@ useEffect(() => {
                 "Availability Status": 'Occupied',
                 "Current Resident ID": editingResident.ID,
                 "Lease Start Date": residentData["Move-in Date"] || now
+                 "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}`
               })
               .eq('ID', newAccommodationId);
           }
@@ -291,6 +295,7 @@ useEffect(() => {
                 "Current Resident ID": null,
                 "Lease Start Date": null,
                 "Lease End Date": latestTransfer.move_out_date || latestTransfer.transfer_date || now
+                "Current Resident Name": null
               })
               .eq('ID', latestTransfer.from_accommodation_id);
           }
@@ -304,6 +309,7 @@ useEffect(() => {
                 "Availability Status": 'Occupied',
                 "Current Resident ID": editingResident.ID,
                 "Lease Start Date": latestTransfer.transfer_date || now
+                  "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
               })
               .eq('ID', latestTransfer.to_accommodation_id);
           }
@@ -322,6 +328,7 @@ useEffect(() => {
                 "Current Resident ID": null,
                 "Lease Start Date": null,
                 "Lease End Date": latestRoomTransfer.transfer_date || now
+                "Current Resident Name": null
               })
               .eq('ID', latestRoomTransfer.from_accommodation_id);
           }
@@ -335,6 +342,7 @@ useEffect(() => {
                 "Availability Status": 'Occupied',
                 "Current Resident ID": editingResident.ID,
                 "Lease Start Date": latestRoomTransfer.transfer_date || now
+                 "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
               })
               .eq('ID', latestRoomTransfer.to_accommodation_id);
           }
@@ -349,6 +357,7 @@ useEffect(() => {
               "Current Resident ID": null,
               "Lease Start Date": null,
               "Lease End Date": residentData["Move-out Date"] || now
+              "Current Resident Name": null
             })
             .eq('ID', originalAccommodationId);
         }
@@ -376,7 +385,7 @@ useEffect(() => {
 
         if (insertError) throw insertError;
         savedResident = newData;
-        console.log("✅ New resident created:", savedResident.ID);
+        console.log("✅ New resident created:", savedResident.ID + savedResident["First Name"]);
         
         // Mark accommodation as occupied if assigned
         console.log("New Resident Status for accommodation update:", savedResident.Status); // <--- ADD THIS
@@ -389,6 +398,7 @@ useEffect(() => {
               "Availability Status": 'Occupied',
               "Current Resident ID": savedResident.ID,
               "Lease Start Date": savedResident["Move-in Date"] || now
+               "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}`
             })
             .eq('ID', savedResident["Accommodation ID"]);
         }
