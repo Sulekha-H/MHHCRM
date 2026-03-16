@@ -144,7 +144,7 @@ useEffect(() => {
         return weeks;
     };
     
-    const weekDates = generateWeekDates('2025-09-01', 18);
+    const weekDates = generateWeekDates('2026-01-01', 18);
 
     const handleEdit = useCallback((logData) => {
         setViewingLog(null);
@@ -266,7 +266,7 @@ useEffect(() => {
         
         // Filter logs to only include the documents we're tracking
         const requiredDocsNames = [
-            "Weekly inpections",
+            "Weekly inspections",
             "Weekly schedule"
         ];
         const trackedDocumentIds = swDocuments
@@ -408,7 +408,7 @@ useEffect(() => {
 
     // Filter documents to only show "Weekly risk assessment" and "Weekly schedule"
     const requiredDocsNames = [
-        "Weekly risk assessment",
+        "Weekly inspections",
         "Weekly schedule"
     ];
     
