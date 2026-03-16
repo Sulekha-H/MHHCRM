@@ -266,7 +266,7 @@ useEffect(() => {
         
         // Filter logs to only include the documents we're tracking
         const requiredDocsNames = [
-            "Weekly insepections",
+            "Weekly inpections",
             "Weekly schedule"
         ];
         const trackedDocumentIds = swDocuments
