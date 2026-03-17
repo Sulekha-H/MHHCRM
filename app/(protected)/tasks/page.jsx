@@ -145,7 +145,7 @@ useEffect(() => {
   };
 }, [supabase, filters, sortOrder]);
 
-  const loadTasks = usecallback(async () => {
+  const loadTasks = async () => {
     setLoading(true);
     console.log("🔄 [SUPABASE] Starting to load tasks...");
     
