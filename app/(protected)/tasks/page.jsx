@@ -138,7 +138,7 @@ useEffect(() => {
     }
   };
 
-  loadTasks();
+  loadTasksData();
 
   return () => {
     mounted = false;
