@@ -33,279 +33,64 @@ export default function TasksPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [sortOrder, setSortOrder] = useState("newest");
 
-useEffect(() => {
+const loadAllData = useCallback(async () => {
   if (!supabase) return;
-
-  let mounted = true;
-
-  const loadTasksData = async () => {
-    try {
-      setLoading(true);
-      console.log("🔄 Loading tasks data...");
-
-      // Fetch tasks
-      const { data: tasksData, error: tasksError } = await supabase
-        .from("tasks")
-        .select("*")
-        .or("Deleted.is.null,Deleted.eq.false");
-
-      if (tasksError) throw tasksError;
-
-      if (!mounted) return;
-
-      // Apply filters
-      let filtered = Array.isArray(tasksData) ? [...tasksData] : [];
-      const now = new Date();
-
-      if (filters.assignee !== "all") {
-        filtered = filtered.filter(
-          t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee
-        );
-      }
-
-      if (filters.status === "overdue") {
-        filtered = filtered.filter(t => {
-          const status = (t.Status || t.status || "").toLowerCase();
-          const dueDate = t["Due Date"] || t.due_date;
-          return status !== "completed" && dueDate && new Date(dueDate) < now;
-        });
-      } else if (filters.status !== "all") {
-        const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
-        filtered = filtered.filter(t => {
-          const taskStatus = (t.Status || t.status || "").toLowerCase().replace(/ /g, "_");
-          return taskStatus === filterStatusLower;
-        });
-      }
-
-      if (filters.priority !== "all_priority") {
-        filtered = filtered.filter(
-          t => ((t.Priority || t.priority || "").toLowerCase()) === filters.priority.toLowerCase()
-        );
-      }
-
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filtered = filtered.filter(t => {
-          const title = t.Title || t.title || "";
-          const desc = t.Description || t.description || "";
-          const assigned = t["Assigned To User ID"] || "unassigned";
-          const createdBy = t["Created By"] || t.created_by || "";
-          return (
-            title.toLowerCase().includes(searchTerm) ||
-            desc.toLowerCase().includes(searchTerm) ||
-            assigned.toLowerCase().includes(searchTerm) ||
-            createdBy.toLowerCase().includes(searchTerm)
-          );
-        });
-      }
-
-      // Sorting
-      filtered.sort((a, b) => {
-        if (sortOrder === "newest") {
-          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-          return dateB - dateA;
-        } else if (sortOrder === "oldest") {
-          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-          return dateA - dateB;
-        } else {
-          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-          const aPriority = (a.Priority || a.priority || "medium").toLowerCase();
-          const bPriority = (b.Priority || b.priority || "medium").toLowerCase();
-          const diff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
-          if (diff !== 0) return diff;
-          const dueA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
-          const dueB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
-          return dueA - dueB;
-        }
-      });
-
-      // Set state
-      if (mounted) {
-        setTasks(tasksData || []);
-        setFilteredTasks(filtered);
-        console.log(`✅ Loaded ${tasksData?.length || 0} tasks`);
-      }
-    } catch (error) {
-      console.error("❌ Error loading tasks:", error);
-      if (mounted) {
-        setTasks([]);
-        setFilteredTasks([]);
-      }
-    } finally {
-      if (mounted) setLoading(false);
+  setLoading(true);
+  try {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      const { data: userData } = await supabase.from('users').select('*').eq('ID', authUser.id).single();
+      setCurrentUser(userData);
     }
-  };
+    const { data: tasksData, error: tasksError } = await supabase.from('tasks').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false });
+    if (tasksError) throw tasksError;
 
-  loadTasksData();
+    const { data: usersData, error: usersError } = await supabase.from('users').select('*').or('Is Active.is.null,Is Active.eq.true');
+    if (usersError) throw usersError;
+    const activeUsers = (usersData || []).filter(u => {
+      const name = u?.["Full Name"]?.trim() || '';
+      return name && !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) && !name.toLowerCase().includes('test') && u.Email && u.ID;
+    });
 
-  return () => {
-    mounted = false;
-  };
+    const { data: residentsData } = await supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false');
+    const { data: propertiesData } = await supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false');
+
+    const now = new Date();
+    let filtered = [...(tasksData || [])];
+    if (filters.assignee !== "all") filtered = filtered.filter(t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee);
+    if (filters.status === "overdue") {
+      filtered = filtered.filter(t => (t.Status || t.status || "").toLowerCase() !== "completed" && t["Due Date"] && new Date(t["Due Date"]) < now);
+    } else if (filters.status !== "all") {
+      filtered = filtered.filter(t => (t.Status || t.status || "").toLowerCase().replace(/ /g, "_") === filters.status);
+    }
+    if (filters.priority !== "all_priority") filtered = filtered.filter(t => (t.Priority || t.priority || "").toLowerCase() === filters.priority);
+    if (filters.search) {
+      const s = filters.search.toLowerCase();
+      filtered = filtered.filter(t => (t.Title || "").toLowerCase().includes(s) || (t.Description || "").toLowerCase().includes(s) || (t["Assigned To User ID"] || "").toLowerCase().includes(s));
+    }
+    filtered.sort((a, b) => {
+      if (sortOrder === "newest") return new Date(b["Created Date"] || 0) - new Date(a["Created Date"] || 0);
+      if (sortOrder === "oldest") return new Date(a["Created Date"] || 0) - new Date(b["Created Date"] || 0);
+      const po = { urgent: 4, high: 3, medium: 2, low: 1 };
+      const diff = (po[(b.Priority || b.priority || "medium").toLowerCase()] || 0) - (po[(a.Priority || a.priority || "medium").toLowerCase()] || 0);
+      return diff !== 0 ? diff : new Date(a["Due Date"] || 0) - new Date(b["Due Date"] || 0);
+    });
+
+    setTasks(tasksData || []);
+    setFilteredTasks(filtered);
+    setUsers(activeUsers);
+    setResidents(residentsData || []);
+    setProperties(propertiesData || []);
+  } catch (error) {
+    console.error("❌ Error loading data:", error);
+    setTasks([]); setUsers([]); setResidents([]); setProperties([]); setFilteredTasks([]);
+  } finally {
+    setLoading(false);
+  }
 }, [supabase, filters, sortOrder]);
 
-  const loadTasks = async () => {
-    setLoading(true);
-    console.log("🔄 [SUPABASE] Starting to load tasks...");
-    
-    try {
-      // Load current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
-        setCurrentUser(userData);
-        console.log("✅ [SUPABASE] Current user:", userData?.["Full Name"] || userData?.Email);
-      }
+useEffect(() => { loadAllData(); }, [loadAllData]);
 
-      // Load tasks - First get all tasks to debug
-      const { data: allTasksDebug, error: debugError } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('Created Date', { ascending: false });
-
-      if (debugError) {
-        console.error("Debug query error:", debugError);
-      } else {
-        console.log("🔍 [DEBUG] Total tasks in database (including deleted):", allTasksDebug?.length);
-        console.log("🔍 [DEBUG] Sample task fields:", allTasksDebug?.[0] ? Object.keys(allTasksDebug[0]) : []);
-        
-        // Check for deleted tasks
-        const deletedTasks = allTasksDebug?.filter(t => t.Deleted === true || t.deleted === true);
-        console.log("🔍 [DEBUG] Tasks marked as deleted:", deletedTasks?.length);
-        
-        // Check status distribution
-        const statusCountsDebug = allTasksDebug?.reduce((acc, task) => {
-          const status = task.Status || task.status || 'Unknown';
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        }, {});
-        console.log("🔍 [DEBUG] Status distribution (including deleted tasks):", statusCountsDebug);
-      }
-
-      // Load tasks - EXCLUDE SOFT-DELETED TASKS
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false')
-        .order('Created Date', { ascending: false });
-
-      if (tasksError) throw tasksError;
-      
-      console.log(`✅ [SUPABASE] Loaded ${tasksData?.length || 0} non-deleted tasks`);
-
-      // 🎯 DETAILED DEBUG: Analyze task statuses and overdue calculation
-      const now = new Date();
-      console.log("\n📊 [DEBUG] Analyzing Tasks for Count Discrepancy:");
-      
-      let overdueTasks = [];
-      let toDoTasks = [];
-      let inProgressTasks = [];
-      let completedTasks = [];
-      
-      tasksData?.forEach((task, index) => {
-        const status = (task.Status || task.status || '').toLowerCase();
-        const statusNormalized = status.replace(/ /g, '_');
-        const dueDate = task["Due Date"] || task.due_date;
-        const dueDateObj = dueDate ? new Date(dueDate) : null;
-        const isNotCompleted = status !== 'completed';
-        const isPastDue = dueDateObj && dueDateObj < now;
-        
-        // Categorize tasks
-        if (statusNormalized === 'to_do') {
-          toDoTasks.push(task);
-        } else if (statusNormalized === 'in_progress') {
-          inProgressTasks.push(task);
-        } else if (status === 'completed') {
-          completedTasks.push(task);
-        }
-        
-        // Check if overdue (not completed AND past due)
-        if (isNotCompleted && isPastDue) {
-          overdueTasks.push(task);
-        }
-        
-        console.log(`\n📝 Task ${index + 1} - "${task.Title}":`, {
-          rawStatus: task.Status || task.status,
-          statusLowercase: status,
-          statusNormalized: statusNormalized,
-          dueDate: dueDate ? format(dueDateObj, 'yyyy-MM-dd HH:mm') : 'No due date',
-          isPastDue: isPastDue ? '⏰ OVERDUE' : dueDateObj ? '✅ Future' : 'No date',
-          isCompleted: status === 'completed' ? '✅ COMPLETED' : '⏳ Not completed',
-          assignedTo: task["Assigned To User ID"] || "Unassigned",
-          categorizedAs: overdueTasks.includes(task) ? 'OVERDUE' : 
-                          toDoTasks.includes(task) ? 'TO DO' :
-                          inProgressTasks.includes(task) ? 'IN PROGRESS' :
-                          completedTasks.includes(task) ? 'COMPLETED' : 'OTHER'
-        });
-      });
-
-      console.log("\n🎯 [DEBUG] Final Task Count Breakdown:");
-      console.log("  📌 Total non-deleted tasks:", tasksData?.length);
-      console.log("  ⏰ Overdue (Not completed && Past due):", overdueTasks.length);
-      console.log("  📋 To Do (Status == 'to_do'):", toDoTasks.length);
-      console.log("  🔄 In Progress (Status == 'in_progress'):", inProgressTasks.length);
-      console.log("  ✅ Completed (Status == 'completed'):", completedTasks.length);
-      
-      // Load users - EXCLUDE INACTIVE USERS
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .or('Is Active.is.null,Is Active.eq.true');
-
-      if (usersError) throw usersError;
-      
-      const activeUsers = Array.isArray(usersData) ? usersData.filter(user => {
-        const name = user?.["Full Name"]?.trim() || '';
-        return name && 
-               !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
-               !name.toLowerCase().includes('test') &&
-               user.Email &&
-               user.ID;
-      }) : [];
-      
-      console.log(`✅ [SUPABASE] Active users: ${activeUsers.length}`);
-
-      // Load residents - EXCLUDE DELETED RESIDENTS
-      const { data: residentsData, error: residentsError } = await supabase
-        .from('residents')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false');
-
-      if (residentsError) throw residentsError;
-      console.log(`✅ [SUPABASE] Loaded ${residentsData?.length || 0} non-deleted residents`);
-
-      // Load properties - EXCLUDE DELETED PROPERTIES
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false');
-
-      if (propertiesError) throw propertiesError;
-      console.log(`✅ [SUPABASE] Loaded ${propertiesData?.length || 0} non-deleted properties`);
-      
-      setTasks(Array.isArray(tasksData) ? tasksData : []);
-      setUsers(Array.isArray(activeUsers) ? activeUsers : []);
-      //console.log('DEBUG: Users passed to TaskForm:', Array.isArray(activeUsers) ? activeUsers : []); // ADDED LINE
-      setResidents(Array.isArray(residentsData) ? residentsData : []);
-      setProperties(Array.isArray(propertiesData) ? propertiesData : []);
-      
-    } catch (error) {
-      console.error("❌ [SUPABASE] Critical error loading data:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response,
-        stack: error.stack
-      });
-      
-      setTasks([]);
-      setUsers([]);
-      setResidents([]);
-      setProperties([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (taskData) => {
     try {
@@ -357,7 +142,7 @@ useEffect(() => {
       setShowForm(false);
       setEditingTask(null);
       setViewingTask(null);
-      loadTasks();
+      loadAllData()
     } catch (error) {
       console.error("❌ [SUPABASE] Error saving task:", error);
       alert("Error saving task: " + error.message);
@@ -391,7 +176,7 @@ useEffect(() => {
         if (error) throw error;
         console.log(`✅ [SUPABASE] Task ${task.ID} soft deleted successfully by ${userWhoDeleted}`);
         
-        loadTasks();
+       loadAllData()
       } catch (error) {
         console.error("❌ [SUPABASE] Error deleting task:", error);
         alert("Error deleting task: " + error.message);
