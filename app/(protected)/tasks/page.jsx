@@ -1,11 +1,9 @@
 "use client"
-
 import { useSession, useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Download, AlertTriangle, Clock, CheckCircle2, ListTodo } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,11 +12,10 @@ import { format } from "date-fns";
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function TasksPage() {
-  const supabase = useClerkSupabaseClient()
-  const {session} = useSession();
+  const supabase = useClerkSupabaseClient();
+  const { session } = useSession();
   const { user } = useUser();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
@@ -33,34 +30,57 @@ export default function TasksPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [sortOrder, setSortOrder] = useState("newest");
 
-useEffect(() => {
-  if (!supabase) return;
-
-  let mounted = true;
-
-  const loadTasksData = async () => {
+  // 1. COMPREHENSIVE DATA LOADING FUNCTION
+  const loadTasks = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
+    console.log("🔄 [SUPABASE] Starting comprehensive data load...");
+    
     try {
-      setLoading(true);
-      console.log("🔄 Loading tasks data...");
+      // Fetch Current User Profile
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const { data: userData } = await supabase.from('users').select('*').eq('ID', authUser.id).single();
+        setCurrentUser(userData);
+      }
 
-      // Fetch tasks
+      // Fetch Tasks (excluding soft-deleted)
       const { data: tasksData, error: tasksError } = await supabase
-        .from("tasks")
-        .select("*")
-        .or("Deleted.is.null,Deleted.eq.false");
+        .from('tasks')
+        .select('*')
+        .or('Deleted.is.null,Deleted.eq.false')
+        .order('Created Date', { ascending: false });
 
       if (tasksError) throw tasksError;
 
-      if (!mounted) return;
+      // Fetch Active Users
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .or('Is Active.is.null,Is Active.eq.true');
 
-      // Apply filters
+      if (usersError) throw usersError;
+      
+      const activeUsers = Array.isArray(usersData) ? usersData.filter(u => {
+        const name = u?.["Full Name"]?.trim() || '';
+        return name && 
+               !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
+               !name.toLowerCase().includes('test') &&
+               u.Email && u.ID;
+      }) : [];
+
+      // Fetch Residents
+      const { data: residentsData } = await supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false');
+      
+      // Fetch Properties
+      const { data: propertiesData } = await supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false');
+
+      // --- APPLY FILTERS & SORTING ---
       let filtered = Array.isArray(tasksData) ? [...tasksData] : [];
       const now = new Date();
 
       if (filters.assignee !== "all") {
-        filtered = filtered.filter(
-          t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee
-        );
+        filtered = filtered.filter(t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee);
       }
 
       if (filters.status === "overdue") {
@@ -71,552 +91,99 @@ useEffect(() => {
         });
       } else if (filters.status !== "all") {
         const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
-        filtered = filtered.filter(t => {
-          const taskStatus = (t.Status || t.status || "").toLowerCase().replace(/ /g, "_");
-          return taskStatus === filterStatusLower;
-        });
+        filtered = filtered.filter(t => (t.Status || t.status || "").toLowerCase().replace(/ /g, "_") === filterStatusLower);
       }
 
       if (filters.priority !== "all_priority") {
-        filtered = filtered.filter(
-          t => ((t.Priority || t.priority || "").toLowerCase()) === filters.priority.toLowerCase()
-        );
+        filtered = filtered.filter(t => (t.Priority || t.priority || "").toLowerCase() === filters.priority.toLowerCase());
       }
 
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
-        filtered = filtered.filter(t => {
-          const title = t.Title || t.title || "";
-          const desc = t.Description || t.description || "";
-          const assigned = t["Assigned To User ID"] || "unassigned";
-          const createdBy = t["Created By"] || t.created_by || "";
-          return (
-            title.toLowerCase().includes(searchTerm) ||
-            desc.toLowerCase().includes(searchTerm) ||
-            assigned.toLowerCase().includes(searchTerm) ||
-            createdBy.toLowerCase().includes(searchTerm)
-          );
-        });
+        filtered = filtered.filter(t => 
+          (t.Title || "").toLowerCase().includes(searchTerm) || 
+          (t.Description || "").toLowerCase().includes(searchTerm) ||
+          (t["Assigned To User ID"] || "").toLowerCase().includes(searchTerm)
+        );
       }
 
-      // Sorting
+      // Sorting Logic
       filtered.sort((a, b) => {
-        if (sortOrder === "newest") {
-          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-          return dateB - dateA;
-        } else if (sortOrder === "oldest") {
-          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-          return dateA - dateB;
-        } else {
-          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-          const aPriority = (a.Priority || a.priority || "medium").toLowerCase();
-          const bPriority = (b.Priority || b.priority || "medium").toLowerCase();
-          const diff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
-          if (diff !== 0) return diff;
-          const dueA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
-          const dueB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
-          return dueA - dueB;
-        }
+        if (sortOrder === "newest") return new Date(b["Created Date"] || 0) - new Date(a["Created Date"] || 0);
+        if (sortOrder === "oldest") return new Date(a["Created Date"] || 0) - new Date(b["Created Date"] || 0);
+        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+        const diff = (priorityOrder[(b.Priority || 'medium').toLowerCase()] || 0) - (priorityOrder[(a.Priority || 'medium').toLowerCase()] || 0);
+        return diff !== 0 ? diff : new Date(a["Due Date"] || 0) - new Date(b["Due Date"] || 0);
       });
 
-      // Set state
-      if (mounted) {
-        setTasks(tasksData || []);
-        setFilteredTasks(filtered);
-        console.log(`✅ Loaded ${tasksData?.length || 0} tasks`);
-      }
-    } catch (error) {
-      console.error("❌ Error loading tasks:", error);
-      if (mounted) {
-        setTasks([]);
-        setFilteredTasks([]);
-      }
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  };
-
-  loadTasksData();
-
-  return () => {
-    mounted = false;
-  };
-}, [supabase, filters, sortOrder]);
-
-  const loadTasks = async () => {
-    setLoading(true);
-    console.log("🔄 [SUPABASE] Starting to load tasks...");
-    
-    try {
-      // Load current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
-        setCurrentUser(userData);
-        console.log("✅ [SUPABASE] Current user:", userData?.["Full Name"] || userData?.Email);
-      }
-
-      // Load tasks - First get all tasks to debug
-      const { data: allTasksDebug, error: debugError } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('Created Date', { ascending: false });
-
-      if (debugError) {
-        console.error("Debug query error:", debugError);
-      } else {
-        console.log("🔍 [DEBUG] Total tasks in database (including deleted):", allTasksDebug?.length);
-        console.log("🔍 [DEBUG] Sample task fields:", allTasksDebug?.[0] ? Object.keys(allTasksDebug[0]) : []);
-        
-        // Check for deleted tasks
-        const deletedTasks = allTasksDebug?.filter(t => t.Deleted === true || t.deleted === true);
-        console.log("🔍 [DEBUG] Tasks marked as deleted:", deletedTasks?.length);
-        
-        // Check status distribution
-        const statusCountsDebug = allTasksDebug?.reduce((acc, task) => {
-          const status = task.Status || task.status || 'Unknown';
-          acc[status] = (acc[status] || 0) + 1;
-          return acc;
-        }, {});
-        console.log("🔍 [DEBUG] Status distribution (including deleted tasks):", statusCountsDebug);
-      }
-
-      // Load tasks - EXCLUDE SOFT-DELETED TASKS
-      const { data: tasksData, error: tasksError } = await supabase
-        .from('tasks')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false')
-        .order('Created Date', { ascending: false });
-
-      if (tasksError) throw tasksError;
+      // Update All States
+      setTasks(tasksData || []);
+      setFilteredTasks(filtered);
+      setUsers(activeUsers);
+      setResidents(residentsData || []);
+      setProperties(propertiesData || []);
       
-      console.log(`✅ [SUPABASE] Loaded ${tasksData?.length || 0} non-deleted tasks`);
-
-      // 🎯 DETAILED DEBUG: Analyze task statuses and overdue calculation
-      const now = new Date();
-      console.log("\n📊 [DEBUG] Analyzing Tasks for Count Discrepancy:");
-      
-      let overdueTasks = [];
-      let toDoTasks = [];
-      let inProgressTasks = [];
-      let completedTasks = [];
-      
-      tasksData?.forEach((task, index) => {
-        const status = (task.Status || task.status || '').toLowerCase();
-        const statusNormalized = status.replace(/ /g, '_');
-        const dueDate = task["Due Date"] || task.due_date;
-        const dueDateObj = dueDate ? new Date(dueDate) : null;
-        const isNotCompleted = status !== 'completed';
-        const isPastDue = dueDateObj && dueDateObj < now;
-        
-        // Categorize tasks
-        if (statusNormalized === 'to_do') {
-          toDoTasks.push(task);
-        } else if (statusNormalized === 'in_progress') {
-          inProgressTasks.push(task);
-        } else if (status === 'completed') {
-          completedTasks.push(task);
-        }
-        
-        // Check if overdue (not completed AND past due)
-        if (isNotCompleted && isPastDue) {
-          overdueTasks.push(task);
-        }
-        
-        console.log(`\n📝 Task ${index + 1} - "${task.Title}":`, {
-          rawStatus: task.Status || task.status,
-          statusLowercase: status,
-          statusNormalized: statusNormalized,
-          dueDate: dueDate ? format(dueDateObj, 'yyyy-MM-dd HH:mm') : 'No due date',
-          isPastDue: isPastDue ? '⏰ OVERDUE' : dueDateObj ? '✅ Future' : 'No date',
-          isCompleted: status === 'completed' ? '✅ COMPLETED' : '⏳ Not completed',
-          assignedTo: task["Assigned To User ID"] || "Unassigned",
-          categorizedAs: overdueTasks.includes(task) ? 'OVERDUE' : 
-                          toDoTasks.includes(task) ? 'TO DO' :
-                          inProgressTasks.includes(task) ? 'IN PROGRESS' :
-                          completedTasks.includes(task) ? 'COMPLETED' : 'OTHER'
-        });
-      });
-
-      console.log("\n🎯 [DEBUG] Final Task Count Breakdown:");
-      console.log("  📌 Total non-deleted tasks:", tasksData?.length);
-      console.log("  ⏰ Overdue (Not completed && Past due):", overdueTasks.length);
-      console.log("  📋 To Do (Status == 'to_do'):", toDoTasks.length);
-      console.log("  🔄 In Progress (Status == 'in_progress'):", inProgressTasks.length);
-      console.log("  ✅ Completed (Status == 'completed'):", completedTasks.length);
-      
-      // Load users - EXCLUDE INACTIVE USERS
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .or('Is Active.is.null,Is Active.eq.true');
-
-      if (usersError) throw usersError;
-      
-      const activeUsers = Array.isArray(usersData) ? usersData.filter(user => {
-        const name = user?.["Full Name"]?.trim() || '';
-        return name && 
-               !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
-               !name.toLowerCase().includes('test') &&
-               user.Email &&
-               user.ID;
-      }) : [];
-      
-      console.log(`✅ [SUPABASE] Active users: ${activeUsers.length}`);
-
-      // Load residents - EXCLUDE DELETED RESIDENTS
-      const { data: residentsData, error: residentsError } = await supabase
-        .from('residents')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false');
-
-      if (residentsError) throw residentsError;
-      console.log(`✅ [SUPABASE] Loaded ${residentsData?.length || 0} non-deleted residents`);
-
-      // Load properties - EXCLUDE DELETED PROPERTIES
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false');
-
-      if (propertiesError) throw propertiesError;
-      console.log(`✅ [SUPABASE] Loaded ${propertiesData?.length || 0} non-deleted properties`);
-      
-      setTasks(Array.isArray(tasksData) ? tasksData : []);
-      setUsers(Array.isArray(activeUsers) ? activeUsers : []);
-      //console.log('DEBUG: Users passed to TaskForm:', Array.isArray(activeUsers) ? activeUsers : []); // ADDED LINE
-      setResidents(Array.isArray(residentsData) ? residentsData : []);
-      setProperties(Array.isArray(propertiesData) ? propertiesData : []);
+      console.log(`✅ Loaded ${activeUsers.length} users and ${tasksData?.length} tasks.`);
       
     } catch (error) {
-      console.error("❌ [SUPABASE] Critical error loading data:", error);
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response,
-        stack: error.stack
-      });
-      
-      setTasks([]);
-      setUsers([]);
-      setResidents([]);
-      setProperties([]);
+      console.error("❌ Error loading data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, filters, sortOrder]);
+
+  // 2. TRIGGER INITIAL LOAD & UPDATES
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
 
   const handleSubmit = async (taskData) => {
     try {
-      if (!taskData["Logged By"] && currentUser?.["Full Name"]) {
-        taskData["Logged By"] = currentUser["Full Name"];
-      }
-
+      if (!taskData["Logged By"] && currentUser?.["Full Name"]) taskData["Logged By"] = currentUser["Full Name"];
+      
       if (taskData["Assigned To User ID"] === "all_team_members") {
-        const taskPromises = (Array.isArray(users) ? users : []).map(user => {
-          const userTask = {
-            ...taskData,
-            ID: crypto.randomUUID(),
-            "Assigned To User ID": user["Full Name"],
-            "Created Date": new Date().toISOString(),
-            "Updated Date": new Date().toISOString(),
-            "Created By": currentUser?.Email || "Unknown"
-          };
-          return supabase.from('tasks').insert([userTask]);
-        });
-        
-        await Promise.all(taskPromises);
-        console.log(`✅ [SUPABASE] Created ${users.length} tasks for all team members`);
-      } else if (editingTask && editingTask.ID) {
-        const updateData = {
-          ...taskData,
-          "Updated Date": new Date().toISOString()
-        };
-        const { error } = await supabase
-          .from('tasks')
-          .update(updateData)
-          .eq('ID', editingTask.ID);
-        
-        if (error) throw error;
+        const promises = users.map(u => supabase.from('tasks').insert([{ ...taskData, ID: crypto.randomUUID(), "Assigned To User ID": u["Full Name"], "Created By": currentUser?.Email || "Unknown" }]));
+        await Promise.all(promises);
+      } else if (editingTask?.ID) {
+        await supabase.from('tasks').update({ ...taskData, "Updated Date": new Date().toISOString() }).eq('ID', editingTask.ID);
       } else {
-        const insertData = {
-          ...taskData,
-          ID: crypto.randomUUID(),
-          "Created Date": new Date().toISOString(),
-          "Updated Date": new Date().toISOString(),
-          "Created By": currentUser?.Email || "Unknown"
-        };
-        const { error } = await supabase
-          .from('tasks')
-          .insert([insertData]);
-        
-        if (error) throw error;
+        await supabase.from('tasks').insert([{ ...taskData, ID: crypto.randomUUID(), "Created Date": new Date().toISOString(), "Created By": currentUser?.Email || "Unknown" }]);
       }
       
       setShowForm(false);
       setEditingTask(null);
-      setViewingTask(null);
       loadTasks();
     } catch (error) {
-      console.error("❌ [SUPABASE] Error saving task:", error);
       alert("Error saving task: " + error.message);
     }
   };
 
-  const handleEdit = (task) => {
-    setViewingTask(null);
-    setEditingTask(task);
-    setShowForm(true);
-  };
-
-  const handleViewDetails = (task) => {
-    setViewingTask(task);
-  };
-
   const handleDelete = async (task) => {
-    if (window.confirm(`Are you sure you want to delete "${task.Title}"? This action cannot be undone.`)) {
-      try {
-        // SOFT DELETE: Mark as deleted instead of permanently removing
-        const userWhoDeleted = currentUser?.["Full Name"] || "Unknown";
-        const { error } = await supabase
-          .from('tasks')
-          .update({
-            Deleted: true,
-            "Deleted Date": new Date().toISOString(),
-            "Deleted By": userWhoDeleted
-          })
-          .eq('ID', task.ID);
-        
-        if (error) throw error;
-        console.log(`✅ [SUPABASE] Task ${task.ID} soft deleted successfully by ${userWhoDeleted}`);
-        
-        loadTasks();
-      } catch (error) {
-        console.error("❌ [SUPABASE] Error deleting task:", error);
-        alert("Error deleting task: " + error.message);
-      }
+    if (window.confirm(`Delete "${task.Title}"?`)) {
+      await supabase.from('tasks').update({ Deleted: true, "Deleted Date": new Date().toISOString(), "Deleted By": currentUser?.["Full Name"] || "Unknown" }).eq('ID', task.ID);
+      loadTasks();
     }
-  };
-
-  const exportToCSV = () => {
-    const formatDate = (dateString) => {
-      if (!dateString) return "";
-      try {
-        return format(new Date(dateString), 'yyyy-MM-dd');
-      } catch {
-        return dateString;
-      }
-    };
-
-    const formatDateTime = (dateString) => {
-      if (!dateString) return "";
-      try {
-        return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss');
-      } catch {
-        return dateString;
-      }
-    };
-
-    const formatStatus = (status) => {
-      const statusMap = {
-        'To Do': 'To Do',
-        'to_do': 'To Do',
-        'In Progress': 'In Progress',
-        'in_progress': 'In Progress',
-        'Completed': 'Completed',
-        'completed': 'Completed',
-        'Overdue': 'Overdue',
-        'overdue': 'Overdue'
-      };
-      return statusMap[status] || statusMap[String(status).toLowerCase().replace(/ /g, '_')] || '';
-    };
-
-    const formatPriority = (priority) => {
-      const priorityMap = {
-        'Low': 'Low',
-        'low': 'Low',
-        'Medium': 'Medium',
-        'medium': 'Medium',
-        'High': 'High',
-        'high': 'High',
-        'Urgent': 'Urgent',
-        'urgent': 'Urgent'
-      };
-      return priorityMap[priority] || priorityMap[String(priority).toLowerCase()] || '';
-    };
-
-    const formatRelatedEntity = (entity) => {
-      const entityMap = {
-        'Resident': 'Resident',
-        'resident': 'Resident',
-        'Property': 'Property',
-        'property': 'Property',
-        'Support Plan': 'Support Plan',
-        'support_plan': 'Support Plan',
-        'Incident': 'Incident',
-        'incident': 'Incident',
-        'None': 'None',
-        'none': 'None'
-      };
-      return entityMap[entity] || entityMap[String(entity).toLowerCase().replace(/ /g, '_')] || '';
-    };
-
-    const headers = [
-      "ID",
-      "Title",
-      "Description",
-      "Due Date",
-      "Status",
-      "Priority",
-      "Assigned To User ID",
-      "Related Entity",
-      "Related Entity ID",
-      "Logged By",
-      "Created Date",
-      "Updated Date",
-      "Created By"
-    ];
-
-    const rows = (Array.isArray(filteredTasks) ? filteredTasks : []).map(task => [
-      task.ID || "",
-      task.Title || "",
-      task.Description || "",
-      formatDateTime(task["Due Date"]),
-      formatStatus(task.Status || task.status),
-      formatPriority(task.Priority || task.priority),
-      task["Assigned To User ID"] || "",
-      formatRelatedEntity(task["Related Entity"] || task.related_entity),
-      task["Related Entity ID"] || task.related_entity_id || "",
-      task["Logged By"] || task.logged_by || "",
-      formatDateTime(task["Created Date"] || task.created_date),
-      formatDateTime(task["Updated Date"] || task.updated_date),
-      task["Created By"] || task.created_by || ""
-    ]);
-
-    const escapeCSV = (value) => {
-      if (value === null || value === undefined) return '';
-      const stringValue = String(value);
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n') || stringValue.includes('\r')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-      return stringValue;
-    };
-
-    const csvContent = [
-      headers.map(escapeCSV).join(','),
-      ...rows.map(row => row.map(escapeCSV).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `tasks_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    console.log("✅ [SUPABASE] Tasks CSV export completed successfully");
   };
 
   const getTaskCounts = () => {
     const now = new Date();
-    const taskArray = Array.isArray(tasks) ? tasks : [];
-    
-    // Count overdue: Not completed AND due date is in the past
-    const overdueCount = taskArray.filter(t => {
-      const status = (t.Status || t.status || '').toLowerCase();
-      const dueDate = t["Due Date"] || t.due_date;
-      const dueDateObj = dueDate ? new Date(dueDate) : null;
-      const isNotCompleted = status !== 'completed';
-      const isPastDue = dueDateObj && dueDateObj < now;
-      
-      return isNotCompleted && isPastDue;
-    }).length;
-    
-    // Count to_do
-    const toDoCount = taskArray.filter(t => {
-      const status = (t.Status || t.status || '').toLowerCase().replace(/ /g, '_');
-      return status === 'to_do';
-    }).length;
-    
-    // Count in_progress
-    const inProgressCount = taskArray.filter(t => {
-      const status = (t.Status || t.status || '').toLowerCase().replace(/ /g, '_');
-      return status === 'in_progress';
-    }).length;
-    
-    // Count completed
-    const completedCount = taskArray.filter(t => {
-      const status = (t.Status || t.status || '').toLowerCase();
-      return status === 'completed';
-    }).length;
-    
-    // Count myTasks: Assigned to current user AND not completed
-    const myTasksCount = taskArray.filter(t => {
-      const status = (t.Status || t.status || '').toLowerCase();
-      const assignedTo = t["Assigned To User ID"];
-      const currentUserName = currentUser?.["Full Name"];
-      return assignedTo === currentUserName && status !== 'completed';
-    }).length;
-    
-    console.log("\n🔢 [DEBUG] getTaskCounts() Results:", {
-      total: taskArray.length,
-      overdue: overdueCount,
-      to_do: toDoCount,
-      in_progress: inProgressCount,
-      completed: completedCount,
-      myTasks: myTasksCount
-    });
-    
     return {
-      total: taskArray.length,
-      overdue: overdueCount,
-      to_do: toDoCount,
-      in_progress: inProgressCount,
-      completed: completedCount,
-      myTasks: myTasksCount
+      total: tasks.length,
+      overdue: tasks.filter(t => (t.Status || '').toLowerCase() !== 'completed' && t["Due Date"] && new Date(t["Due Date"]) < now).length,
+      to_do: tasks.filter(t => (t.Status || '').toLowerCase().replace(/ /g, '_') === 'to_do').length,
+      in_progress: tasks.filter(t => (t.Status || '').toLowerCase().replace(/ /g, '_') === 'in_progress').length,
+      completed: tasks.filter(t => (t.Status || '').toLowerCase() === 'completed').length,
+      myTasks: tasks.filter(t => t["Assigned To User ID"] === currentUser?.["Full Name"] && (t.Status || '').toLowerCase() !== 'completed').length
     };
   };
 
   const taskCounts = getTaskCounts();
-
-  const groupedTasks = (Array.isArray(filteredTasks) ? filteredTasks : []).reduce((acc, task) => {
-    const assignee = task["Assigned To User ID"] || 'Unassigned';
-    if (!acc[assignee]) {
-      acc[assignee] = [];
-    }
-    acc[assignee].push(task);
+  const groupedTasks = filteredTasks.reduce((acc, t) => {
+    const assignee = t["Assigned To User ID"] || 'Unassigned';
+    if (!acc[assignee]) acc[assignee] = [];
+    acc[assignee].push(t);
     return acc;
   }, {});
-
-  Object.keys(groupedTasks).forEach(assignee => {
-    groupedTasks[assignee].sort((a, b) => {
-      if (sortOrder === "newest") {
-        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-        return dateB.getTime() - dateA.getTime();
-      } else if (sortOrder === "oldest") {
-        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-        return dateA.getTime() - dateB.getTime();
-      } else {
-        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-        const aPriority = (a.Priority || a.priority || 'medium').toLowerCase();
-        const bPriority = (b.Priority || b.priority || 'medium').toLowerCase();
-        const priorityDiff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
-        
-        if (priorityDiff !== 0) return priorityDiff;
-        
-        const dueDateA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
-        const dueDateB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
-        return dueDateA.getTime() - dueDateB.getTime();
-      }
-    });
-  });
 
   return (
     <div className="space-y-6 p-6">
@@ -624,249 +191,68 @@ useEffect(() => {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
           <p className="text-slate-600">Track and manage tasks for your team</p>
-          {currentUser && (
-            <p className="text-xs text-slate-400 mt-1">Logged in as: {currentUser.Email}</p>
-          )}
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={exportToCSV}
-            variant="outline"
-            className="flex items-center gap-2"
-            disabled={loading || filteredTasks.length === 0}
-          >
-            <Download className="w-4 h-4" />
-            Export to CSV
-          </Button>
-          <Button
-            onClick={() => setShowForm(true)}
-            className="bg-cyan-600 hover:bg-cyan-700 shadow-sm"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Task
+          <Button onClick={() => setShowForm(true)} className="bg-cyan-600 hover:bg-cyan-700 shadow-sm">
+            <Plus className="w-4 h-4 mr-2" /> Add New Task
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "overdue", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-red-700">Overdue</p>
-                <p className="text-2xl font-bold text-red-900 mt-1">{taskCounts.overdue}</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "to_do", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-blue-700">To Do</p>
-                <p className="text-2xl font-bold text-blue-900 mt-1">{taskCounts.to_do}</p>
-              </div>
-              <ListTodo className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "in_progress", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-yellow-700">In Progress</p>
-                <p className="text-2xl font-bold text-yellow-900 mt-1">{taskCounts.in_progress}</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "completed", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-green-700">Completed</p>
-                <p className="text-2xl font-bold text-green-900 mt-1">{taskCounts.completed}</p>
-              </div>
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => { 
-            if (currentUser?.["Full Name"]) {
-              setFilters(prev => ({ ...prev, assignee: currentUser["Full Name"], status: "all" }));
-            }
-          }}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-purple-700">My Tasks</p>
-                <p className="text-2xl font-bold text-purple-900 mt-1">{taskCounts.myTasks}</p>
-              </div>
-              <div className="w-8 h-8 bg-purple-200 rounded-full flex items-center justify-center">
-                <span className="text-purple-700 font-bold text-sm">ME</span>
-              </div>
-            </div>
+        {/* Stat Cards */}
+        {[
+          { label: "Overdue", count: taskCounts.overdue, color: "red", icon: AlertTriangle, val: "overdue" },
+          { label: "To Do", count: taskCounts.to_do, color: "blue", icon: ListTodo, val: "to_do" },
+          { label: "In Progress", count: taskCounts.in_progress, color: "yellow", icon: Clock, val: "in_progress" },
+          { label: "Completed", count: taskCounts.completed, color: "green", icon: CheckCircle2, val: "completed" }
+        ].map(s => (
+          <Card key={s.label} className={`bg-${s.color}-50 border-${s.color}-200 cursor-pointer hover:shadow-md`} onClick={() => setFilters(p => ({ ...p, status: s.val, assignee: "all" }))}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div><p className={`text-xs font-medium text-${s.color}-700`}>{s.label}</p><p className={`text-2xl font-bold text-${s.color}-900`}>{s.count}</p></div>
+              <s.icon className={`w-8 h-8 text-${s.color}-600`} />
+            </CardContent>
+          </Card>
+        ))}
+        <Card className="bg-purple-50 border-purple-200 cursor-pointer" onClick={() => currentUser && setFilters(p => ({ ...p, assignee: currentUser["Full Name"], status: "all" }))}>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div><p className="text-xs font-medium text-purple-700">My Tasks</p><p className="text-2xl font-bold text-purple-900">{taskCounts.myTasks}</p></div>
+            <div className="w-8 h-8 bg-purple-200 rounded-full flex items-center justify-center text-purple-700 font-bold">ME</div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search tasks by title, description, assignee, or creator..."
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                className="pl-10"
-              />
-            </div>
-            <div className="w-full md:w-48">
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="priority">By Priority</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Card><CardContent className="p-6 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1"><Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" /><Input placeholder="Search tasks..." value={filters.search} onChange={e => setFilters(p => ({ ...p, search: e.target.value }))} className="pl-10" /></div>
+        <Select value={sortOrder} onValueChange={setSortOrder}><SelectTrigger className="w-48"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">Newest</SelectItem><SelectItem value="oldest">Oldest</SelectItem><SelectItem value="priority">Priority</SelectItem></SelectContent></Select>
+      </CardContent></Card>
 
       <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-3">Filter by Status</h3>
-          <Tabs value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value, assignee: "all" }))}>
-            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
-              <TabsTrigger value="all">All ({taskCounts.total})</TabsTrigger>
-              <TabsTrigger value="to_do">To Do</TabsTrigger>
-              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-3">Filter by Priority</h3>
-          <Tabs value={filters.priority} onValueChange={(value) => setFilters(prev => ({ ...prev, priority: value, assignee: "all" }))}>
-            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
-              <TabsTrigger value="all_priority">All Priority</TabsTrigger>
-              <TabsTrigger value="urgent">Urgent</TabsTrigger>
-              <TabsTrigger value="high">High</TabsTrigger>
-              <TabsTrigger value="medium">Medium</TabsTrigger>
-              <TabsTrigger value="low">Low</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+        <Tabs value={filters.status} onValueChange={v => setFilters(p => ({ ...p, status: v, assignee: "all" }))}>
+          <TabsList className="w-full lg:w-auto"><TabsTrigger value="all">All ({taskCounts.total})</TabsTrigger><TabsTrigger value="to_do">To Do</TabsTrigger><TabsTrigger value="in_progress">In Progress</TabsTrigger><TabsTrigger value="completed">Completed</TabsTrigger><TabsTrigger value="overdue">Overdue</TabsTrigger></TabsList>
+        </Tabs>
+        <Tabs value={filters.priority} onValueChange={v => setFilters(p => ({ ...p, priority: v, assignee: "all" }))}>
+          <TabsList className="w-full lg:w-auto"><TabsTrigger value="all_priority">All Priority</TabsTrigger><TabsTrigger value="urgent">Urgent</TabsTrigger><TabsTrigger value="high">High</TabsTrigger><TabsTrigger value="medium">Medium</TabsTrigger><TabsTrigger value="low">Low</TabsTrigger></TabsList>
+        </Tabs>
       </div>
 
       {showForm && (
-        <div>
-          <TaskForm_Supabase
-            task={editingTask}
-            users={users}
-            residents={residents}
-            properties={properties}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingTask(null);
-            }}
-          />
-        </div>
+        <TaskForm_Supabase task={editingTask} users={users} residents={residents} properties={properties} onSubmit={handleSubmit} onCancel={() => { setShowForm(false); setEditingTask(null); }} />
       )}
       
       {viewingTask && (
-        <TaskDetailModal
-          task={viewingTask}
-          assignedUser={(Array.isArray(users) ? users : []).find(u => u["Full Name"] === viewingTask["Assigned To User ID"])}
-          onClose={() => setViewingTask(null)}
-          onEdit={(task) => {
-            setViewingTask(null);
-            handleEdit(task);
-          }}
-        />
+        <TaskDetailModal task={viewingTask} assignedUser={users.find(u => u["Full Name"] === viewingTask["Assigned To User ID"])} onClose={() => setViewingTask(null)} onEdit={t => { setViewingTask(null); setEditingTask(t); setShowForm(true); }} />
       )}
 
-      {loading ? (
-        <div className="text-center py-12">
-          <p className="text-slate-500">Loading tasks...</p>
-        </div>
-      ) : filteredTasks.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ListTodo className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">No tasks found</h3>
-            <p className="text-slate-500 mb-4">
-              {filters.search ? "Try adjusting your search terms" : "Get started by adding your first task"}
-            </p>
-            {!filters.search && (
-              <Button onClick={() => setShowForm(true)} className="bg-cyan-600 hover:bg-cyan-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Task
-              </Button>
-            )}
-            <div className="mt-4 text-xs text-slate-400">
-              Total tasks in system: {tasks.length}
-            </div>
-          </CardContent>
-        </Card>
+      {loading ? <div className="text-center py-12 text-slate-500">Loading tasks...</div> : filteredTasks.length === 0 ? (
+        <Card><CardContent className="p-12 text-center text-slate-500"><ListTodo className="w-12 h-12 mx-auto mb-4" /><h3>No tasks found</h3></CardContent></Card>
       ) : (
         <div className="space-y-8">
-          {Object.keys(groupedTasks).sort((a, b) => {
-            if (a === 'Unassigned') return 1;
-            if (b === 'Unassigned') return -1;
-            if (a === currentUser?.["Full Name"]) return -1;
-            if (b === currentUser?.["Full Name"]) return 1;
-            return a.localeCompare(b);
-          }).map(assignee => (
+          {Object.keys(groupedTasks).map(assignee => (
             <div key={assignee} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h3 className="text-xl font-semibold text-slate-900">
-                  {assignee === currentUser?.["Full Name"] && '⭐ '}
-                  {assignee}
-                  <span className="ml-3 text-base font-normal text-slate-500">
-                    ({groupedTasks[assignee].length} {groupedTasks[assignee].length === 1 ? 'task' : 'tasks'})
-                  </span>
-                </h3>
-              </div>
+              <h3 className="text-xl font-semibold text-slate-900 border-b pb-2">{assignee === currentUser?.["Full Name"] && '⭐ '}{assignee} ({groupedTasks[assignee].length})</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {groupedTasks[assignee].map((task) => {
-                  const assignedUser = (Array.isArray(users) ? users : []).find(u => u["Full Name"] === task["Assigned To User ID"]);
-                  return (
-                    <TaskCard
-                      key={task.ID}
-                      task={task}
-                      onEdit={handleEdit}
-                      onViewDetails={handleViewDetails}
-                      onDelete={handleDelete}
-                      assignedUser={assignedUser}
-                      assignedUserName={task["Assigned To User ID"]}
-                    />
-                  );
-                })}
+                {groupedTasks[assignee].map(t => <TaskCard key={t.ID} task={t} onEdit={setEditingTask} onViewDetails={setViewingTask} onDelete={handleDelete} assignedUser={users.find(u => u["Full Name"] === t["Assigned To User ID"])} />)}
               </div>
             </div>
           ))}
