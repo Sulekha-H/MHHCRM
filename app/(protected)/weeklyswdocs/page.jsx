@@ -144,7 +144,7 @@ useEffect(() => {
         return weeks;
     };
     
-    const weekDates = generateWeekDates('2025-12-29', 18);
+    const weekDates = generateWeekDates('2025-29-12', 18);
 
     const handleEdit = useCallback((logData) => {
         setViewingLog(null);
