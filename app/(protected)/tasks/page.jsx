@@ -1,4 +1,5 @@
 "use client"
+
 import { useSession, useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
@@ -9,14 +10,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
-import TaskForm_Supabase from "@/components/tasks/TaskForm";
+import TaskForm_Supabase from "@/components/tasks/TaskForm"; // Assuming this is TaskForm
 import TaskCard from "@/components/tasks/TaskCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 
 export default function TasksPage() {
   const supabase = useClerkSupabaseClient();
   const { session } = useSession();
-  const { user } = useUser();
+  const { user } = useUser(); // Clerk user
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -27,21 +28,25 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState(null);
   const [filters, setFilters] = useState({ status: "all", priority: "all_priority", search: "", assignee: "all" });
   const [viewingTask, setViewingTask] = useState(null);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null); // Supabase user profile
   const [sortOrder, setSortOrder] = useState("newest");
 
-  // 1. COMPREHENSIVE DATA LOADING FUNCTION
-  const loadTasks = useCallback(async () => {
+  // 1. Function to load all raw data from Supabase
+  const loadAllRawData = useCallback(async () => {
     if (!supabase) return;
-    setLoading(true);
-    console.log("🔄 [SUPABASE] Starting comprehensive data load...");
-    
+    setLoading(true); // Start loading indicator
+    console.log("🔄 [SUPABASE] Starting to load ALL raw data...");
+
     try {
       // Fetch Current User Profile
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         const { data: userData } = await supabase.from('users').select('*').eq('ID', authUser.id).single();
         setCurrentUser(userData);
+        console.log("✅ [SUPABASE] Current user loaded:", userData?.["Full Name"] || userData?.Email);
+      } else {
+         setCurrentUser(null);
+         console.log("⚠️ [SUPABASE] No authenticated user.");
       }
 
       // Fetch Tasks (excluding soft-deleted)
@@ -50,123 +55,204 @@ export default function TasksPage() {
         .select('*')
         .or('Deleted.is.null,Deleted.eq.false')
         .order('Created Date', { ascending: false });
-
       if (tasksError) throw tasksError;
+      setTasks(tasksData || []); // Update tasks state with raw data
+      console.log(`✅ [SUPABASE] Loaded ${tasksData?.length || 0} raw tasks.`);
 
-      // Fetch Active Users
+
+      // Fetch Active Users for the dropdown
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*')
-        .or('Is Active.is.null,Is Active.eq.true');
-
+        .or('Is Active.is.null,Is Active.eq.true'); // Filter out inactive users
       if (usersError) throw usersError;
-      
       const activeUsers = Array.isArray(usersData) ? usersData.filter(u => {
         const name = u?.["Full Name"]?.trim() || '';
         return name && 
-               !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
-               !name.toLowerCase().includes('test') &&
-               u.Email && u.ID;
+               !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) && // Exclude specific users
+               !name.toLowerCase().includes('test') && // Exclude test users
+               u.Email && u.ID; // Ensure valid email and ID
       }) : [];
+      setUsers(activeUsers); // THIS IS CRUCIAL FOR THE DROPDOWN
+      console.log(`✅ [SUPABASE] Loaded ${activeUsers.length} active users.`);
 
-      // Fetch Residents
+      // Fetch Residents (excluding soft-deleted)
       const { data: residentsData } = await supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false');
-      
-      // Fetch Properties
-      const { data: propertiesData } = await supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false');
-
-      // --- APPLY FILTERS & SORTING ---
-      let filtered = Array.isArray(tasksData) ? [...tasksData] : [];
-      const now = new Date();
-
-      if (filters.assignee !== "all") {
-        filtered = filtered.filter(t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee);
-      }
-
-      if (filters.status === "overdue") {
-        filtered = filtered.filter(t => {
-          const status = (t.Status || t.status || "").toLowerCase();
-          const dueDate = t["Due Date"] || t.due_date;
-          return status !== "completed" && dueDate && new Date(dueDate) < now;
-        });
-      } else if (filters.status !== "all") {
-        const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
-        filtered = filtered.filter(t => (t.Status || t.status || "").toLowerCase().replace(/ /g, "_") === filterStatusLower);
-      }
-
-      if (filters.priority !== "all_priority") {
-        filtered = filtered.filter(t => (t.Priority || t.priority || "").toLowerCase() === filters.priority.toLowerCase());
-      }
-
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filtered = filtered.filter(t => 
-          (t.Title || "").toLowerCase().includes(searchTerm) || 
-          (t.Description || "").toLowerCase().includes(searchTerm) ||
-          (t["Assigned To User ID"] || "").toLowerCase().includes(searchTerm)
-        );
-      }
-
-      // Sorting Logic
-      filtered.sort((a, b) => {
-        if (sortOrder === "newest") return new Date(b["Created Date"] || 0) - new Date(a["Created Date"] || 0);
-        if (sortOrder === "oldest") return new Date(a["Created Date"] || 0) - new Date(b["Created Date"] || 0);
-        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-        const diff = (priorityOrder[(b.Priority || 'medium').toLowerCase()] || 0) - (priorityOrder[(a.Priority || 'medium').toLowerCase()] || 0);
-        return diff !== 0 ? diff : new Date(a["Due Date"] || 0) - new Date(b["Due Date"] || 0);
-      });
-
-      // Update All States
-      setTasks(tasksData || []);
-      setFilteredTasks(filtered);
-      setUsers(activeUsers);
       setResidents(residentsData || []);
-      setProperties(propertiesData || []);
-      
-      console.log(`✅ Loaded ${activeUsers.length} users and ${tasksData?.length} tasks.`);
-      
-    } catch (error) {
-      console.error("❌ Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, filters, sortOrder]);
+      console.log(`✅ [SUPABASE] Loaded ${residentsData?.length || 0} residents.`);
 
-  // 2. TRIGGER INITIAL LOAD & UPDATES
+      // Fetch Properties (excluding soft-deleted)
+      const { data: propertiesData } = await supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false');
+      setProperties(propertiesData || []);
+      console.log(`✅ [SUPABASE] Loaded ${propertiesData?.length || 0} properties.`);
+
+    } catch (error) {
+      console.error("❌ [SUPABASE] Error loading raw data:", error.message, error.stack);
+      setTasks([]);
+      setUsers([]);
+      setResidents([]);
+      setProperties([]);
+    } finally {
+      // setLoading(false); // Do not set to false here, wait until filtering is done too
+    }
+  }, [supabase, setTasks, setUsers, setResidents, setProperties, setCurrentUser]);
+
+
+  // 2. Function to apply filters and sorting to the *already fetched* tasks
+  const applyFiltersAndSort = useCallback(() => {
+    console.log("⚙️ Applying filters and sorting...");
+    if (!tasks) { // Ensure tasks data is available
+        setFilteredTasks([]);
+        setLoading(false);
+        return;
+    }
+
+    let currentFiltered = [...tasks]; // Start with the raw tasks
+
+    const now = new Date();
+
+    // Apply filters
+    if (filters.assignee !== "all") {
+      currentFiltered = currentFiltered.filter(
+        t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee
+      );
+    }
+    if (filters.status === "overdue") {
+      currentFiltered = currentFiltered.filter(t => {
+        const status = (t.Status || t.status || "").toLowerCase();
+        const dueDate = t["Due Date"] || t.due_date;
+        return status !== "completed" && dueDate && new Date(dueDate) < now;
+      });
+    } else if (filters.status !== "all") {
+      const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
+      currentFiltered = currentFiltered.filter(t => {
+        const taskStatus = (t.Status || t.status || "").toLowerCase().replace(/ /g, "_");
+        return taskStatus === filterStatusLower;
+      });
+    }
+    if (filters.priority !== "all_priority") {
+      currentFiltered = currentFiltered.filter(
+        t => ((t.Priority || t.priority || "").toLowerCase()) === filters.priority.toLowerCase()
+      );
+    }
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      currentFiltered = currentFiltered.filter(t => {
+        const title = t.Title || t.title || "";
+        const desc = t.Description || t.description || "";
+        const assigned = t["Assigned To User ID"] || "unassigned";
+        const createdBy = t["Created By"] || t.created_by || "";
+        return (
+          title.toLowerCase().includes(searchTerm) ||
+          desc.toLowerCase().includes(searchTerm) ||
+          assigned.toLowerCase().includes(searchTerm) ||
+          createdBy.toLowerCase().includes(searchTerm)
+        );
+      });
+    }
+
+    // Apply sorting
+    currentFiltered.sort((a, b) => {
+      if (sortOrder === "newest") {
+        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+        return dateB - dateA;
+      } else if (sortOrder === "oldest") {
+        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+        return dateA - dateB;
+      } else { // Default to priority then due date
+        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+        const aPriority = (a.Priority || a.priority || "medium").toLowerCase();
+        const bPriority = (b.Priority || b.priority || "medium").toLowerCase();
+        const diff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
+        if (diff !== 0) return diff; // Sort by priority first
+        const dueA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
+        const dueB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
+        return dueA - dueB; // Then by due date
+      }
+    });
+    setFilteredTasks(currentFiltered);
+    setLoading(false); // Finished loading and processing
+    console.log(`✅ Applied filters and sorting. ${currentFiltered.length} tasks visible.`);
+
+  }, [tasks, filters, sortOrder, setFilteredTasks]); // Dependencies for re-running this function
+
+  // 3. useEffect to trigger initial raw data load
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    loadAllRawData();
+  }, [loadAllRawData]); // Re-run if loadAllRawData memoized function changes
+
+  // 4. useEffect to trigger filtering/sorting when raw tasks, filters, or sortOrder change
+  useEffect(() => {
+    applyFiltersAndSort();
+  }, [tasks, filters, sortOrder, applyFiltersAndSort]); // Re-run if any of these change
 
   const handleSubmit = async (taskData) => {
     try {
-      if (!taskData["Logged By"] && currentUser?.["Full Name"]) taskData["Logged By"] = currentUser["Full Name"];
+      // Ensure "Logged By" is set if not already
+      if (!taskData["Logged By"] && currentUser?.["Full Name"]) {
+        taskData["Logged By"] = currentUser["Full Name"];
+      }
       
+      // Handle "all_team_members" assignment
       if (taskData["Assigned To User ID"] === "all_team_members") {
-        const promises = users.map(u => supabase.from('tasks').insert([{ ...taskData, ID: crypto.randomUUID(), "Assigned To User ID": u["Full Name"], "Created By": currentUser?.Email || "Unknown" }]));
+        // Create multiple tasks, one for each user
+        const promises = users.map(u => 
+          supabase.from('tasks').insert([{ 
+            ...taskData, 
+            ID: crypto.randomUUID(), // Generate a new UUID for each task
+            "Assigned To User ID": u["Full Name"], 
+            "Created By": currentUser?.Email || "Unknown",
+            "Created Date": new Date().toISOString() // Ensure created date is set for new tasks
+          }])
+        );
         await Promise.all(promises);
       } else if (editingTask?.ID) {
-        await supabase.from('tasks').update({ ...taskData, "Updated Date": new Date().toISOString() }).eq('ID', editingTask.ID);
+        // Update existing task
+        await supabase.from('tasks').update({ 
+          ...taskData, 
+          "Updated Date": new Date().toISOString() 
+        }).eq('ID', editingTask.ID);
       } else {
-        await supabase.from('tasks').insert([{ ...taskData, ID: crypto.randomUUID(), "Created Date": new Date().toISOString(), "Created By": currentUser?.Email || "Unknown" }]);
+        // Create new single task
+        await supabase.from('tasks').insert([{ 
+          ...taskData, 
+          ID: crypto.randomUUID(), 
+          "Created Date": new Date().toISOString(), 
+          "Created By": currentUser?.Email || "Unknown" 
+        }]);
       }
       
       setShowForm(false);
       setEditingTask(null);
-      loadTasks();
+      loadAllRawData(); // Re-load all data to refresh tasks and then re-apply filters
     } catch (error) {
+      console.error("Error saving task:", error);
       alert("Error saving task: " + error.message);
     }
   };
 
   const handleDelete = async (task) => {
-    if (window.confirm(`Delete "${task.Title}"?`)) {
-      await supabase.from('tasks').update({ Deleted: true, "Deleted Date": new Date().toISOString(), "Deleted By": currentUser?.["Full Name"] || "Unknown" }).eq('ID', task.ID);
-      loadTasks();
+    if (window.confirm(`Are you sure you want to delete "${task.Title}"?`)) {
+      try {
+        // Perform a soft delete
+        await supabase.from('tasks').update({ 
+          Deleted: true, 
+          "Deleted Date": new Date().toISOString(), 
+          "Deleted By": currentUser?.["Full Name"] || "Unknown" 
+        }).eq('ID', task.ID);
+        loadAllRawData(); // Re-load all data to reflect the deletion
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        alert("Error deleting task: " + error.message);
+      }
     }
   };
 
   const getTaskCounts = () => {
     const now = new Date();
+    // Use the raw 'tasks' state for global counts, not 'filteredTasks'
     return {
       total: tasks.length,
       overdue: tasks.filter(t => (t.Status || '').toLowerCase() !== 'completed' && t["Due Date"] && new Date(t["Due Date"]) < now).length,
@@ -178,6 +264,7 @@ export default function TasksPage() {
   };
 
   const taskCounts = getTaskCounts();
+  // Group filtered tasks, not raw tasks
   const groupedTasks = filteredTasks.reduce((acc, t) => {
     const assignee = t["Assigned To User ID"] || 'Unassigned';
     if (!acc[assignee]) acc[assignee] = [];
