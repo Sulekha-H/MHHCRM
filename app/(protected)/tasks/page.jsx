@@ -286,6 +286,7 @@ useEffect(() => {
       
       setTasks(Array.isArray(tasksData) ? tasksData : []);
       setUsers(Array.isArray(activeUsers) ? activeUsers : []);
+      console.log('DEBUG: Users passed to TaskForm:', Array.isArray(activeUsers) ? activeUsers : []); // ADDED LINE
       setResidents(Array.isArray(residentsData) ? residentsData : []);
       setProperties(Array.isArray(propertiesData) ? propertiesData : []);
       
