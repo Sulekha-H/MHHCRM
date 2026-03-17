@@ -830,7 +830,7 @@ useEffect(() => {
                     }
                     return weeks;
                   };
-                  const weekDates = generateWeekDates('2025-09-01', 18);
+                  const weekDates = generateWeekDates('2026-01-01', 18);
 
                   return (
                     <div key={property.id}>
