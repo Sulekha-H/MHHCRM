@@ -37,10 +37,10 @@ const loadAllData = useCallback(async () => {
   if (!supabase) return;
   setLoading(true);
   try {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (authUser) {
-      const { data: userData } = await supabase.from('users').select('*').eq('ID', authUser.id).single();
-      setCurrentUser(userData);
+    if (user?.id) {
+  const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
+  setCurrentUser(userData);
+}
     }
     const { data: tasksData, error: tasksError } = await supabase.from('tasks').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false });
     if (tasksError) throw tasksError;
