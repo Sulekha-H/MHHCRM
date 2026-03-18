@@ -31,37 +31,66 @@ export default function Repairs() { // Component name changed
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
 
-  // Load data on mount
 useEffect(() => {
   if (!supabase) return; // Ensure Supabase client is ready
-
-  let mounted = true;
-
-  const loadData = async () => {
+  
+  const fetchAllData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      // Load current user using Clerk's user object
+      if (user?.id) {
+        const { data: userData, error: userError } = await supabase.from('users').select('*').eq('ID', user.id).single();
+        if (userError) console.error("Error loading current user from Supabase:", userError);
+        // Assuming you have a setUser state for the current user, like in TasksPage
+        // If you don't use it, you can remove this part or adapt as needed
+        // setUser(userData); 
+      }
+
+      // Load repairs
+      const { data: repairsData, error: repairsError } = await supabase
         .from("repairs")
         .select("*")
+        .or('Deleted.is.null,Deleted.eq.false') // Added soft-delete filter
         .order("Created Date", { ascending: false });
+      if (repairsError) throw repairsError;
+      setRepairs(repairsData || []);
 
-      if (error) throw error;
-      if (mounted) setRepairs(data || []);
+      // Load properties
+      const { data: propertiesData, error: propertiesError } = await supabase
+        .from('properties')
+        .select('*')
+        .or('Deleted.is.null,Deleted.eq.false'); // Added soft-delete filter
+      if (propertiesError) throw propertiesError;
+      setProperties(propertiesData || []);
+
+      // Load accommodations
+      const { data: accommodationsData, error: accommodationsError } = await supabase
+        .from('accommodations')
+        .select('*')
+        .or('Deleted.is.null,Deleted.eq.false'); // Added soft-delete filter
+      if (accommodationsError) throw accommodationsError;
+      setAccommodations(accommodationsData || []);
+
     } catch (err) {
-      console.error("❌ Error loading repairs:", err);
-      if (mounted) setRepairs([]);
+      console.error("❌ Error loading data:", err);
+      setRepairs([]);
+      setProperties([]);
+      setAccommodations([]);
     } finally {
-      if (mounted) setLoading(false);
+      setLoading(false);
     }
   };
 
-  loadData();
+  fetchAllData();
 
-  return () => {
-    mounted = false;
-  };
-}, [supabase]);
+  // No cleanup function needed for simple data fetching unless you have subscriptions
+}, [supabase, user]); // Dependencies: supabase client and Clerk's user object
 
+
+
+
+
+  
 // Filter and sort repairs
 const filterRepairs = useCallback(() => {
   let current = Array.isArray(repairs) ? [...repairs] : [];
@@ -311,7 +340,7 @@ useEffect(() => {
       
       setShowForm(false);
       setEditingRepair(null);
-      loadData();
+      fetchAllData()
     } catch (error) {
       console.error("Error saving repair:", error);
       alert("Error saving repair: " + error.message);
@@ -436,7 +465,7 @@ useEffect(() => {
           setViewingRepair(null);
         }
         
-        loadData();
+       fetchAllData()
       } catch (error) {
         console.error("Error deleting repair:", error);
         alert("Error deleting repair: " + error.message);
