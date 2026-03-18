@@ -29,160 +29,56 @@ export default function IncidentsSupabase() {
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
 
-  useEffect(() => {
-  if (!supabase) return;
+const fetchAllData = useCallback(async () => {
+    if (!supabase) return;
+    setLoading(true);
 
-  let mounted = true;
-
-  const loadIncidentsData = async () => {
     try {
-      setLoading(true);
-      console.log("🔄 Loading incidents data...");
+      if (user?.id) {
+        const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
+        setCurrentUser(userData);
+      }
 
-      // Fetch incidents
       const { data: incidentsData, error: incidentsError } = await supabase
         .from("incidents")
         .select("*")
-        .or("Deleted.is.null,Deleted.eq.false")
+        .or('Deleted.is.null,Deleted.eq.false')
         .order("Created Date", { ascending: false });
-
       if (incidentsError) throw incidentsError;
+      setIncidents(incidentsData || []);
 
-      if (!mounted) return;
-
-      // Filter based on active tab
-      let filtered = Array.isArray(incidentsData) ? [...incidentsData] : [];
-      const lowerSearchTerm = searchTerm?.toLowerCase() || "";
-
-      if (activeTab !== "all") {
-        filtered = filtered.filter(incident => {
-          const status = (incident.Status || incident.status || "open").toLowerCase().replace(/ /g, "_");
-          return status === activeTab;
-        });
-      }
-
-      // Filter by search term
-      if (lowerSearchTerm) {
-        filtered = filtered.filter(incident => {
-          const description = (incident.Description || incident.description || "").toLowerCase();
-          const type = (incident.Incident_Type || incident.incident_type || "").toLowerCase();
-          const location = (incident.Location || incident.location || "").toLowerCase();
-          return description.includes(lowerSearchTerm) || type.includes(lowerSearchTerm) || location.includes(lowerSearchTerm);
-        });
-      }
-
-      // Optional: sort by created date descending
-      filtered.sort((a, b) => {
-        const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-        const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-        return dateB - dateA;
-      });
-
-      if (mounted) {
-        setIncidents(incidentsData || []);
-        setFilteredIncidents(filtered);
-        console.log(`✅ Loaded ${incidentsData?.length || 0} incidents`);
-      }
-    } catch (error) {
-      console.error("❌ Error loading incidents:", error);
-      if (mounted) {
-        setIncidents([]);
-        setFilteredIncidents([]);
-      }
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  };
-
-  loadIncidentsData();
-
-  return () => {
-    mounted = false;
-  };
-}, [supabase, activeTab, searchTerm]);
-  
-  const loadData = async () => {
-    setLoading(true);
-    console.log("🔵 Starting to load incidents from Supabase...");
-
-    try {
-      // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', authUser.email)
-          .single();
-        setCurrentUser(userData);
-        console.log("👤 Current user:", userData?.email);
-      }
-
-      // Load incidents with direct Supabase query
-      console.log("📊 Fetching incidents from Supabase...");
-      const { data: incidentsData, error: incidentsError } = await supabase
-        .from('incidents')
-        .select('*')
-        .order('"Incident Date"', { ascending: false });
-
-      console.log("📊 Raw incidents data:", incidentsData);
-      console.log("❌ Incidents error:", incidentsError);
-
-      if (incidentsError) {
-        console.error("❌ Error loading incidents:", incidentsError);
-        throw incidentsError;
-      }
-      
-      // Filter out soft-deleted incidents (only exclude if explicitly marked as deleted)
-      const activeIncidents = (incidentsData || []).filter(i => {
-        const isDeleted = i.Deleted || i["Deleted"];
-        console.log(`Checking incident ${i.ID || i.id}: Deleted=${isDeleted}`);
-        return isDeleted !== true;
-      });
-      console.log(`✅ Loaded ${activeIncidents.length} incidents (filtered out ${(incidentsData?.length || 0) - activeIncidents.length} deleted)`);
-
-      // Load residents
       const { data: residentsData, error: residentsError } = await supabase
         .from('residents')
-        .select('*');
-
+        .select('*')
+        .or('Deleted.is.null,Deleted.eq.false');
       if (residentsError) throw residentsError;
-      console.log(`✅ Loaded ${residentsData?.length || 0} residents`);
+      setResidents(residentsData || []);
 
-      // Load properties
       const { data: propertiesData, error: propertiesError } = await supabase
         .from('properties')
-        .select('*');
-
+        .select('*')
+        .or('Deleted.is.null,Deleted.eq.false');
       if (propertiesError) throw propertiesError;
-      console.log(`✅ Loaded ${propertiesData?.length || 0} properties`);
+      setProperties(propertiesData || []);
 
-      // Load users
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('*');
-
+        .select('*')
+        .or('Is Active.is.null,Is Active.eq.true');
       if (usersError) throw usersError;
-
-      const activeUsers = usersData.filter(user => {
-        const name = user?.Full_Name?.trim() || user?.full_name?.trim() || '';
-        return (user.Is_Active !== false && user.is_active !== false) &&
+      const activeUsers = (usersData || []).filter(u => {
+        const name = u?.["Full Name"]?.trim() || u?.full_name?.trim() || '';
+        return (u.Is_Active !== false && u.is_active !== false) &&
                name &&
                !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
                !name.toLowerCase().includes('test') &&
-               (user.Email || user.email) &&
-               (user.ID || user.id);
+               (u.Email || u.email) &&
+               (u.ID || u.id);
       });
-      console.log(`✅ Loaded ${activeUsers.length} active users`);
-
-      setIncidents(activeIncidents);
-      setResidents(residentsData || []);
-      setProperties(propertiesData || []);
       setUsers(activeUsers);
 
     } catch (error) {
-      console.error("❌ Critical error loading data:", error);
-      alert("Error loading incidents: " + error.message + "\nCheck browser console for details.");
+      console.error("❌ Error loading all data for incidents page:", error);
       setIncidents([]);
       setResidents([]);
       setProperties([]);
@@ -190,7 +86,44 @@ export default function IncidentsSupabase() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, user]);
+
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  const filterAndSortIncidents = useCallback(() => {
+    let currentFiltered = Array.isArray(incidents) ? [...incidents] : [];
+    const lowerSearchTerm = searchTerm?.toLowerCase() || "";
+
+    if (activeTab !== "all") {
+      currentFiltered = currentFiltered.filter(incident => {
+        const status = (incident.Status || incident.status || "open").toLowerCase().replace(/ /g, "_");
+        return status === activeTab;
+      });
+    }
+
+    if (lowerSearchTerm) {
+      currentFiltered = currentFiltered.filter(incident => {
+        const description = (incident.Description || incident.description || "").toLowerCase();
+        const type = (incident.Incident_Type || incident.incident_type || "").toLowerCase();
+        const location = (incident.Location || incident.location || "").toLowerCase();
+        return description.includes(lowerSearchTerm) || type.includes(lowerSearchTerm) || location.includes(lowerSearchTerm);
+      });
+    }
+
+    currentFiltered.sort((a, b) => {
+      const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+      const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    setFilteredIncidents(currentFiltered);
+  }, [incidents, searchTerm, activeTab]);
+
+  useEffect(() => {
+    filterAndSortIncidents();
+  }, [filterAndSortIncidents]);
 
   const handleSubmit = async (incidentData) => {
     try {
@@ -216,7 +149,7 @@ export default function IncidentsSupabase() {
       
       setShowForm(false);
       setEditingIncident(null);
-      loadData();
+      fetchAllData()
     } catch (error) {
       console.error("Error saving incident:", error);
       alert("Error saving incident: " + error.message);
@@ -249,7 +182,7 @@ export default function IncidentsSupabase() {
         if (error) throw error;
         console.log(`✅ Soft deleted incident ${incident.ID || incident.id}`);
         setViewingIncident(null);
-        await loadData();
+        await fetchAllData();
       } catch (error) {
         console.error("Error deleting incident:", error);
         alert("Error deleting incident: " + error.message);
