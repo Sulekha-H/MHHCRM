@@ -27,36 +27,66 @@ export default function OfficeLogs() {
   const [sortOrder, setSortOrder] = useState("newest");
   const [users, setUsers] = useState([]);
 
-// Load data on mount
-useEffect(() => {
-  if (!supabase) return;
-
-  let mounted = true;
-
-  const loadData = async () => {
+const loadAllData = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("office_logs")
-        .select("*")
-        .order("Date Time", { ascending: false });
+      let currentUserData = null;
+      // Use Clerk's user.email to find corresponding Supabase user data
+      if (user?.email) {
+        const { data: supabaseUserData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', user.email)
+          .single();
+        if (userError && userError.code !== 'PGRST116') { // PGRST116 means "no rows found", which is fine if user isn't in DB yet
+          console.error("Error loading Supabase user data:", userError);
+        }
+        currentUserData = supabaseUserData;
+        setCurrentUser(currentUserData); // Set the Supabase user data here
+        console.log("👤 Current user (from Supabase):", currentUserData?.full_name || currentUserData?.email);
+      } else {
+        setCurrentUser(null);
+      }
 
-      if (error) throw error;
-      if (mounted) setLogs(data || []);
-    } catch (err) {
-      console.error("❌ Error loading office logs:", err);
-      if (mounted) setLogs([]);
+      // Load office logs, filter out deleted
+      const { data: logsData, error: logsError } = await supabase
+        .from('office_logs')
+        .select('*')
+        .or('Deleted.is.null,Deleted.eq.false')
+        .order('"Date Time"', { ascending: false });
+
+      if (logsError) throw logsError;
+      console.log(`✅ Loaded ${logsData?.length || 0} office logs from Supabase`);
+      setLogs(logsData || []);
+
+      // Load users for staff selection, filter out inactive and specific names
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*');
+
+      if (usersError) throw usersError;
+
+      const activeUsers = (usersData || []).filter(u => {
+        const name = u?.full_name?.trim().toLowerCase() || u?.["Full Name"]?.trim().toLowerCase() || '';
+        const excludeNames = ['tair', 'iveta lobinate', 'iveta lobinaite', 'amit noach', 'pilar'];
+        return (u.is_active !== false && u.Is_Active !== false) && !excludeNames.includes(name) && !name.includes('test');
+      });
+      setUsers(activeUsers);
+
+    } catch (error) {
+      console.error("❌ Critical error loading data:", error);
+      alert("Error loading office logs: " + error.message + "\nCheck browser console for details.");
+      setLogs([]);
+      setUsers([]);
+      setCurrentUser(null);
     } finally {
-      if (mounted) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, [supabase, user]); // Depend on supabase client and clerk user object
 
-  loadData();
-
-  return () => {
-    mounted = false;
-  };
-}, [supabase]);
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]); // Run once on mount and when loadAllData changes
 
 // Filter and sort logs
 const filterLogs = useCallback(() => {
@@ -112,57 +142,6 @@ const filterLogs = useCallback(() => {
 useEffect(() => {
   filterLogs();
 }, [filterLogs]);
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', authUser.email)
-          .single();
-        
-        const isTestUser = (userData?.full_name && 
-          (['tair', 'iveta lobinate', 'amit noach'].includes(userData.full_name.trim().toLowerCase()) || 
-           userData.full_name.trim().toLowerCase().includes('test'))
-        );
-        
-        setUser(isTestUser ? null : userData);
-      }
-
-      // Load office logs - using PostgreSQL column names with spaces, filter out deleted
-      const { data: logsData, error: logsError } = await supabase
-        .from('office_logs')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false')
-        .order('"Date Time"', { ascending: false });
-
-      if (logsError) throw logsError;
-      console.log(`✅ Loaded ${logsData?.length || 0} office logs from Supabase`);
-
-      // Load users
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('*');
-
-      if (usersError) throw usersError;
-
-      const activeUsers = usersData.filter(u => {
-        const name = u?.full_name?.trim().toLowerCase() || u?.["Full Name"]?.trim().toLowerCase() || '';
-        const excludeNames = ['tair', 'iveta lobinate', 'iveta lobinaite', 'amit noach', 'pilar'];
-        return u.is_active !== false && !excludeNames.includes(name) && !name.includes('test');
-      });
-
-      setLogs(logsData || []);
-      setUsers(activeUsers);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (logData) => {
     try {
@@ -253,7 +232,7 @@ useEffect(() => {
       
       setShowForm(false);
       setEditingLog(null);
-      loadData();
+      loadAllData();
     } catch (error) {
       console.error("Error saving log:", error);
       alert("Error saving office log: " + error.message);
@@ -296,7 +275,7 @@ useEffect(() => {
       if (error) throw error;
 
       console.log(`Office log ${log["ID"] || log.id} deleted permanently.`);
-      await loadData();
+      await loadAllData();
 
     } catch (error) {
       console.error("Error deleting office log:", error);
