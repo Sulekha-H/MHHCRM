@@ -70,7 +70,7 @@ const loadAllData = useCallback(async () => {
       const activeUsers = (usersData || []).filter(u => {
         const name = u?.full_name?.trim().toLowerCase() || u?.["Full Name"]?.trim().toLowerCase() || '';
         const excludeNames = ['tair', 'iveta lobinate', 'iveta lobinaite', 'amit noach', 'pilar'];
-        return (u.is_active !== false && u.Is_Active !== false) && !excludeNames.includes(name) && !name.includes('test');
+        return (u["Is Active"] === true || u["Is Active"] === "TRUE") && !excludeNames.includes(name) && !name.includes('test');
       });
       setUsers(activeUsers);
 
