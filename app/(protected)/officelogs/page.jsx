@@ -29,22 +29,24 @@ export default function OfficeLogs() {
   const [currentUser, setCurrentUser] = useState(null);
 
 const loadAllData = useCallback(async () => {
+    if (!supabase) return;
     setLoading(true);
     try {
       let currentUserData = null;
-      // Use Clerk's user.email to find corresponding Supabase user data
-      if (user?.email) {
+      // Use Clerk's user.primaryEmailAddress.emailAddress to find corresponding Supabase user data
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (userEmail) {
         const { data: supabaseUserData, error: userError } = await supabase
           .from('users')
           .select('*')
-          .eq('email', user.email)
+          .eq('Email', userEmail)
           .single();
         if (userError && userError.code !== 'PGRST116') { // PGRST116 means "no rows found", which is fine if user isn't in DB yet
           console.error("Error loading Supabase user data:", userError);
         }
         currentUserData = supabaseUserData;
         setCurrentUser(currentUserData); // Set the Supabase user data here
-        console.log("👤 Current user (from Supabase):", currentUserData?.full_name || currentUserData?.email);
+        console.log("👤 Current user (from Supabase):", currentUserData?.full_name || currentUserData?.Email);
       } else {
         setCurrentUser(null);
       }
@@ -70,7 +72,9 @@ const loadAllData = useCallback(async () => {
       const activeUsers = (usersData || []).filter(u => {
         const name = u?.full_name?.trim().toLowerCase() || u?.["Full Name"]?.trim().toLowerCase() || '';
         const excludeNames = ['tair', 'iveta lobinate', 'iveta lobinaite', 'amit noach', 'pilar'];
-        return (u["Is Active"] === true || u["Is Active"] === "TRUE") && !excludeNames.includes(name) && !name.includes('test');
+        // Relax Is Active check to handle NULL values
+        const isActive = u["Is Active"] !== false && u["Is Active"] !== "FALSE";
+        return isActive && !excludeNames.includes(name) && !name.includes('test');
       });
       setUsers(activeUsers);
 
