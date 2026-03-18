@@ -13,6 +13,20 @@ import { format } from "date-fns";
 import OfficeLogForm from "@/components/office-logs/OfficeLogForm";
 import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
 
+// Helper function to normalize column names from Supabase
+const normalizeData = (data) => {
+  if (!data) return data;
+  if (Array.isArray(data)) return data.map(normalizeData);
+
+  const normalized = {};
+  Object.keys(data).forEach(key => {
+    // Convert "Full Name", "Full_Name", "full name" to "full_name"
+    const normalizedKey = key.trim().toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
+    normalized[normalizedKey] = data[key];
+  });
+  return normalized;
+};
+
 export default function OfficeLogs() {
   const supabase = useClerkSupabaseClient()
   const { user } = useUser();
@@ -32,26 +46,33 @@ const loadAllData = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
     try {
-      let currentUserData = null;
-      // Use Clerk's user.primaryEmailAddress.emailAddress to find corresponding Supabase user data
-      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      console.log("🔄 [OfficeLogs] Loading data...");
+
+      // 1. Resolve Clerk User Email
+      const userEmail = user?.primaryEmailAddress?.emailAddress || (user?.emailAddresses && user.emailAddresses[0]?.emailAddress);
+      console.log("📧 [OfficeLogs] Clerk User Email:", userEmail);
+
+      // 2. Lookup Current User in Supabase
       if (userEmail) {
+        console.log("🔍 [OfficeLogs] Looking up Supabase user record...");
         const { data: supabaseUserData, error: userError } = await supabase
           .from('users')
           .select('*')
           .eq('Email', userEmail)
-          .single();
-        if (userError && userError.code !== 'PGRST116') { // PGRST116 means "no rows found", which is fine if user isn't in DB yet
-          console.error("Error loading Supabase user data:", userError);
+          .maybeSingle();
+
+        if (userError) {
+          console.error("❌ [OfficeLogs] Error fetching current user:", userError);
+        } else if (!supabaseUserData) {
+          console.warn("⚠️ [OfficeLogs] No Supabase user found for:", userEmail);
         }
-        currentUserData = supabaseUserData;
-        setCurrentUser(currentUserData); // Set the Supabase user data here
-        console.log("👤 Current user (from Supabase):", currentUserData?.full_name || currentUserData?.Email);
-      } else {
-        setCurrentUser(null);
+
+        const normalized = normalizeData(supabaseUserData);
+        setCurrentUser(normalized);
+        console.log("👤 [OfficeLogs] Current user resolved:", normalized?.full_name || normalized?.email || "Unknown");
       }
 
-      // Load office logs, filter out deleted
+      // 3. Load Office Logs
       const { data: logsData, error: logsError } = await supabase
         .from('office_logs')
         .select('*')
@@ -59,35 +80,58 @@ const loadAllData = useCallback(async () => {
         .order('"Date Time"', { ascending: false });
 
       if (logsError) throw logsError;
-      console.log(`✅ Loaded ${logsData?.length || 0} office logs from Supabase`);
       setLogs(logsData || []);
+      console.log(`📋 [OfficeLogs] Loaded ${logsData?.length || 0} logs`);
 
-      // Load users for staff selection, filter out inactive and specific names
+      // 4. Load All Users for Selection
+      console.log("👥 [OfficeLogs] Fetching staff members...");
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*');
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error("❌ [OfficeLogs] Error fetching users list:", usersError);
+        throw usersError;
+      }
 
-      const activeUsers = (usersData || []).filter(u => {
-        const name = u?.full_name?.trim().toLowerCase() || u?.["Full Name"]?.trim().toLowerCase() || '';
+      console.log(`👥 [OfficeLogs] Raw users count from DB: ${usersData?.length || 0}`);
+      const normalizedUsers = (usersData || []).map(normalizeData);
+
+      if (normalizedUsers.length > 0) {
+        console.log("📋 [OfficeLogs] Sample user raw keys:", Object.keys(usersData[0]));
+        console.log("📋 [OfficeLogs] Sample user normalized keys:", Object.keys(normalizedUsers[0]));
+      }
+
+      const activeUsers = normalizedUsers.filter(u => {
+        const name = String(u.full_name || u.name || "").trim().toLowerCase();
         const excludeNames = ['tair', 'iveta lobinate', 'iveta lobinaite', 'amit noach', 'pilar'];
-        // Relax Is Active check to handle NULL values
-        const isActive = u["Is Active"] !== false && u["Is Active"] !== "FALSE";
-        return isActive && !excludeNames.includes(name) && !name.includes('test');
+
+        // Default to active unless explicitly disabled
+        let isActive = true;
+        if (u.is_active !== undefined && u.is_active !== null) {
+          isActive = u.is_active !== false && u.is_active !== "FALSE" && u.is_active !== "false" && u.is_active !== 0;
+        }
+
+        const isNotExcluded = name !== "" && !excludeNames.includes(name) && !name.includes('test');
+        return isActive && isNotExcluded;
       });
+
+      console.log(`✅ [OfficeLogs] Final staff list: ${activeUsers.length} members`);
+      if (activeUsers.length === 0 && normalizedUsers.length > 0) {
+        console.warn("⚠️ [OfficeLogs] All users were filtered out! Check filter logic.");
+      }
+
       setUsers(activeUsers);
 
     } catch (error) {
-      console.error("❌ Critical error loading data:", error);
-      alert("Error loading office logs: " + error.message + "\nCheck browser console for details.");
+      console.error("❌ [OfficeLogs] Critical loading error:", error);
+      alert("Error loading office logs: " + error.message);
       setLogs([]);
       setUsers([]);
-      setCurrentUser(null);
     } finally {
       setLoading(false);
     }
-  }, [supabase, user]); // Depend on supabase client and clerk user object
+  }, [supabase, user]);
 
   useEffect(() => {
     loadAllData();
@@ -151,7 +195,7 @@ useEffect(() => {
   const handleSubmit = async (logData) => {
     try {
       if (!logData.staff_member) {
-        logData.staff_member = user?.full_name || 'Unknown';
+        logData.staff_member = currentUser?.full_name || user?.fullName || 'Unknown';
       }
 
       // Transform form values to match Supabase check constraints
@@ -657,7 +701,7 @@ useEffect(() => {
         <div className="mb-8">
           <OfficeLogForm
             log={editingLog}
-            currentUser={user}
+            currentUser={currentUser}
             users={users}
             onSubmit={handleSubmit}
             onCancel={() => {

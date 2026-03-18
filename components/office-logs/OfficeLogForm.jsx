@@ -52,6 +52,10 @@ export default function OfficeLogForm({ log, currentUser, users, onSubmit, onCan
       setDateTimeString(format(new Date(logData.date_time), "yyyy-MM-dd'T'HH:mm"));
     } else {
       setDateTimeString(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
+      const defaultStaff = currentUser?.full_name || currentUser?.Full_Name || "";
+      if (defaultStaff) {
+        setFormData(prev => ({ ...prev, staff_member: defaultStaff }));
+      }
     }
   }, [log, currentUser]);
 
@@ -147,22 +151,26 @@ export default function OfficeLogForm({ log, currentUser, users, onSubmit, onCan
                 <div className="space-y-2">
                   <Label>Staff Member</Label>
                   <Select
-                    value={formData.staff_member}
+                    value={formData.staff_member || ""}
                     onValueChange={(value) => setFormData({ ...formData, staff_member: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select staff member" />
+                      <SelectValue placeholder={users?.length > 0 ? "Select staff member" : "No staff found"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {users?.map((user) => {
-                        const userName = user["Full Name"] || user.Full_Name || user.full_name || "";
-                        const userId = user.ID || user.Id || user.id;
-                        return (
-                          <SelectItem key={userId} value={userName}>
-                            {userName}
-                          </SelectItem>
-                        );
-                      })}
+                      {users?.length > 0 ? (
+                        users.map((u, idx) => {
+                          const userName = u.full_name || u["Full Name"] || "Unknown User";
+                          const userId = u.id || u.ID || `user-${idx}`;
+                          return (
+                            <SelectItem key={userId} value={userName}>
+                              {userName}
+                            </SelectItem>
+                          );
+                        })
+                      ) : (
+                        <SelectItem value="_none" disabled>No staff members loaded</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -240,22 +248,26 @@ export default function OfficeLogForm({ log, currentUser, users, onSubmit, onCan
                     <div className="space-y-2">
                       <Label>Follow Up By</Label>
                       <Select
-                        value={formData.follow_up_by_user_id}
+                        value={formData.follow_up_by_user_id || ""}
                         onValueChange={(value) => setFormData({ ...formData, follow_up_by_user_id: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Assign to staff..." />
+                          <SelectValue placeholder={users?.length > 0 ? "Assign to staff..." : "No staff found"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {users?.map((user) => {
-                            const userName = user["Full Name"] || user.Full_Name || user.full_name || "";
-                            const userId = user.ID || user.Id || user.id;
-                            return (
-                              <SelectItem key={userId} value={userName}>
-                                {userName}
-                              </SelectItem>
-                            );
-                          })}
+                          {users?.length > 0 ? (
+                            users.map((u, idx) => {
+                              const userName = u.full_name || u["Full Name"] || "Unknown User";
+                              const userId = u.id || u.ID || `user-followup-${idx}`;
+                              return (
+                                <SelectItem key={userId} value={userName}>
+                                  {userName}
+                                </SelectItem>
+                              );
+                            })
+                          ) : (
+                            <SelectItem value="_none" disabled>No staff members loaded</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
