@@ -26,6 +26,7 @@ export default function OfficeLogs() {
   const [activeStatusTab, setActiveStatusTab] = useState("all_status");
   const [sortOrder, setSortOrder] = useState("newest");
   const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
 const loadAllData = useCallback(async () => {
     setLoading(true);
