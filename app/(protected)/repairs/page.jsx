@@ -31,64 +31,41 @@ export default function Repairs() { // Component name changed
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
 
+const fetchAllData = useCallback(async () => {
+  if (!supabase) return;
+  setLoading(true);
+  try {
+    const { data: repairsData, error: repairsError } = await supabase
+      .from("repairs")
+      .select("*")
+      .or('Deleted.is.null,Deleted.eq.false')
+      .order("Created Date", { ascending: false });
+    if (repairsError) throw repairsError;
+    setRepairs(repairsData || []);
+
+    const { data: propertiesData, error: propertiesError } = await supabase
+      .from('properties').select('*').or('Deleted.is.null,Deleted.eq.false');
+    if (propertiesError) throw propertiesError;
+    setProperties(propertiesData || []);
+
+    const { data: accommodationsData, error: accommodationsError } = await supabase
+      .from('accommodations').select('*').or('Deleted.is.null,Deleted.eq.false');
+    if (accommodationsError) throw accommodationsError;
+    setAccommodations(accommodationsData || []);
+
+  } catch (err) {
+    console.error("❌ Error loading data:", err);
+    setRepairs([]);
+    setProperties([]);
+    setAccommodations([]);
+  } finally {
+    setLoading(false);
+  }
+}, [supabase, user]);
+
 useEffect(() => {
-  if (!supabase) return; // Ensure Supabase client is ready
-  
-  const fetchAllData = async () => {
-    setLoading(true);
-    try {
-      // Load current user using Clerk's user object
-      if (user?.id) {
-        const { data: userData, error: userError } = await supabase.from('users').select('*').eq('ID', user.id).single();
-        if (userError) console.error("Error loading current user from Supabase:", userError);
-        // Assuming you have a setUser state for the current user, like in TasksPage
-        // If you don't use it, you can remove this part or adapt as needed
-        // setUser(userData); 
-      }
-
-      // Load repairs
-      const { data: repairsData, error: repairsError } = await supabase
-        .from("repairs")
-        .select("*")
-        .or('Deleted.is.null,Deleted.eq.false') // Added soft-delete filter
-        .order("Created Date", { ascending: false });
-      if (repairsError) throw repairsError;
-      setRepairs(repairsData || []);
-
-      // Load properties
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false'); // Added soft-delete filter
-      if (propertiesError) throw propertiesError;
-      setProperties(propertiesData || []);
-
-      // Load accommodations
-      const { data: accommodationsData, error: accommodationsError } = await supabase
-        .from('accommodations')
-        .select('*')
-        .or('Deleted.is.null,Deleted.eq.false'); // Added soft-delete filter
-      if (accommodationsError) throw accommodationsError;
-      setAccommodations(accommodationsData || []);
-
-    } catch (err) {
-      console.error("❌ Error loading data:", err);
-      setRepairs([]);
-      setProperties([]);
-      setAccommodations([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   fetchAllData();
-
-  // No cleanup function needed for simple data fetching unless you have subscriptions
-}, [supabase, user]); // Dependencies: supabase client and Clerk's user object
-
-
-
-
+}, [fetchAllData]);
 
   
 // Filter and sort repairs
@@ -145,20 +122,6 @@ useEffect(() => {
   filterRepairs();
 }, [filterRepairs]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', authUser.email)
-          .single();
-        
-        setUser(userData);
-      }
 
       // Load repairs - using PostgreSQL column names with spaces
       const { data: repairsData, error: repairsError } = await supabase
