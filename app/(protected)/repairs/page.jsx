@@ -38,18 +38,18 @@ const fetchAllData = useCallback(async () => {
     const { data: repairsData, error: repairsError } = await supabase
       .from("repairs")
       .select("*")
-      .or('Deleted.is.null,Deleted.eq.false')
-      .order("Created Date", { ascending: false });
+      .or('"Deleted".is.null,"Deleted".eq.false')
+      .order('"Created Date"', { ascending: false });
     if (repairsError) throw repairsError;
     setRepairs(repairsData || []);
 
     const { data: propertiesData, error: propertiesError } = await supabase
-      .from('properties').select('*').or('Deleted.is.null,Deleted.eq.false');
+      .from('properties').select('*').or('"Deleted".is.null,"Deleted".eq.false');
     if (propertiesError) throw propertiesError;
     setProperties(propertiesData || []);
 
     const { data: accommodationsData, error: accommodationsError } = await supabase
-      .from('accommodations').select('*').or('Deleted.is.null,Deleted.eq.false');
+      .from('accommodations').select('*').or('"Deleted".is.null,"Deleted".eq.false');
     if (accommodationsError) throw accommodationsError;
     setAccommodations(accommodationsData || []);
 
@@ -121,41 +121,6 @@ const filterRepairs = useCallback(() => {
 useEffect(() => {
   filterRepairs();
 }, [filterRepairs]);
-
-
-      // Load repairs - using PostgreSQL column names with spaces
-      const { data: repairsData, error: repairsError } = await supabase
-        .from('repairs')
-        .select('*')
-        .eq('"Deleted"', false)
-        .order('"Reported Date"', { ascending: false });
-
-      if (repairsError) throw repairsError;
-      console.log(`✅ Loaded ${repairsData?.length || 0} repairs from Supabase`);
-
-      // Load properties
-      const { data: propertiesData, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*');
-
-      if (propertiesError) throw propertiesError;
-
-      // Load accommodations
-      const { data: accommodationsData, error: accommodationsError } = await supabase
-        .from('accommodations')
-        .select('*');
-
-      if (accommodationsError) throw accommodationsError;
-
-      setRepairs(repairsData || []);
-      setProperties(propertiesData || []);
-      setAccommodations(accommodationsData || []);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = async (repairData) => {
     try {
