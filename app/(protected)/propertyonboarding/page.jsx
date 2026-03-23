@@ -102,13 +102,13 @@ export default function PropertyOnboardingSupabase() {
   useEffect(() => {
     const loadUserAndData = async () => {
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
         
-        if (authUser) {
+        if (userEmail) {
           const { data: userData } = await supabase
             .from('users')
             .select('*')
-            .eq('email', authUser.email)
+            .eq('Email', userEmail)
             .single();
           setCurrentUser(userData);
           console.log("Current user:", userData?.Email || userData?.email);

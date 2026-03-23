@@ -34,8 +34,9 @@ const fetchAllData = useCallback(async () => {
     setLoading(true);
 
     try {
-      if (user?.id) {
-        const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (userEmail) {
+        const { data: userData } = await supabase.from('users').select('*').eq('Email', userEmail).single();
         setCurrentUser(userData);
       }
 
@@ -168,14 +169,14 @@ const fetchAllData = useCallback(async () => {
   const handleDelete = async (incident) => {
     if (window.confirm(`Are you sure you want to delete this incident? It will be moved to deleted entries.`)) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
         
         const { error } = await supabase
           .from('incidents')
           .update({
             "Deleted": true,
             "Deleted Date": new Date().toISOString(),
-            "Deleted By": user?.email || 'unknown'
+            "Deleted By": userEmail || 'unknown'
           })
           .eq('ID', incident.ID || incident.id);
 

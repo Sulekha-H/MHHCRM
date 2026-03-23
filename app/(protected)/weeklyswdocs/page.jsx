@@ -42,12 +42,12 @@ const loadData = async () => {
     // Load current user
     let userData = null;
     try {
-      const { data: { user: authUser } = {} } = await supabase.auth.getUser();
-      if (authUser) {
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (userEmail) {
         const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('email', authUser.email)
+          .eq('Email', userEmail)
           .single();
         userData = data;
       }
@@ -182,8 +182,7 @@ useEffect(() => {
 
             if (logData.id) {
                 console.log("✏️ Updating existing log:", logData.id);
-                const { error } = await supabase(() =>
-                    supabase
+                const { error } = await supabase
                         .from('weekly_sw_doc_logs')
                         .update({
                             'Status': dbStatus,
@@ -192,8 +191,7 @@ useEffect(() => {
                             'File URL': logData.file_url || null,
                             'Updated Date': new Date().toISOString()
                         })
-                        .eq('ID', logData.id)
-                );
+                        .eq('ID', logData.id);
                 if (error) throw error;
                 console.log("✅ Log updated successfully");
             } else {
@@ -212,11 +210,9 @@ useEffect(() => {
                     'Created By': currentUser?.Email || 'Unknown'
                 };
                 console.log("📤 Inserting log:", newLog);
-                const { error } = await supabase(() =>
-                    supabase
+                const { error } = await supabase
                         .from('weekly_sw_doc_logs')
-                        .insert([newLog])
-                );
+                        .insert([newLog]);
                 if (error) throw error;
                 console.log("✅ Log created successfully");
             }
@@ -237,16 +233,14 @@ useEffect(() => {
     const confirmDelete = async () => {
         if (logToDelete) {
             try {
-                const { error } = await supbase(() =>
-                    supabase
+                const { error } = await supabase
                         .from('weekly_sw_doc_logs')
                         .update({
                             'Deleted': true,
                             'Deleted Date': new Date().toISOString(),
                             'Deleted By': currentUser?.Email || 'unknown_user'
                         })
-                        .eq('ID', logToDelete.id)
-                );
+                        .eq('ID', logToDelete.id);
                 if (error) throw error;
                 
                 console.log(`Weekly SW Doc Log ${logToDelete.id} soft deleted successfully.`);

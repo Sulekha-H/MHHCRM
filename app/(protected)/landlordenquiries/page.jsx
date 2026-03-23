@@ -223,9 +223,12 @@ export default function LandlordEnquiries() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUser(user);
-        console.log("Current user:", user?.email);
+        const userEmail = user?.primaryEmailAddress?.emailAddress;
+        if (userEmail) {
+          const { data: userData } = await supabase.from('users').select('*').eq('Email', userEmail).single();
+          setCurrentUser(userData);
+          console.log("Current user:", userEmail);
+        }
       } catch (error) {
         console.error("Error loading user:", error);
       }

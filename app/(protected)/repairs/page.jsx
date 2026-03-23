@@ -380,7 +380,7 @@ useEffect(() => {
           .update({
             "Deleted": true,
             "Deleted Date": new Date().toISOString(),
-            "Deleted By": user?.email || "unknown"
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || "unknown"
           })
           .eq('"ID"', repairId);
         

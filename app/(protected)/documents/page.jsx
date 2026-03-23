@@ -152,12 +152,12 @@ useEffect(() => {
     setLoading(true);
     console.log('🔄 Starting to load Documents & Assets data...');
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      console.log('👤 Current user:', authUser?.email);
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      console.log('👤 Current user email:', userEmail);
       
       let userData = null;
-      if (authUser) {
-        const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+      if (userEmail) {
+        const { data } = await supabase.from('users').select('*').eq('Email', userEmail).single();
         userData = data;
         setCurrentUser(userData);
       }
@@ -329,7 +329,7 @@ useEffect(() => {
         const deleteData = {
           "Deleted": true,
           "Deleted Date": new Date().toISOString(),
-          "Deleted By": currentUser?.email || currentUser?.full_name || 'unknown'
+          "Deleted By": user?.primaryEmailAddress?.emailAddress || currentUser?.full_name || 'unknown'
         };
 
         let error;
