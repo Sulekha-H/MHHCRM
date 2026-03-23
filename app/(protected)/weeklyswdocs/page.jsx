@@ -42,12 +42,12 @@ const loadData = async () => {
     // Load current user
     let userData = null;
     try {
-      const { data: { user: authUser } = {} } = await supabase.auth.getUser();
-      if (authUser) {
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (userEmail) {
         const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('email', authUser.email)
+          .eq('Email', userEmail)
           .single();
         userData = data;
       }

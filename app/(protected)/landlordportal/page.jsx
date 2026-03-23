@@ -68,14 +68,14 @@ export default function LandlordPortalSupabase() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
       let userData = null;
       
-      if (authUser) {
+      if (userEmail) {
         const { data } = await supabase
           .from('users')
           .select('*')
-          .eq('Email', authUser.email)
+          .eq('Email', userEmail)
           .single();
         userData = data;
       }

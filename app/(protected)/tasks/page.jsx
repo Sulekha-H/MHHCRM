@@ -151,9 +151,9 @@ useEffect(() => {
     
     try {
       // Load current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase.from('users').select('*').eq('ID', user.id).single();
+      const userEmail = user?.primaryEmailAddress?.emailAddress;
+      if (userEmail) {
+        const { data: userData } = await supabase.from('users').select('*').eq('Email', userEmail).single();
         setCurrentUser(userData);
         console.log("✅ [SUPABASE] Current user:", userData?.["Full Name"] || userData?.Email);
       }

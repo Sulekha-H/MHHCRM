@@ -44,12 +44,12 @@ export default function Properties() {
         
         // Load current user
         try {
-          const { data: { user: authUser } = {} } = await supabase.auth.getUser(); // Add default empty object for data
-          if (authUser && mounted) {
+          const userEmail = user?.primaryEmailAddress?.emailAddress;
+          if (userEmail && mounted) {
             const { data, error } = await supabase
               .from('users')
               .select('*')
-              .eq('ID', authUser.id)
+              .eq('Email', userEmail)
               .single();
             if (error) throw error; // Handle user fetch error
             if (mounted) {
@@ -268,7 +268,7 @@ export default function Properties() {
           .update({
             "Deleted": true,
             "Deleted Date": new Date().toISOString(),
-            "Deleted By": currentUser?.email || currentUser?.Email || "Unknown"
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || currentUser?.Email || "Unknown"
           })
           .eq('ID', property["ID"] || property.id);
 
