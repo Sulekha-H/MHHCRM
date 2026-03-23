@@ -1,0 +1,35 @@
+
+> housing-dashboard@0.1.0 dev
+> next dev
+
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.2:3000
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+ ✓ Ready in 1347ms
+ ○ Compiling /accommodations ...
+ ⨯ Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
+    at ignore-listed frames {
+  digest: '351103407'
+}
+
+[35m
+[Clerk]:[0m You are running in keyless mode.
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=9qgfpun9o1kjjj3q8ga311ao74tgtn6ezvcv0lm6&return_url=http%3A%2F%2Flocalhost%3A3000%2F
+
+ GET /accommodations 200 in 3.9s (compile: 2.2s, proxy.ts: 9ms, render: 1750ms)
+ POST /accommodations 200 in 58ms (compile: 17ms, proxy.ts: 21ms, render: 20ms)
+ POST /accommodations 303 in 2.0s (compile: 5ms, proxy.ts: 8ms, render: 1993ms)
+ GET /accommodations 404 in 2.1s (compile: 1667ms, proxy.ts: 37ms, render: 365ms)
+ GET /accommodations 200 in 322ms (compile: 15ms, proxy.ts: 18ms, render: 289ms)
+ POST /accommodations 404 in 44ms (compile: 17ms, proxy.ts: 14ms, render: 13ms)
+ GET /sign-in 200 in 121ms (compile: 13ms, proxy.ts: 32ms, render: 75ms)
+ POST /accommodations 404 in 110ms (compile: 40ms, proxy.ts: 19ms, render: 51ms)

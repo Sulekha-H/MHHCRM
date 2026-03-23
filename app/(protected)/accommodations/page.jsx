@@ -35,12 +35,8 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingAccommodation, setViewingAccommodation] = useState(null);
 
-useEffect(() => {
-  if (!supabase) return;
-
-  let mounted = true;
-
-  const wrappedLoadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!supabase) return;
     try {
       setLoading(true);
       console.log("🔄 [SUPABASE] Loading accommodations data...");
@@ -54,8 +50,6 @@ useEffect(() => {
       if (accommodationsRes.error) throw accommodationsRes.error;
       if (propertiesRes.error) throw propertiesRes.error;
       if (residentsRes.error) throw residentsRes.error;
-
-      if (!mounted) return;
 
       const propertiesData = (propertiesRes.data || []).sort((a, b) => {
         const aIsRyland = a.Name?.toLowerCase().includes('ryland');
@@ -75,22 +69,17 @@ useEffect(() => {
       console.log("✅ [SUPABASE] All data loaded successfully");
     } catch (error) {
       console.error("❌ [SUPABASE] Error loading data:", error);
-      if (mounted) {
-        setAccommodations([]);
-        setProperties([]);
-        setResidents([]);
-      }
+      setAccommodations([]);
+      setProperties([]);
+      setResidents([]);
     } finally {
-      if (mounted) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, [supabase]);
 
-  wrappedLoadData();
-
-  return () => {
-    mounted = false;
-  };
-}, [supabase]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
   
   const accommodationsWithOccupancy = useMemo(() => {
     console.log("🔄 [SUPABASE] Calculating occupancy for accommodations...");
@@ -135,8 +124,9 @@ useEffect(() => {
 
     if (activeTab !== "all") {
       filtered = filtered.filter(accommodation => {
-        const status = accommodation["Availability_Status"] || accommodation["Availability Status"] || accommodation.availability_status || "";
-        return status.toLowerCase() === activeTab.toLowerCase();
+        const status = (accommodation["Availability_Status"] || accommodation["Availability Status"] || accommodation.availability_status || "").toLowerCase().replace(/_/g, ' ');
+        const tabValue = activeTab.toLowerCase().replace(/_/g, ' ');
+        return status === tabValue;
       });
     }
 

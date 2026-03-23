@@ -12,25 +12,25 @@ import { X, Save, Home } from "lucide-react";
 
 export default function AccommodationForm({ accommodation, properties, residents, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(accommodation ? {
-    property_id: accommodation.Property_Id || accommodation.property_id || "",
-    room_number: accommodation.Room_Number || accommodation.room_number || "",
-    accommodation_type: accommodation.Accommodation_Type || accommodation.accommodation_type || "single_room",
-    floor: accommodation.Floor !== null && accommodation.Floor !== undefined ? accommodation.Floor : (accommodation.floor !== null && accommodation.floor !== undefined ? accommodation.floor : 1),
-    size_sqm: accommodation.Size_Sqm || accommodation.size_sqm || 0,
-    max_occupancy: accommodation.Max_Occupancy || accommodation.max_occupancy || 1,
-    current_resident_id: accommodation.Current_Resident_Id || accommodation.current_resident_id || "",
-    rent_per_week: accommodation.Rent_Per_Week || accommodation.rent_per_week || 0,
-    deposit_amount: accommodation.Deposit_Amount || accommodation.deposit_amount || 0,
-    furnished: accommodation.Furnished !== null && accommodation.Furnished !== undefined ? accommodation.Furnished : (accommodation.furnished !== null && accommodation.furnished !== undefined ? accommodation.furnished : true),
-    amenities: accommodation.Amenities || accommodation.amenities || [],
-    accessibility_features: accommodation.Accessibility_Features || accommodation.accessibility_features || "",
-    condition: accommodation.Condition || accommodation.condition || "good",
-    last_maintenance_date: accommodation.Last_Maintenance_Date || accommodation.last_maintenance_date || "",
-    next_maintenance_due: accommodation.Next_Maintenance_Due || accommodation.next_maintenance_due || "",
-    availability_status: accommodation.Availability_Status || accommodation.availability_status || "available",
-    available_from: accommodation.Available_From || accommodation.available_from || "",
-    notes: accommodation.Notes || accommodation.notes || "",
-    images: accommodation.Images || accommodation.images || []
+    property_id: accommodation["Property ID"] || accommodation.Property_Id || accommodation.property_id || "",
+    room_number: accommodation["Room Number"] || accommodation.Room_Number || accommodation.room_number || "",
+    accommodation_type: (accommodation["Accommodation Type"] || accommodation.Accommodation_Type || accommodation.accommodation_type || "single_room").toLowerCase().replace(/ /g, '_'),
+    floor: accommodation["Floor"] ?? accommodation.Floor ?? accommodation.floor ?? 1,
+    size_sqm: accommodation["Size (sqm)"] || accommodation.Size_Sqm || accommodation.size_sqm || 0,
+    max_occupancy: accommodation["Max Occupancy"] || accommodation.Max_Occupancy || accommodation.max_occupancy || 1,
+    current_resident_id: accommodation["Current Resident ID"] || accommodation.Current_Resident_Id || accommodation.current_resident_id || "",
+    rent_per_week: accommodation["Weekly Rent"] || accommodation.Rent_Per_Week || accommodation.rent_per_week || 0,
+    deposit_amount: accommodation["Deposit Amount"] || accommodation.Deposit_Amount || accommodation.deposit_amount || 0,
+    furnished: accommodation["Furnished"] ?? accommodation.Furnished ?? accommodation.furnished ?? true,
+    amenities: accommodation["Amenities"] || accommodation.Amenities || accommodation.amenities || [],
+    accessibility_features: accommodation["Accessibility Features"] || accommodation.Accessibility_Features || accommodation.accessibility_features || "",
+    condition: (accommodation["Condition"] || accommodation.Condition || accommodation.condition || "good").toLowerCase().replace(/ /g, '_'),
+    last_maintenance_date: accommodation["Last Maintenance Date"] || accommodation.Last_Maintenance_Date || accommodation.last_maintenance_date || "",
+    next_maintenance_due: accommodation["Next Maintenance Due"] || accommodation.Next_Maintenance_Due || accommodation.next_maintenance_due || "",
+    availability_status: (accommodation["Availability Status"] || accommodation.Availability_Status || accommodation.availability_status || "available").toLowerCase().replace(/ /g, '_'),
+    available_from: accommodation["Available From"] || accommodation.Available_From || accommodation.available_from || "",
+    notes: accommodation["Notes"] || accommodation.Notes || accommodation.notes || "",
+    images: accommodation["Images"] || accommodation.Images || accommodation.images || []
   } : {
     property_id: "",
     room_number: "",
@@ -67,32 +67,66 @@ export default function AccommodationForm({ accommodation, properties, residents
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Convert to PascalCase for Supabase
+    const selectedProperty = properties?.find(p => p.ID === formData.property_id);
+    const selectedResident = residents?.find(r => r.ID === formData.current_resident_id);
+
+    // Value mapping for constraints
+    const statusMap = {
+      'available': 'Available',
+      'occupied': 'Occupied',
+      'reserved': 'Reserved',
+      'maintenance': 'Maintenance',
+      'out_of_service': 'Out of Service'
+    };
+
+    const conditionMap = {
+      'excellent': 'Excellent',
+      'good': 'Good',
+      'fair': 'Fair',
+      'needs_repair': 'Needs Repair',
+      'out_of_order': 'Out of Order'
+    };
+
+    const typeMap = {
+      'single_room': 'Single Room',
+      'shared_room': 'Shared Room',
+      'studio': 'Studio',
+      'one_bedroom_flat': 'One Bedroom Flat',
+      'two_bedroom_flat': 'Two Bedroom Flat'
+    };
+
+    // Align with exact database schema column names
     const supabaseData = {
-      Property_Id: formData.property_id,
-      Room_Number: formData.room_number,
-      Accommodation_Type: formData.accommodation_type,
-      Floor: formData.floor,
-      Size_Sqm: formData.size_sqm,
-      Max_Occupancy: formData.max_occupancy,
-      Current_Resident_Id: formData.current_resident_id || null,
-      Rent_Per_Week: formData.rent_per_week,
-      Deposit_Amount: formData.deposit_amount,
-      Furnished: formData.furnished,
-      Amenities: formData.amenities,
-      Accessibility_Features: formData.accessibility_features || null,
-      Condition: formData.condition,
-      Last_Maintenance_Date: formData.last_maintenance_date || null,
-      Next_Maintenance_Due: formData.next_maintenance_due || null,
-      Availability_Status: formData.availability_status,
-      Available_From: formData.available_from || null,
-      Notes: formData.notes || null,
-      Images: formData.images,
-      Updated_Date: new Date().toISOString()
+      "Property ID": formData.property_id,
+      "Property Name": selectedProperty?.Name || null,
+      "Property Address": selectedProperty?.Address || null,
+      "Room Number": formData.room_number,
+      "Accommodation Type": typeMap[formData.accommodation_type] || 'Single Room',
+      "Floor": formData.floor,
+      "Size (sqm)": formData.size_sqm,
+      "Max Occupancy": formData.max_occupancy,
+      "Current Resident ID": formData.current_resident_id || null,
+      "Current Resident Name": selectedResident ? `${selectedResident["First Name"]} ${selectedResident["Last Name"]}` : null,
+      "Weekly Rent": formData.rent_per_week,
+      "Deposit Amount": formData.deposit_amount,
+      "Furnished": formData.furnished,
+      "Amenities": formData.amenities,
+      "Accessibility Features": formData.accessibility_features || null,
+      "Condition": conditionMap[formData.condition] || 'Good',
+      "Last Maintenance Date": formData.last_maintenance_date || null,
+      "Next Maintenance Due": formData.next_maintenance_due || null,
+      "Availability Status": statusMap[formData.availability_status] || 'Available',
+      "Available From": formData.available_from || null,
+      "Notes": formData.notes || null,
+      "Images": formData.images,
+      "Updated Date": new Date().toISOString()
     };
 
     if (!accommodation) {
-      supabaseData.Created_Date = new Date().toISOString();
+      supabaseData.ID = crypto.randomUUID();
+      supabaseData["Created Date"] = new Date().toISOString();
+    } else {
+      supabaseData.ID = accommodation.ID || accommodation.id;
     }
 
     onSubmit(supabaseData);
