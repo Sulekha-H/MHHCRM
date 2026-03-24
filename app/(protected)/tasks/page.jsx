@@ -34,117 +34,84 @@ export default function TasksPage() {
   const [sortOrder, setSortOrder] = useState("newest");
 
 useEffect(() => {
-  if (!supabase) return;
+  if (!supabase || !user) return;
+  loadTasks();
+}, [supabase, user]);
 
-  let mounted = true;
 
-  const loadTasksData = async () => {
-    try {
-      setLoading(true);
-      console.log("🔄 Loading tasks data...");
+useEffect(() => {
+  let filtered = Array.isArray(tasks) ? [...tasks] : [];
+  const now = new Date();
 
-      // Fetch tasks
-      const { data: tasksData, error: tasksError } = await supabase
-        .from("tasks")
-        .select("*")
-        .or("Deleted.is.null,Deleted.eq.false");
+  if (filters.assignee !== "all") {
+    filtered = filtered.filter(
+      t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee
+    );
+  }
 
-      if (tasksError) throw tasksError;
+  if (filters.status === "overdue") {
+    filtered = filtered.filter(t => {
+      const status = (t.Status || t.status || "").toLowerCase();
+      const dueDate = t["Due Date"] || t.due_date;
+      return status !== "completed" && dueDate && new Date(dueDate) < now;
+    });
+  } else if (filters.status !== "all") {
+    const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
+    filtered = filtered.filter(t => {
+      const taskStatus = (t.Status || t.status || "").toLowerCase().replace(/ /g, "_");
+      return taskStatus === filterStatusLower;
+    });
+  }
 
-      if (!mounted) return;
+  if (filters.priority !== "all_priority") {
+    filtered = filtered.filter(
+      t => ((t.Priority || t.priority || "").toLowerCase()) === filters.priority.toLowerCase()
+    );
+  }
 
-      // Apply filters
-      let filtered = Array.isArray(tasksData) ? [...tasksData] : [];
-      const now = new Date();
+  if (filters.search) {
+    const searchTerm = filters.search.toLowerCase();
+    filtered = filtered.filter(t => {
+      const title = t.Title || t.title || "";
+      const desc = t.Description || t.description || "";
+      const assigned = t["Assigned To User ID"] || "unassigned";
+      const createdBy = t["Created By"] || t.created_by || "";
+      return (
+        title.toLowerCase().includes(searchTerm) ||
+        desc.toLowerCase().includes(searchTerm) ||
+        assigned.toLowerCase().includes(searchTerm) ||
+        createdBy.toLowerCase().includes(searchTerm)
+      );
+    });
+  }
 
-      if (filters.assignee !== "all") {
-        filtered = filtered.filter(
-          t => (t["Assigned To User ID"] || "Unassigned") === filters.assignee
-        );
-      }
-
-      if (filters.status === "overdue") {
-        filtered = filtered.filter(t => {
-          const status = (t.Status || t.status || "").toLowerCase();
-          const dueDate = t["Due Date"] || t.due_date;
-          return status !== "completed" && dueDate && new Date(dueDate) < now;
-        });
-      } else if (filters.status !== "all") {
-        const filterStatusLower = filters.status.toLowerCase().replace(/ /g, "_");
-        filtered = filtered.filter(t => {
-          const taskStatus = (t.Status || t.status || "").toLowerCase().replace(/ /g, "_");
-          return taskStatus === filterStatusLower;
-        });
-      }
-
-      if (filters.priority !== "all_priority") {
-        filtered = filtered.filter(
-          t => ((t.Priority || t.priority || "").toLowerCase()) === filters.priority.toLowerCase()
-        );
-      }
-
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        filtered = filtered.filter(t => {
-          const title = t.Title || t.title || "";
-          const desc = t.Description || t.description || "";
-          const assigned = t["Assigned To User ID"] || "unassigned";
-          const createdBy = t["Created By"] || t.created_by || "";
-          return (
-            title.toLowerCase().includes(searchTerm) ||
-            desc.toLowerCase().includes(searchTerm) ||
-            assigned.toLowerCase().includes(searchTerm) ||
-            createdBy.toLowerCase().includes(searchTerm)
-          );
-        });
-      }
-
-      // Sorting
-      filtered.sort((a, b) => {
-        if (sortOrder === "newest") {
-          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-          return dateB - dateA;
-        } else if (sortOrder === "oldest") {
-          const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
-          const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
-          return dateA - dateB;
-        } else {
-          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-          const aPriority = (a.Priority || a.priority || "medium").toLowerCase();
-          const bPriority = (b.Priority || b.priority || "medium").toLowerCase();
-          const diff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
-          if (diff !== 0) return diff;
-          const dueA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
-          const dueB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
-          return dueA - dueB;
-        }
-      });
-
-      // Set state
-      if (mounted) {
-        setTasks(tasksData || []);
-        setFilteredTasks(filtered);
-        console.log(`✅ Loaded ${tasksData?.length || 0} tasks`);
-      }
-    } catch (error) {
-      console.error("❌ Error loading tasks:", error);
-      if (mounted) {
-        setTasks([]);
-        setFilteredTasks([]);
-      }
-    } finally {
-      if (mounted) setLoading(false);
+  filtered.sort((a, b) => {
+    if (sortOrder === "newest") {
+      const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+      const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+      return dateB - dateA;
+    } else if (sortOrder === "oldest") {
+      const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
+      const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
+      return dateA - dateB;
+    } else {
+      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+      const aPriority = (a.Priority || a.priority || "medium").toLowerCase();
+      const bPriority = (b.Priority || b.priority || "medium").toLowerCase();
+      const diff = (priorityOrder[bPriority] || 0) - (priorityOrder[aPriority] || 0);
+      if (diff !== 0) return diff;
+      const dueA = a["Due Date"] ? new Date(a["Due Date"]) : new Date(0);
+      const dueB = b["Due Date"] ? new Date(b["Due Date"]) : new Date(0);
+      return dueA - dueB;
     }
-  };
+  });
 
-  loadTasksData();
+  setFilteredTasks(filtered);
+}, [tasks, filters, sortOrder]);
 
-  return () => {
-    mounted = false;
-  };
-}, [supabase, filters, sortOrder]);
 
+
+  
   const loadTasks = async () => {
     setLoading(true);
     console.log("🔄 [SUPABASE] Starting to load tasks...");
