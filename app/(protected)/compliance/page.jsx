@@ -185,29 +185,11 @@ useEffect(() => {
     }
   }, [supabase, user]);
 
-  const handleSubmit = async (logData) => {
-    try {
-      if (!logData["Logged By"] && currentUser?.email) {
-        const userRecord = users.find(u => u.email === currentUser.email);
-        logData["Logged By"] = userRecord?.full_name || currentUser.email;
-      }
-
-      if (editingLog && editingLog.id) {
-        const { error } = await supabase.from('compliance_logs').update(logData).eq('ID', editingLog.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('compliance_logs').insert([logData]);
-        if (error) throw error;
-      }
-      setShowForm(false);
-      setEditingLog(null);
-      setViewingLog(null);
-      loadData();
-    } catch (error) {
-      console.error("Error saving compliance log:", error);
-      alert("Error saving compliance record: " + error.message);
-    }
-  };
+const handleSubmit = async (logData) => {
+  try {
+    const cleanedLogData = {
+      ...logData,
+    
 
   const handleEdit = (log) => {
     setViewingLog(null);
