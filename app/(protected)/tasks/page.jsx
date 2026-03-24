@@ -221,17 +221,25 @@ useEffect(() => {
         .or('Is Active.is.null,Is Active.eq.true');
 
       if (usersError) throw usersError;
+
+      // 🔥 TEMP FIX (remove filtering)
+const activeUsers = Array.isArray(usersData) ? usersData : [];
+
+console.log("RAW usersData:", usersData);
+console.log("ACTIVE users (no filter):", activeUsers);
+
+setUsers(Array.isArray(activeUsers) ? activeUsers : []);
       
-      const activeUsers = Array.isArray(usersData) ? usersData.filter(user => {
-        const name = user?.["Full Name"]?.trim() || '';
-        return name && 
-               !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
-               !name.toLowerCase().includes('test') &&
-               user.Email &&
-               user.ID;
-      }) : [];
+      //const activeUsers = Array.isArray(usersData) ? usersData.filter(user => {
+       // const name = user?.["Full Name"]?.trim() || '';
+       // return name && 
+               //!['Tair', 'Iveta lobinate', 'amit noach'].includes(name) &&
+               //!name.toLowerCase().includes('test') &&
+               //user.Email &&
+               //user.ID;
+      //}) : [];
       
-      console.log(`✅ [SUPABASE] Active users: ${activeUsers.length}`);
+      //console.log(`✅ [SUPABASE] Active users: ${activeUsers.length}`);
 
       // Load residents - EXCLUDE DELETED RESIDENTS
       const { data: residentsData, error: residentsError } = await supabase
