@@ -282,7 +282,16 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
                   <Checkbox
                     id="actioned"
                     checked={formData.actioned}
-                    onCheckedChange={(checked) => handleChange("actioned", checked)}
+                    onCheckedChange={(checked) => {
+                    const isChecked = checked === true;
+
+                    handleChange("actioned", isChecked);
+
+                    if (!isChecked) {
+                   handleChange("actioned_date", null);
+                   handleChange("actioned_notes", "");
+                   }
+                   }}
                   />
                   <Label htmlFor="actioned" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     This certificate has been renewed/actioned
