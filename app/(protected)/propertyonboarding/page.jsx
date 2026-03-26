@@ -84,6 +84,7 @@ export default function PropertyOnboardingSupabase() {
   const client = useClerkSupabaseClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [caseToDelete, setCaseToDelete] = useState(null);
+  const [users, setUsers] = useState([]);
 
   // Helper function to safely format dates
   const formatCaseDate = (dateString) => {
