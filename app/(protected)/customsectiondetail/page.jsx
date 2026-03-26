@@ -19,7 +19,7 @@ export default function CustomSectionDetail() {
   const { user } = useUser();
   const supabase = useClerkSupabaseClient()
   const router = useRouter();
-  const { id: sectionId } = useParams;
+  const { id: sectionId } = useParams();
   const [section, setSection] = useState(null);
   const [dataRecords, setDataRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
