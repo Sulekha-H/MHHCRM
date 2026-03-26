@@ -173,6 +173,7 @@ const toSupabaseFormat = (data) => {
 };
 
 export default function LandlordEnquiries() {
+  const supabase = useClerkSupabaseClient()
   const [enquiries, setEnquiries] = useState([]);
   const [filteredEnquiries, setFilteredEnquiries] = useState([]);
   const [loading, setLoading] = useState(true);
