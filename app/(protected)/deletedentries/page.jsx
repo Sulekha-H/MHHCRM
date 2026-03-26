@@ -14,13 +14,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function DeletedEntries() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("residents");
   const [restoreItem, setRestoreItem] = useState(null);
   const [permanentDeleteItem, setPermanentDeleteItem] = useState(null);
-  
   const [deletedResidents, setDeletedResidents] = useState([]);
   const [deletedProperties, setDeletedProperties] = useState([]);
   const [deletedAccommodations, setDeletedAccommodations] = useState([]);
@@ -44,6 +43,7 @@ export default function DeletedEntries() {
   const [deletedCustomSections, setDeletedCustomSections] = useState([]);
   const [deletedCustomSectionData, setDeletedCustomSectionData] = useState([]);
   const [deletedLandlordPortal, setDeletedLandlordPortal] = useState([]);
+  const [users, setUsers] = useState([]);
 
   const normalizeData = (data) => {
     if (!data) return null;
