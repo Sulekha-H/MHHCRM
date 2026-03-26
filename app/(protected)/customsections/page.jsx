@@ -14,7 +14,7 @@ import CustomSectionForm_Supabase from "@/components/custom-sections/csform";
 
 export default function CustomSections() {
   const { user } = useUser();
-  const client = useClerkSupabaseClient();
+  const supabase = useClerkSupabaseClient()
   const [sections, setSections] = useState([]);
   const [filteredSections, setFilteredSections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +23,8 @@ export default function CustomSections() {
   const [editingSection, setEditingSection] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [sectionToDelete, setSectionToDelete] = useState(null);
+  const [users, setUsers] = useState([]);
+  
 
   useEffect(() => {
     const loadUser = async () => {
