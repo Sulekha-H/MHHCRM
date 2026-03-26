@@ -70,6 +70,7 @@ export default function AppLayout({ children }) {
   // Administration section
   const adminNav = [
     { name: "Custom Sections", href: "/customsections", icon: Settings },
+    { name: "Custom Sections detail", href: "/customsectiondetail", icon: Settings },
     { name: "Landlord Portal", href: "/landlordportal", icon: Settings },
     { name: "Settings", href: "/settings", icon: Settings },
     { name: "Deleted Entries", href: "/deletedentries", icon: Trash2 }
