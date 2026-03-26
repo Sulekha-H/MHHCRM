@@ -53,6 +53,7 @@ const normalizeLogData = (log) => {
 
 export default function LandlordPortalSupabase() {
   const { user } = useUser();
+  const supabase = useClerkSupabaseClient()
   const client = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -64,6 +65,7 @@ export default function LandlordPortalSupabase() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [logToDelete, setLogToDelete] = useState(null);
+  const [users, setUsers] = useState([]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -409,8 +411,8 @@ export default function LandlordPortalSupabase() {
     console.log("✅ Landlord Portal CSV export completed successfully");
   };
 
-  const startDate = new Date('2025-09-08T00:00:00');
-  const endDate = new Date('2025-12-31T23:59:59');
+  const startDate = new Date('2026-01-01T00:00:00');
+  const endDate = new Date('2026-12-31T23:59:59');
 
   const generateWeeks = (start, end) => {
     const weeks = [];
