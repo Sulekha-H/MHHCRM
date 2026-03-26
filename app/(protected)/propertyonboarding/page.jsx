@@ -71,6 +71,7 @@ const normalizeCase = (case_) => {
 };
 
 export default function PropertyOnboardingSupabase() {
+  const supabase = useClerkSupabaseClient()
   const [onboardingCases, setOnboardingCases] = useState([]);
   const [filteredCases, setFilteredCases] = useState([]);
   const [loading, setLoading] = useState(true);
