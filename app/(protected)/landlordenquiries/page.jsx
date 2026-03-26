@@ -186,6 +186,7 @@ export default function LandlordEnquiries() {
   const client = useClerkSupabaseClient();
   const [currentUser, setCurrentUser] = useState(null);
   const [enquiryToDelete, setEnquiryToDelete] = useState(null);
+  const [users, setUsers] = useState([]);
 
   const hasFollowUpNeeded = useCallback((enquiry) => {
     return enquiry.follow_up_action && !enquiry.follow_up_completed;
