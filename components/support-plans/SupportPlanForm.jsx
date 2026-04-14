@@ -64,6 +64,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
     key_worker: plan.Key_Worker || plan.key_worker || currentUser?.full_name || "",
     status: normalizeStatus(plan.Status || plan.status) || (activePlanType === "support_notes" ? "document_combined_uploaded" : "up_to_date"),
     file_url: plan.File_Url || plan.file_url || "",
+    additional_file_url: plan.Additional_File_Url || plan.additional_file_url || "", // <--- ADD THIS LINE HERE
     attended_in_person: plan.Attended_In_Person !== null && plan.Attended_In_Person !== undefined ? plan.Attended_In_Person : (plan.attended_in_person || false),
     attended_telephone: plan.Attended_Telephone !== null && plan.Attended_Telephone !== undefined ? plan.Attended_Telephone : (plan.attended_telephone || false),
     did_not_attend: plan.Did_Not_Attend !== null && plan.Did_Not_Attend !== undefined ? plan.Did_Not_Attend : (plan.did_not_attend || false),
@@ -84,6 +85,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
     key_worker: currentUser?.full_name || "",
     status: activePlanType === "support_notes" ? "document_combined_uploaded" : "up_to_date",
     file_url: "",
+    additional_file_url: "", // <--- ADD THIS LINE HERE
     attended_in_person: false,
     attended_telephone: false,
     did_not_attend: false,
@@ -132,6 +134,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
       "Key Worker": formData.key_worker,
       "Status": transformStatus(formData.status),
       "File URL": formData.file_url || null,
+      "Additional File URL": formData.additional_file_url || null, // <--- ADD THIS LINE HERE
       "Updated Date": new Date().toISOString()
     };
 
@@ -470,6 +473,21 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
                 Please enter a valid URL (must start with http:// or https://)
               </p>
             </div>
+              {/* START OF NEW CODE BLOCK */}
+            <div className="mt-4"> {/* Add margin for visual separation */}
+              <Label htmlFor="additional_file_url">Additional Document URL</Label>
+              <Input
+                id="additional_file_url"
+                type="url"
+                value={formData.additional_file_url}
+                onChange={e => handleChange("additional_file_url", e.target.value)}
+                placeholder="https://gdrive.com/..."
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Please enter a valid URL (must start with http:// or https://)
+              </p>
+            </div>
+            {/* END OF NEW CODE BLOCK */}
           </div>
 
           {isQuarterlyReview && formData.resident_id && (
