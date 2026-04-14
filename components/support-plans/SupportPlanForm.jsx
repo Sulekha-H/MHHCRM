@@ -475,7 +475,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
             </div>
               {/* START OF NEW CODE BLOCK */}
             <div className="mt-4"> {/* Add margin for visual separation */}
-              <Label htmlFor="additional_file_url">Additional Document URL</Label>
+              <Label htmlFor="additional_file_url">Additional Document URL (If support is 2 hours)</Label>
               <Input
                 id="additional_file_url"
                 type="url"
