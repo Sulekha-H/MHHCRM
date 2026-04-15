@@ -164,7 +164,7 @@ export default function SidebarNavigation() {
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu className="gap-0.5">
-            {AllocatedResidentsNav.map((item) => (
+            {AllocatedResidentNav.map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
                   <Link href={item.href} className={linkClass}>
