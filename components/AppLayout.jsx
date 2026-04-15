@@ -175,30 +175,7 @@ export default function AppLayout({ children }) {
             </div>
           </div>
 
-          {/* Support & Care */}
-          <div>
-            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Support & Care
-            </h3>
-            <div className="space-y-1">
-              {supportNav.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-  {/* Allocated Residents */}
+            {/* Allocated Residents */}
           <div>
             <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               Allocated Residents
@@ -222,6 +199,30 @@ export default function AppLayout({ children }) {
             </div>
           </div>
           {/* Allocated Residents */}
+
+          {/* Support & Care */}
+          <div>
+            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Support & Care
+            </h3>
+            <div className="space-y-1">
+              {supportNav.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
           
           <div>
             <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
