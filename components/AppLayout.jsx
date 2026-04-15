@@ -55,6 +55,11 @@ export default function AppLayout({ children }) {
     { name: "Referrals", href: "/referrals", icon: ArrowRightLeft },
   ];
 
+  const AllocatedResidentNav = [
+    { name: "Support Plans", href: "/supportplans", icon: Heart },
+    { name: "Benefits", href: "/benefits", icon: Gift },
+  ];
+
   const complianceNav = [
     { name: "Service Charges", href: "/servicecharges", icon: PoundSterling },
     { name: "Compliance", href: "/compliance", icon: Shield },
@@ -193,8 +198,7 @@ export default function AppLayout({ children }) {
               ))}
             </div>
           </div>
-          
-     {/* Allocated Residents */}
+  {/* Allocated Residents */}
           <div>
             <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               Allocated Residents
@@ -218,6 +222,7 @@ export default function AppLayout({ children }) {
             </div>
           </div>
           {/* Allocated Residents */}
+          
           <div>
             <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
               Compliance & Documents
