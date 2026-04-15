@@ -160,26 +160,6 @@ export default function SidebarNavigation() {
 
       <SidebarGroup className="p-1.5">
         <SidebarGroupLabel className={groupLabelClass}>
-          Allocated Residents
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {AllocatedResidentNav.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className={linkClass}>
-                    <item.icon className={iconClass} />
-                    {item.name}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-
-      <SidebarGroup className="p-1.5">
-        <SidebarGroupLabel className={groupLabelClass}>
           Compliance & Documents
         </SidebarGroupLabel>
         <SidebarGroupContent>
