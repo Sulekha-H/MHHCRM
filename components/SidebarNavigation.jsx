@@ -70,14 +70,14 @@ export default function SidebarNavigation() {
   const supportNav = [
     { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
     { name: "Weekly SW Docs", href: "/weeklyswdocs", icon: FileStack, current: pathname === "/weeklyswdocs" },
-    { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
+    { name: "Benefits", href: "/benefits", icon: Heart, current: pathname === "/benefits" },
     { name: "Referrals", href: "/referrals", icon: ArrowRightLeft, current: pathname === "/referrals" },
   ];
 
 
   const  allocatedResidentNav= [
   { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
-  { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
+  { name: "Benefits", href: "/benefits", icon: Heart, current: pathname === "/benefits" },
   ];
 
   const complianceNav = [
