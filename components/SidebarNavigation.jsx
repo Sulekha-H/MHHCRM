@@ -70,8 +70,14 @@ export default function SidebarNavigation() {
   const supportNav = [
     { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
     { name: "Weekly SW Docs", href: "/weeklyswdocs", icon: FileStack, current: pathname === "/weeklyswdocs" },
-    { name: "Benefits", href: "/benefits", icon: Gift, current: pathname === "/benefits" },
+    { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
     { name: "Referrals", href: "/referrals", icon: ArrowRightLeft, current: pathname === "/referrals" },
+  ];
+
+
+  const  allocatedResidentNav= [
+  { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
+  { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
   ];
 
   const complianceNav = [
@@ -157,6 +163,27 @@ export default function SidebarNavigation() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
+      
+      <SidebarGroup className="p-1.5">
+        <SidebarGroupLabel className={groupLabelClass}>
+          Allocated Residents
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-0.5">
+            {allocatedResidentNav.map((item) => (
+              <SidebarMenuItem key={item.name}>
+                <SidebarMenuButton asChild isActive={item.current}>
+                  <Link href={item.href} className={linkClass}>
+                    <item.icon className={iconClass} />
+                    {item.name}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
 
       <SidebarGroup className="p-1.5">
         <SidebarGroupLabel className={groupLabelClass}>
