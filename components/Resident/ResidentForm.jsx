@@ -62,6 +62,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
     "Date of Birth": "",
     "Phone Number": "",
     "Email Address": "",
+    "Resident Type": "Standard resident", // <--- Add this line
     "Accommodation Type": "Shared House",
     "Property Address": "",
     "Property ID": "",
@@ -117,6 +118,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
       
       setFormData({
         ...resident,
+        "Resident Type": resident["Resident Type"] || "Standard resident", // <--- ADD THIS LINE
         "Fluent English": resident["Fluent English"] || false,
         "Partial English": resident["Partial English"] || false,
         "Language Spoken": resident["Language Spoken"] || "",
@@ -560,6 +562,24 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
                     placeholder="e.g., resident@example.com"
                   />
                 </div>
+                          {/* --- INSERT RESIDENT TYPE DROPDOWN HERE --- */}
+                <div>
+                  <Label htmlFor="resident_type" className="mb-2 block">Resident Type *</Label>
+                  <Select
+                    value={formData["Resident Type"]}
+                    onValueChange={(value) => handleChange("Resident Type", value)}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select resident type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Standard resident">Standard Resident</SelectItem>
+                      <SelectItem value="UASC placement">UASC Placement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* --- END RESIDENT TYPE DROPDOWN --- */}
                 <div>
                   <Label 
                     htmlFor="claim_reference_number"
