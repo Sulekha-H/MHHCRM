@@ -55,7 +55,7 @@ export default function AppLayout({ children }) {
     { name: "Referrals", href: "/referrals", icon: ArrowRightLeft },
   ];
 
-  const AllocatedResidentNav = [
+  const allocatedResidentsNav = [
     { name: "Support Plans", href: "/supportplans", icon: Heart },
     { name: "Benefits", href: "/benefits", icon: Gift },
   ];
