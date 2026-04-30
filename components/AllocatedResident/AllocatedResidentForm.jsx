@@ -53,7 +53,7 @@ const getDaySuffix = (day) => {
 };
 
 export default function allocatedResidents({ resident, accommodations, onSubmit, onCancel }) {
-  console.log("Accommodations prop received by ResidentForm:", accommodations); // Add this line here
+  console.log("Accommodations prop received by AllocatedResidentForm:", accommodations); // Add this line here
   const [properties, setProperties] = useState([]);
     const supabase = useClerkSupabaseClient()
   const [formData, setFormData] = useState(resident || {
@@ -62,7 +62,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
     "Date of Birth": "",
     "Phone Number": "",
     "Email Address": "",
-    "Resident Type": "Standard resident", // <--- Add this line
     "Accommodation Type": "Shared House",
     "Property Address": "",
     "Property ID": "",
@@ -71,12 +70,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
     "Move-out Date": "",
     "Support Level": "Medium",
     "Support Worker": "",
-    "Emergency Contact Name": "",
-    "Emergency Contact Phone": "",
-    "Fluent English": false,
-    "Partial English": false,
-    "Language Spoken": "",
-    "Communication Needs": "",
     "Medical Conditions": "",
     "Status": "Active",
     "Notes": "",
@@ -88,12 +81,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
     "Accommodation Transfers": [],
     "Sign-up Documents URL": "",
     "Photo ID URL": "",
-    "PA/Worker Name": "",
-    "PA/Worker Contact": "",
-    "PA/Worker Email": "",
-    "PA/Worker Borough": "",
-    "PA/Worker Team": "",
-    "PA/Worker Duty Line": "",
     "Future Address": "",
     "Future Housing Type": "",
     "Move-on Outcome": "",
@@ -118,17 +105,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
       
       setFormData({
         ...resident,
-        "Resident Type": resident["Resident Type"] || "Standard resident", // <--- ADD THIS LINE
-        "Fluent English": resident["Fluent English"] || false,
-        "Partial English": resident["Partial English"] || false,
-        "Language Spoken": resident["Language Spoken"] || "",
-        "Communication Needs": resident["Communication Needs"] || "",
-        "PA/Worker Name": resident["PA/Worker Name"] || "",
-        "PA/Worker Contact": resident["PA/Worker Contact"] || "",
-        "PA/Worker Email": resident["PA/Worker Email"] || "",
-        "PA/Worker Borough": resident["PA/Worker Borough"] || "",
-        "PA/Worker Team": resident["PA/Worker Team"] || "",
-        "PA/Worker Duty Line": resident["PA/Worker Duty Line"] || "",
         "Room Transfers": resident["Room Transfers"] || [],
         "Accommodation Transfers": resident["Accommodation Transfers"] || [],
         "Future Address": resident["Future Address"] || "",
@@ -141,14 +117,11 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
       setFormData({
         "First Name": "", "Last Name": "", "Date of Birth": "", "Phone Number": "", "Email Address": "",
         "Accommodation Type": "Shared House", "Property Address": "", "Property ID": "", "Accommodation ID": "",
-        "Move-in Date": "", "Move-out Date": "", "Support Level": "Medium", "Support Worker": "",
-        "Emergency Contact Name": "", "Emergency Contact Phone": "",
-        "Fluent English": false, "Partial English": false, "Language Spoken": "", "Communication Needs": "",
+        "Move-in Date": "", "Move-out Date": "","Support Worker": "",
         "Medical Conditions": "",
         "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
         "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
         "Sign-up Documents URL": "", "Photo ID URL": "",
-        "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
         "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
       });
       setPhotoUrlInput("");
