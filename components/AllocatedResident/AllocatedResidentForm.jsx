@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from 'date-fns';
 import { Plus, Upload, Trash2, Link2, Camera, X, Save, UserPlus, Home, FileText } from "lucide-react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
-
+ 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
   
