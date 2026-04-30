@@ -5,10 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Plus, Upload, FileText, Trash2, User, Link2, Camera, XCircle, X, Save, UserPlus, Home } from "lucide-react";
+import { Plus, Upload, Trash2, Link2, Camera, X, Save, UserPlus, Home, FileText } from "lucide-react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 
 const convertToDirectImageUrl = (url) => {
@@ -52,23 +50,24 @@ const getDaySuffix = (day) => {
   }
 };
 
-export default function allocatedResidents({ resident, accommodations, onSubmit, onCancel }) {
-  console.log("Accommodations prop received by AllocatedResidentForm:", accommodations); // Add this line here
+export default function AllocatedResidentForm({ resident, accommodations, onSubmit, onCancel }) {
   const [properties, setProperties] = useState([]);
-    const supabase = useClerkSupabaseClient()
-  const [formData, setFormData] = useState(resident || {
+  const supabase = useClerkSupabaseClient();
+  const [formData, setFormData] = useState({
     "First Name": "",
     "Last Name": "",
     "Date of Birth": "",
     "Phone Number": "",
     "Email Address": "",
+    "Resident Type": "Standard resident",
     "Accommodation Type": "Shared House",
     "Property Address": "",
     "Property ID": "",
+    "Property Name": "",
     "Accommodation ID": "",
+    "Unit/Room Number": "",
     "Move-in Date": "",
     "Move-out Date": "",
-    "Support Level": "Medium",
     "Support Worker": "",
     "Medical Conditions": "",
     "Status": "Active",
@@ -84,9 +83,9 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
     "Future Address": "",
     "Future Housing Type": "",
     "Move-on Outcome": "",
+    "Other Documents": []
   });
 
-  const [documentsToUpload, setDocumentsToUpload] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [photoPreviewError, setPhotoPreviewError] = useState(false);
@@ -99,35 +98,21 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
 
   useEffect(() => {
     if (resident) {
-      console.log("📝 Editing resident:", resident["First Name"], resident["Last Name"]);
-      console.log("   Property ID:", resident["Property ID"]);
-      console.log("   Accommodation ID:", resident["Accommodation ID"]);
-      
       setFormData({
         ...resident,
+        "Resident Type": resident["Resident Type"] || "Standard resident",
         "Room Transfers": resident["Room Transfers"] || [],
         "Accommodation Transfers": resident["Accommodation Transfers"] || [],
         "Future Address": resident["Future Address"] || "",
         "Future Housing Type": resident["Future Housing Type"] || "",
         "Move-on Outcome": resident["Move-on Outcome"] || "",
+        "Property Name": resident["Property Name"] || "",
+        "Unit/Room Number": resident["Unit/Room Number"] || "",
+        "Other Documents": resident["Other Documents"] || []
       });
       setPhotoUrlInput(resident["Photo ID URL"] || "");
       setShowGoogleDriveHelp(resident["Photo ID URL"]?.includes('drive.google.com') || false);
-    } else {
-      setFormData({
-        "First Name": "", "Last Name": "", "Date of Birth": "", "Phone Number": "", "Email Address": "",
-        "Accommodation Type": "Shared House", "Property Address": "", "Property ID": "", "Accommodation ID": "",
-        "Move-in Date": "", "Move-out Date": "","Support Worker": "",
-        "Medical Conditions": "",
-        "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
-        "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
-        "Sign-up Documents URL": "", "Photo ID URL": "",
-        "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
-      });
-      setPhotoUrlInput("");
-      setShowGoogleDriveHelp(false);
     }
-    setPhotoPreviewError(false);
   }, [resident]);
 
   useEffect(() => {
@@ -141,18 +126,12 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
       }
     };
     loadInitialData();
-  }, []);
+  }, [supabase]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log("🚀 FORM SUBMIT - Starting...");
-    console.log("   Form Data Property ID:", formData["Property ID"]);
-    console.log("   Form Data Accommodation ID:", formData["Accommodation ID"]);
-    
     let submissionData = { ...formData };
-    submissionData["Room Transfers"] = formData["Room Transfers"] || [];
-    submissionData["Accommodation Transfers"] = formData["Accommodation Transfers"] || [];
 
     try {
       setUploadingFiles(true);
@@ -160,9 +139,14 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
       const selectedProperty = properties.find(p => p.ID === formData["Property ID"]);
       if (selectedProperty) {
         submissionData["Property Address"] = selectedProperty.Address;
+        submissionData["Property Name"] = selectedProperty.Name;
       }
 
-      // Recursively convert empty strings to null for ALL foreign key fields
+      const selectedAccommodation = accommodations.find(a => a.ID === formData["Accommodation ID"]);
+      if (selectedAccommodation) {
+        submissionData["Unit/Room Number"] = selectedAccommodation["Room Number"];
+      }
+
       const cleanForeignKeys = (obj) => {
         if (Array.isArray(obj)) {
           obj.forEach(item => cleanForeignKeys(item));
@@ -189,12 +173,14 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
 
       if (hasNewRoomTransfer) {
         const latestRoomTransfer = submissionData["Room Transfers"][submissionData["Room Transfers"].length - 1];
-        
         if (latestRoomTransfer.to_accommodation_id) {
           submissionData["Accommodation ID"] = latestRoomTransfer.to_accommodation_id;
-          
           if (latestRoomTransfer.transfer_date) {
             submissionData["Move-in Date"] = latestRoomTransfer.transfer_date;
+          }
+          const newAcc = accommodations.find(a => a.ID === latestRoomTransfer.to_accommodation_id);
+          if (newAcc) {
+            submissionData["Unit/Room Number"] = newAcc["Room Number"];
           }
         }
       }
@@ -212,6 +198,12 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
           const newProperty = properties.find(p => p.ID === latestAccommodationTransfer.to_property_id);
           if (newProperty) {
             submissionData["Property Address"] = newProperty.Address;
+            submissionData["Property Name"] = newProperty.Name;
+          }
+          
+          const newAcc = accommodations.find(a => a.ID === latestAccommodationTransfer.to_accommodation_id);
+          if (newAcc) {
+            submissionData["Unit/Room Number"] = newAcc["Room Number"];
           }
           
           if (latestAccommodationTransfer.transfer_date) {
@@ -219,46 +211,8 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
           }
         }
       }
-      else if (resident && submissionData["Accommodation Transfers"].length > 0) {
-        const latestAccommodationTransfer = submissionData["Accommodation Transfers"][submissionData["Accommodation Transfers"].length - 1];
-        
-        if (latestAccommodationTransfer.to_accommodation_id) {
-          submissionData["Accommodation ID"] = latestAccommodationTransfer.to_accommodation_id;
-          
-          if (latestAccommodationTransfer.to_property_id) {
-            submissionData["Property ID"] = latestAccommodationTransfer.to_property_id;
-            
-            const newProperty = properties.find(p => p.ID === latestAccommodationTransfer.to_property_id);
-            if (newProperty) {
-              submissionData["Property Address"] = newProperty.Address;
-            }
-          }
-          
-          if (latestAccommodationTransfer.transfer_date) {
-            submissionData["Move-in Date"] = latestAccommodationTransfer.transfer_date;
-          }
-        }
-      }
-      else if (resident && submissionData["Room Transfers"].length > 0) {
-        const latestRoomTransfer = submissionData["Room Transfers"][submissionData["Room Transfers"].length - 1];
-        
-        if (latestRoomTransfer.to_accommodation_id) {
-          submissionData["Accommodation ID"] = latestRoomTransfer.to_accommodation_id;
-          
-          if (latestRoomTransfer.transfer_date) {
-            submissionData["Move-in Date"] = latestRoomTransfer.transfer_date;
-          }
-        }
-      }
-      
-      console.log("📤 SUBMITTING DATA:");
-      console.log("   Property ID:", submissionData["Property ID"]);
-      console.log("   Accommodation ID:", submissionData["Accommodation ID"]);
-      console.log("   Full Data:", JSON.stringify(submissionData, null, 2));
       
       await onSubmit(submissionData);
-      
-      console.log("✅ FORM SUBMIT - Complete!");
 
     } catch (error) {
       console.error("❌ FORM SUBMIT - Error:", error);
@@ -269,23 +223,18 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
   };
 
   const handleChange = (field, value) => {
-    console.log(`🔄 Field changed: ${field} = ${value}`);
-    
     setFormData(prev => {
       let newState = { ...prev, [field]: value };
       
       if (field === 'Move-out Date' && value) {
         newState.Status = 'Moved On';
       }
-
       if (field === 'Move-out Date' && !value) {
         newState.Status = 'Active';
       }
-      
       if (field === 'Status' && value === 'Active') {
         newState['Move-out Date'] = '';
       }
-
       if (field === 'Status' && value === 'Moved On' && !newState['Move-out Date']) {
         newState['Move-out Date'] = new Date().toISOString().slice(0,10);
       }
@@ -302,12 +251,13 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
   };
 
   const handlePropertyChange = (propertyId) => {
-    console.log("🏢 Property changed to:", propertyId);
     const selectedProperty = properties.find(p => p.ID === propertyId);
     setFormData(prev => ({
         ...prev,
         "Property ID": propertyId,
         "Accommodation ID": "",
+        "Unit/Room Number": "",
+        "Property Name": selectedProperty ? selectedProperty.Name : "",
         "Property Address": selectedProperty ? selectedProperty.Address : "",
         "Room Transfers": (prev["Room Transfers"] || []).map(transfer => ({
           ...transfer,
@@ -318,32 +268,12 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
   };
 
   const handleAccommodationChange = (accommodationId) => {
-    console.log("🏠 Accommodation changed to:", accommodationId);
+    const selectedAccommodation = accommodations.find(a => a.ID === accommodationId);
     setFormData(prev => ({
         ...prev,
-        "Accommodation ID": accommodationId
+        "Accommodation ID": accommodationId,
+        "Unit/Room Number": selectedAccommodation ? selectedAccommodation["Room Number"] : ""
     }));
-  };
-
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    const newDocs = files.map(file => ({
-      file: file,
-      title: file.name,
-      document_type: "other",
-      description: ""
-    }));
-    setDocumentsToUpload(prev => [...prev, ...newDocs]);
-  };
-
-  const updateDocumentField = (index, field, value) => {
-    setDocumentsToUpload(prev => 
-      prev.map((doc, i) => i === index ? { ...doc, [field]: value } : doc)
-    );
-  };
-
-  const removeDocument = (index) => {
-    setDocumentsToUpload(prev => prev.filter((_, i) => i !== index));
   };
 
   const addBenefit = () => {
@@ -478,7 +408,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-blue-600" />
-            {resident ? "Edit Resident" : "Add New Resident"}
+            {resident ? "Edit Allocated Resident" : "Add New Allocated Resident"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -535,7 +465,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                     placeholder="e.g., resident@example.com"
                   />
                 </div>
-                          {/* --- INSERT RESIDENT TYPE DROPDOWN HERE --- */}
                 <div>
                   <Label htmlFor="resident_type" className="mb-2 block">Resident Type *</Label>
                   <Select
@@ -552,14 +481,8 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                     </SelectContent>
                   </Select>
                 </div>
-                {/* --- END RESIDENT TYPE DROPDOWN --- */}
                 <div>
-                  <Label 
-                    htmlFor="claim_reference_number"
-                    className={`mb-2 block ${!formData["Claim Reference Number"] ? 'text-red-600' : ''}`}
-                  >
-                    Claim Reference Number
-                  </Label>
+                  <Label htmlFor="claim_reference_number" className="mb-2 block">Claim Reference Number</Label>
                   <Input
                     id="claim_reference_number"
                     value={formData["Claim Reference Number"]}
@@ -601,7 +524,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                       id="future_address"
                       value={formData["Future Address"]}
                       onChange={(e) => handleChange("Future Address", e.target.value)}
-                      placeholder="Enter the resident's new address outside of My Hope Housing properties"
+                      placeholder="Enter the resident's new address"
                       className="h-20 bg-white"
                     />
                   </div>
@@ -725,7 +648,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Accommodation & Support</h3>
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Accommodation</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="accommodation_type" className="mb-2 block">Accommodation Type *</Label>
@@ -799,13 +722,8 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                     <SelectContent>
                       {accommodations
                           .filter(unit => {
-                            // Only show units for the selected property
                             if (unit["Property ID"] !== formData["Property ID"]) return false;
-                            
-                            // If editing an existing resident, allow their current accommodation
                             if (resident && unit.ID === resident["Accommodation ID"]) return true;
-                            
-                            // Otherwise, only show available rooms (not occupied by another resident)
                             const isOccupied = unit["Availability Status"] === "Occupied" || 
                                               (unit["Current Resident ID"] && unit["Current Resident ID"] !== resident?.ID);
                             return !isOccupied;
@@ -815,39 +733,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                                 {unit["Room Number"]} ({unit["Accommodation Type"]})
                               </SelectItem>
                           ))}
-                    </SelectContent>
-                  </Select>
-                  {formData["Accommodation ID"] && (
-                    <p className="text-xs text-slate-500 mt-1">
-                      Selected: {accommodations.find(a => a.ID === formData["Accommodation ID"])?.["Room Number"] || "N/A"}
-                    </p>
-                  )}
-                  {formData["Property ID"] && accommodations.filter(unit => {
-                    if (unit["Property ID"] !== formData["Property ID"]) return false;
-                    if (resident && unit.ID === resident["Accommodation ID"]) return false;
-                    const isOccupied = unit["Availability Status"] === "Occupied" || 
-                                      (unit["Current Resident ID"] && unit["Current Resident ID"] !== resident?.ID);
-                    return !isOccupied;
-                  }).length === 0 && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      ⚠️ No available rooms in this property. All rooms are currently occupied.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6"> 
-                <div>
-                  <Label htmlFor="support_level" className="mb-2 block">Support Level</Label>
-                  <Select value={formData["Support Level"]} onValueChange={(value) => handleChange("Support Level", value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Intensive">Intensive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -883,10 +768,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
 
               <div className="space-y-3">
                 {(formData["Room Transfers"] || []).map((transfer, index) => {
-                  const fromAccommodation = accommodations.find(a => a.ID === transfer.from_accommodation_id);
-                  const toAccommodation = accommodations.find(a => a.ID === transfer.to_accommodation_id);
                   const transferProperty = properties.find(p => p.ID === transfer.property_id);
-
                   return (
                     <Card key={index} className="p-4">
                       <div className="flex items-start justify-between mb-3">
@@ -1003,11 +885,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
 
               <div className="space-y-3">
                 {(formData["Accommodation Transfers"] || []).map((transfer, index) => {
-                  const fromProperty = properties.find(p => p.ID === transfer.from_property_id);
-                  const toProperty = properties.find(p => p.ID === transfer.to_property_id);
-                  const fromAccommodation = accommodations.find(a => a.ID === transfer.from_accommodation_id);
-                  const toAccommodation = accommodations.find(a => a.ID === transfer.to_accommodation_id);
-
                   return (
                     <Card key={index} className="p-4">
                       <div className="flex items-start justify-between mb-3">
@@ -1030,7 +907,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                             value={transfer.move_in_date}
                             onChange={(e) => updateAccommodationTransfer(index, "move_in_date", e.target.value)}
                           />
-                          <p className="text-xs text-slate-500 mt-1">When they first moved into the FROM property</p>
                         </div>
 
                         <div>
@@ -1040,17 +916,15 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                             value={transfer.move_out_date}
                             onChange={(e) => updateAccommodationTransfer(index, "move_out_date", e.target.value)}
                           />
-                          <p className="text-xs text-slate-500 mt-1">When they moved out of the FROM property</p>
                         </div>
 
                         <div className="md:col-span-2">
-                          <Label className="mb-2 block">Transfer Date (Move into new property)</Label>
+                          <Label className="mb-2 block">Transfer Date</Label>
                           <Input
                             type="date"
                             value={transfer.transfer_date}
                             onChange={(e) => updateAccommodationTransfer(index, "transfer_date", e.target.value)}
                           />
-                          <p className="text-xs text-slate-500 mt-1">When they moved into the TO property</p>
                         </div>
 
                         <div>
@@ -1080,7 +954,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                             disabled={!transfer.from_property_id}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select property first" />
+                              <SelectValue placeholder="Select room" />
                             </SelectTrigger>
                             <SelectContent>
                               {accommodations
@@ -1121,7 +995,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                             disabled={!transfer.to_property_id}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select property first" />
+                              <SelectValue placeholder="Select room" />
                             </SelectTrigger>
                             <SelectContent>
                               {accommodations
@@ -1140,7 +1014,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                           <Textarea
                             value={transfer.reason}
                             onChange={(e) => updateAccommodationTransfer(index, "reason", e.target.value)}
-                            placeholder="Reason for accommodation transfer"
+                            placeholder="Reason for transfer"
                           />
                         </div>
 
@@ -1160,77 +1034,15 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Emergency Contact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Health</h3>
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="emergency_contact_name" className="mb-2 block">Emergency Contact Name</Label>
-                  <Input
-                    id="emergency_contact_name"
-                    value={formData["Emergency Contact Name"]}
-                    onChange={(e) => handleChange("Emergency Contact Name", e.target.value)}
-                    placeholder="e.g., Jane Doe"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="emergency_contact_phone" className="mb-2 block">Emergency Contact Phone</Label>
-                  <Input
-                    id="emergency_contact_phone"
-                    value={formData["Emergency Contact Phone"]}
-                    onChange={(e) => handleChange("Emergency Contact Phone", e.target.value)}
-                    placeholder="e.g., 07987654321"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Communication & Health</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="fluent_english"
-                    checked={formData["Fluent English"]}
-                    onChange={(e) => handleChange("Fluent English", e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <Label htmlFor="fluent_english">Fluent in English</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="partial_english"
-                    checked={formData["Partial English"]}
-                    onChange={(e) => handleChange("Partial English", e.target.checked)}
-                    className="w-4 h-4"
-                  />
-                  <Label htmlFor="partial_english">Partial English</Label>
-                </div>
-                <div>
-                  <Label htmlFor="language_spoken" className="mb-2 block">Language Spoken</Label>
-                  <Input
-                    id="language_spoken"
-                    value={formData["Language Spoken"]}
-                    onChange={(e) => handleChange("Language Spoken", e.target.value)}
-                    placeholder="e.g., Arabic, French"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="communication_needs" className="mb-2 block">Communication Needs</Label>
-                  <Input
-                    id="communication_needs"
-                    value={formData["Communication Needs"]}
-                    onChange={(e) => handleChange("Communication Needs", e.target.value)}
-                    placeholder="e.g., Requires interpreter"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="medical_conditions" className="mb-2 block">Medical Conditions / Special Needs</Label>
+                  <Label htmlFor="medical_conditions" className="mb-2 block">Medical Conditions</Label>
                   <Textarea
                     id="medical_conditions"
                     value={formData["Medical Conditions"]}
                     onChange={(e) => handleChange("Medical Conditions", e.target.value)}
-                    placeholder="Any medical conditions or special needs..."
+                    placeholder="Any medical conditions..."
                     className="h-24"
                   />
                 </div>
@@ -1291,13 +1103,7 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                       />
                     </div>
                   )}
-                  {photoPreviewError && formData["Photo ID URL"] && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Unable to load preview. The link may not be publicly accessible or may not be a direct image link.
-                    </p>
-                  )}
                 </div>
-                
                 <div>
                   <h4 className="font-medium text-slate-900 mb-3">Other Documents</h4>
                   <div>
@@ -1325,70 +1131,9 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
                   id="notes"
                   value={formData.Notes}
                   onChange={(e) => handleChange("Notes", e.target.value)}
-                  placeholder="Any additional notes about the resident..."
+                  placeholder="Any additional notes..."
                   className="h-32"
                 />
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Children's Services / Personal Adviser</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="pa_worker_name" className="mb-2 block">PA/Worker Name</Label>
-                  <Input
-                    id="pa_worker_name"
-                    value={formData["PA/Worker Name"]}
-                    onChange={(e) => handleChange("PA/Worker Name", e.target.value)}
-                    placeholder="e.g., Sarah Smith"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pa_worker_contact" className="mb-2 block">PA/Worker Contact</Label>
-                  <Input
-                    id="pa_worker_contact"
-                    value={formData["PA/Worker Contact"]}
-                    onChange={(e) => handleChange("PA/Worker Contact", e.target.value)}
-                    placeholder="e.g., 07123456789"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pa_worker_email" className="mb-2 block">PA/Worker Email</Label>
-                  <Input
-                    id="pa_worker_email"
-                    type="email"
-                    value={formData["PA/Worker Email"]}
-                    onChange={(e) => handleChange("PA/Worker Email", e.target.value)}
-                    placeholder="e.g., sarah.smith@council.gov.uk"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pa_worker_borough" className="mb-2 block">PA/Worker Borough</Label>
-                  <Input
-                    id="pa_worker_borough"
-                    value={formData["PA/Worker Borough"]}
-                    onChange={(e) => handleChange("PA/Worker Borough", e.target.value)}
-                    placeholder="e.g., Birmingham"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pa_worker_team" className="mb-2 block">PA/Worker Team</Label>
-                  <Input
-                    id="pa_worker_team"
-                    value={formData["PA/Worker Team"]}
-                    onChange={(e) => handleChange("PA/Worker Team", e.target.value)}
-                    placeholder="e.g., Leaving Care Team"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pa_worker_duty_line" className="mb-2 block">PA/Worker Duty Line</Label>
-                  <Input
-                    id="pa_worker_duty_line"
-                    value={formData["PA/Worker Duty Line"]}
-                    onChange={(e) => handleChange("PA/Worker Duty Line", e.target.value)}
-                    placeholder="e.g., 0121 123 4567"
-                  />
-                </div>
               </div>
             </div>
 
@@ -1443,7 +1188,6 @@ export default function allocatedResidents({ resident, accommodations, onSubmit,
 
 function PhotoModalContent({ imageUrl }) {
   const [error, setError] = useState(false);
-
   useEffect(() => {
     setError(false);
   }, [imageUrl]);
