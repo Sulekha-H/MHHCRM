@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Home, Calendar, Phone, MapPin, DoorOpen, X, Mail, Trash2, User } from "lucide-react";
 import { format } from "date-fns";
-
+ 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
   
