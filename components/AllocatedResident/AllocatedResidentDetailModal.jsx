@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
+  DialogHeader, 
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog";
