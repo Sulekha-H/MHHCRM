@@ -23,10 +23,10 @@ export default function allocatedResidents() {
   const supabase = useClerkSupabaseClient()
   const { user } = useUser();
   const { session } = useSession()
-  const [residents, setResidents] = useState([]);
+  const [allocatedResidents, setAllocatedResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
-  const [filteredResidents, setFilteredResidents] = useState([]);
+  const [filteredAllocatedResidents, setFilteredAllocatedResidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('')
   const [error, setError] = useState(null);
@@ -36,6 +36,7 @@ export default function allocatedResidents() {
   const [activeTab, setActiveTab] = useState("all");
   const [expandedProperties, setExpandedProperties] = useState(new Set());
   const [viewingResident, setViewingResident] = useState(null);
+  
 
 useEffect(() => {
   if (supabase) { // Ensure supabase client is available
@@ -44,9 +45,9 @@ useEffect(() => {
 }, [supabase]); // Now loadData will run when supabase is ready
 
 useEffect(() => {
-  if (!residents || residents.length === 0) return;
+  if (!allocatedResidents || allocatedResidents.length === 0) return;
 
-  let filtered = residents;
+  let filtered = allocatedResidents;
 
   if (activeTab.toLowerCase() !== "all") {
     filtered = filtered.filter(
@@ -64,61 +65,73 @@ useEffect(() => {
     );
   }
 
-  setFilteredResidents(filtered);
-}, [residents, activeTab, searchTerm]);
+  setFilteredAllocatedResidents(filtered);
+}, [allocatedResidents, activeTab, searchTerm]);
 
   const loadData = async () => {
-    if (!supabase) return;
-    try {
-      setLoading(true);
-      setError(null);
+  if (!supabase) return;
 
-      const { data: residentsData, error: residentsError } = await supabase
-        .from('residents')
-        .select('*')
-        .order('Created Date', { ascending: false });
+  try {
+    setLoading(true);
+    setError(null);
 
-      if (residentsError) throw residentsError;
-      
-      // Filter out soft-deleted residents
-      const activeResidents = (residentsData || []).filter(r => !r.Deleted && !r["Deleted"]);
-      console.log("✅ Loaded residents:", activeResidents.length, `(filtered out ${(residentsData?.length || 0) - activeResidents.length} deleted)`);
+    // ✅ 1. CHANGE TABLE NAME
+    const { data: allocatedData, error: allocatedError } = await supabase
+      .from('allocated_residents')
+      .select('*')
+      .order('Created Date', { ascending: false });
 
-      const { data: accommodationsData, error: accommodationsError } = await supabase
-        .from('accommodations')
-        .select('*');
+    if (allocatedError) throw allocatedError;
 
-      if (accommodationsError) throw accommodationsError;
-      console.log("✅ Loaded accommodations:", accommodationsData?.length);
+    // ✅ 2. FILTER DELETED
+    const activeAllocated = (allocatedData || []).filter(
+      r => !r.Deleted && !r["Deleted"]
+    );
 
-      const { data: propertiesDataRaw, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*');
+    console.log(
+      "✅ Loaded allocated residents:",
+      activeAllocated.length
+    );
 
-      if (propertiesError) throw propertiesError;
-      console.log("✅ Loaded properties:", propertiesDataRaw?.length);
+    // ✅ 3. KEEP THESE (if you still need them)
+    const { data: accommodationsData, error: accommodationsError } = await supabase
+      .from('accommodations')
+      .select('*');
 
-      const propertiesData = (propertiesDataRaw || []).sort((a, b) => {
-        const nameA = a.Name?.toLowerCase();
-        const nameB = b.Name?.toLowerCase();
+    if (accommodationsError) throw accommodationsError;
 
-        if (nameA && nameA.includes('ryland') && (!nameB || !nameB.includes('ryland'))) return 1;
-        if (nameB && nameB.includes('ryland') && (!nameA || !nameA.includes('ryland'))) return -1;
-        return nameA?.localeCompare(nameB) || 0;
-      });
+    const { data: propertiesDataRaw, error: propertiesError } = await supabase
+      .from('properties')
+      .select('*');
 
-      setResidents(activeResidents);
-      setAccommodations(accommodationsData || []);
-      setProperties(propertiesData);
-      setExpandedProperties(new Set(propertiesData.map(p => p.ID).concat('unassigned')));
+    if (propertiesError) throw propertiesError;
 
-    } catch (error) {
-      console.error("❌ Error loading data:", error);
-      setError(error.message || "Failed to load data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const propertiesData = (propertiesDataRaw || []).sort((a, b) => {
+      const nameA = a.Name?.toLowerCase();
+      const nameB = b.Name?.toLowerCase();
+
+      if (nameA && nameA.includes('ryland') && (!nameB || !nameB.includes('ryland'))) return 1;
+      if (nameB && nameB.includes('ryland') && (!nameA || !nameA.includes('ryland'))) return -1;
+      return nameA?.localeCompare(nameB) || 0;
+    });
+
+    // ✅ 4. IMPORTANT: use correct state
+    setAllocatedResidents(activeAllocated);
+
+    setAccommodations(accommodationsData || []);
+    setProperties(propertiesData);
+
+    setExpandedProperties(
+      new Set(propertiesData.map(p => p.ID).concat('unassigned'))
+    );
+
+  } catch (error) {
+    console.error("❌ Error loading allocated residents:", error);
+    setError(error.message || "Failed to load data. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getResidentPropertyId = (resident) => {
     if (resident["Property ID"]) {
@@ -206,7 +219,7 @@ useEffect(() => {
 
         // Update the resident
         const { data: updatedData, error: updateError } = await supabase
-          .from('residents')
+          .from('allocated_residents')
           .update(cleanedData)
           .eq('ID', editingResident.ID)
           .select()
@@ -378,7 +391,7 @@ useEffect(() => {
         
         // Create new resident
         const { data: newData, error: insertError } = await supabase
-          .from('residents')
+          .from('allocated_residents')
           .insert([insertData])
           .select()
           .single();
@@ -433,7 +446,7 @@ useEffect(() => {
     if (window.confirm(`Are you sure you want to delete ${resident["First Name"]} ${resident["Last Name"]}? It will be moved to deleted entries.`)) {
       try {
         const { error } = await supabase
-          .from('residents')
+          .from('allocated_residents')
           .update({
             "Deleted": true,
             "Deleted Date": new Date().toISOString(),
@@ -504,102 +517,83 @@ useEffect(() => {
         if (!transfers || transfers.length === 0) return "[]";
         return JSON.stringify(transfers);
       };
+//header and row must match 
+      
+  const headers = [
+  "ID",
+  "First Name",
+  "Last Name",
+  "Date of Birth",
+  "Phone Number",
+  "Email Address",
+  "Claim Reference Number",
+  "Submission Reference",
+  "National Insurance Number",
+  "Accommodation Type",
+  "Property ID",
+  "Property Name",
+  "Property Address",
+  "Accommodation ID",
+  "Unit/Room Number",
+  "Move-in Date",
+  "Move-out Date",
+  "Support Worker",
+  "Status",
+  "Medical Conditions",
+  "Benefits",
+  "Room Transfers",
+  "Accommodation Transfers",
+  "Sign-up Documents URL",
+  "Photo ID URL",
+  "Notes",
+  "Future Address",
+  "Future Housing Type",
+  "Move-on Outcome",
+  "Resident Type",
+  "Created Date",
+  "Updated Date",
+  "Deleted",
+  "Deleted Date",
+  "Deleted By"
+];
 
-      const headers = [
-        "ID",
-        "First Name",
-        "Last Name",
-        "Date of Birth",
-        "Phone Number",
-        "Email Address", 
-        "Claim Reference Number",
-        "Submission Reference",
-        "National Insurance Number",
-        "Accommodation Type",
-        "Property ID",
-        "Property Name",
-        "Property Address",
-        "Accommodation ID",
-        "Unit/Room Number",
-        "Move-in Date",
-        "Move-out Date",
-        "Support Level",
-        "Support Worker",
-        "Status",
-        "Emergency Contact Name",
-        "Emergency Contact Phone",
-        "Fluent English",
-        "Partial English",
-        "Language Spoken",
-        "Communication Needs",
-        "Medical Conditions",
-        "Benefits",
-        "Room Transfers",
-        "Accommodation Transfers",
-        "Sign-up Documents URL",
-        "Photo ID URL",
-        "Notes",
-        "PA/Worker Name",
-        "PA/Worker Contact",
-        "PA/Worker Email",
-        "PA/Worker Borough",
-        "PA/Worker Team",
-        "PA/Worker Duty Line",
-        "Created Date",
-        "Updated Date",
-        "Created By",
-        "Deleted",
-        "Deleted Date",
-        "Deleted By"
-      ];
-
-      const rows = filteredResidents.map(resident => [
-        resident.ID || "",
-        resident["First Name"] || "",
-        resident["Last Name"] || "",
-        formatDate(resident["Date of Birth"]),
-        resident["Phone Number"] || "",
-        resident["Email Address"] || "", 
-        resident["Claim Reference Number"] || "",
-        resident["Submission Reference"] || "",
-        resident["National Insurance Number"] || "",
-        resident["Accommodation Type"] || "",
-        resident["Property ID"] || "",
-        getPropertyName(resident["Property ID"]),
-        getPropertyAddress(resident["Property ID"]),
-        resident["Accommodation ID"] || "",
-        getAccommodationUnit(resident["Accommodation ID"]),
-        formatDate(resident["Move-in Date"]),
-        formatDate(resident["Move-out Date"]),
-        resident["Support Level"] || "",
-        resident["Support Worker"] || "",
-        resident.Status || "",
-        resident["Emergency Contact Name"] || "",
-        resident["Emergency Contact Phone"] || "",
-        resident["Fluent English"] ? "Yes" : "No",
-        resident["Partial English"] ? "Yes" : "No",
-        resident["Language Spoken"] || "",
-        resident["Communication Needs"] || "",
-        resident["Medical Conditions"] || "",
-        formatBenefits(resident["Benefits"]),
-        formatRoomTransfers(resident["Room Transfers"]),
-        formatAccommodationTransfers(resident["Accommodation Transfers"]),
-        resident["Sign-up Documents URL"] || "",
-        resident["Photo ID URL"] || "",
-        resident.Notes || "",
-        resident["PA/Worker Name"] || "",
-        resident["PA/Worker Contact"] || "",
-        resident["PA/Worker Email"] || "",
-        resident["PA/Worker Borough"] || "",
-        resident["PA/Worker Team"] || "",
-        resident["PA/Worker Duty Line"] || "",
-        formatDateTime(resident["Created Date"]),
-        formatDateTime(resident["Updated Date"]),
-        resident["Created By"] || "",
-        resident.Deleted ? "Yes" : "No",
-        formatDateTime(resident["Deleted Date"]),
-        resident["Deleted By"] || ""
-      ]);
+      const rows = filteredAllocatedResidents.map(resident => [
+  resident.ID || "",
+  resident["First Name"] || "",
+  resident["Last Name"] || "",
+  formatDate(resident["Date of Birth"]),
+  resident["Phone Number"] || "",
+  resident["Email Address"] || "",
+  resident["Claim Reference Number"] || "",
+  resident["Submission Reference"] || "",
+  resident["National Insurance Number"] || "",
+  resident["Accommodation Type"] || "",
+  resident["Property ID"] || "",
+  resident["Property Name"] || "",
+  resident["Property Address"] || "",
+  resident["Accommodation ID"] || "",
+  resident["Unit/Room Number"] || "",
+  formatDate(resident["Move-in Date"]),
+  formatDate(resident["Move-out Date"]),
+  resident["Support Worker"] || "",
+  resident.Status || "",
+  resident["Medical Conditions"] || "",
+  JSON.stringify(resident["Benefits"] || []),
+  JSON.stringify(resident["Room Transfers"] || []),
+  JSON.stringify(resident["Accommodation Transfers"] || []),
+  resident["Sign-up Documents URL"] || "",
+  resident["Photo ID URL"] || "",
+  resident.Notes || "",
+  resident["Future Address"] || "",
+  resident["Future Housing Type"] || "",
+  resident["Move-on Outcome"] || "",
+  resident["Resident Type"] || "",
+  formatDateTime(resident["Created Date"]),
+  formatDateTime(resident["Updated Date"]),
+  resident.Deleted ? "Yes" : "No",
+  formatDateTime(resident["Deleted Date"]),
+  resident["Deleted By"] || ""
+]);
 
       console.log("Headers:", headers.length);
       console.log("Rows:", rows.length);
@@ -709,8 +703,12 @@ useEffect(() => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 px-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Residents</h1>
-          <p className="text-slate-600">Manage supported housing residents and their information</p>
+         <h1 className="text-3xl font-bold text-slate-900 mb-2">
+         Allocated Residents
+        </h1>
+         <p className="text-slate-600">
+         Manage allocated residents separately from main residents
+         </p>
         </div>
         <div className="flex gap-3">
           <Button
@@ -729,7 +727,7 @@ useEffect(() => {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
               <Input
-                placeholder="Search residents by name, address, or key worker..."
+                placeholder="Search allocated residents by name, address, or key worker..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -741,7 +739,7 @@ useEffect(() => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6 px-6">
         <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
-          <TabsTrigger value="all">All Residents</TabsTrigger>
+          <TabsTrigger value="all">Allocated </TabsTrigger>
           <TabsTrigger value="Active">Active</TabsTrigger>
           <TabsTrigger value="Moved On">Moved On</TabsTrigger>
         </TabsList>
