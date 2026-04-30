@@ -7,25 +7,15 @@ import { format } from "date-fns";
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
-  
   if (url.includes('dropbox.com')) {
-    return url
-      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-      .replace('?dl=0', '')
-      .replace('?dl=1', '');
+    return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '').replace('?dl=1', '');
   }
-  
   if (url.includes('drive.google.com')) {
     const fileIdMatch = url.match(/\/file\/d\/([^\/\?]+)/);
-    if (fileIdMatch) {
-      return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1000`;
-    }
+    if (fileIdMatch) return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1000`;
     const idMatch = url.match(/[?&]id=([^&]+)/);
-    if (idMatch) {
-      return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
-    }
+    if (idMatch) return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
   }
-  
   return url;
 };
 
@@ -33,7 +23,6 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
   const firstName = resident["First Name"] || '';
   const lastName = resident["Last Name"] || '';
   const claimRef = resident["Claim Reference Number"];
-  const niNumber = resident["National Insurance Number"];
   const keyWorker = resident["Support Worker"];
   const status = resident["Status"];
   const accommodationType = resident["Accommodation Type"];
@@ -60,20 +49,10 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <div 
                 className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden border flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
-                onClick={(e) => {
-                  if (photoIdUrl && !imageError) {
-                    e.stopPropagation();
-                    setShowPhotoModal(true);
-                  }
-                }}
+                onClick={(e) => { if (photoIdUrl && !imageError) { e.stopPropagation(); setShowPhotoModal(true); } }}
               >
                 {photoIdUrl && !imageError ? (
-                  <img 
-                    src={previewUrl} 
-                    alt={`${firstName} ${lastName}`} 
-                    className="w-full h-full object-cover"
-                    onError={() => setImageError(true)}
-                  />
+                  <img src={previewUrl} alt={`${firstName} ${lastName}`} className="w-full h-full object-cover" onError={() => setImageError(true)} />
                 ) : (
                   <User className="text-slate-400 w-6 h-6" />
                 )}
@@ -95,7 +74,6 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
           <div className="flex gap-2 flex-wrap">
             <Badge className={getStatusColor(status)}>{status}</Badge>
           </div>
-
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Home className="w-4 h-4 text-slate-400" />
@@ -122,7 +100,6 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
               </div>
             )}
           </div>
-
           {(phoneNumber || emailAddress) && (
             <div className="pt-3 border-t space-y-1">
               {phoneNumber && <div className="flex items-center gap-2 text-sm text-slate-600"><Phone className="w-4 h-4 text-slate-400" />{phoneNumber}</div>}
@@ -131,7 +108,6 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
           )}
         </CardContent>
       </Card>
-
       {showPhotoModal && photoIdUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={() => setShowPhotoModal(false)}>
           <div className="relative max-w-3xl max-h-[90vh] p-4 bg-white rounded-lg shadow-2xl overflow-auto" onClick={(e) => e.stopPropagation()}>

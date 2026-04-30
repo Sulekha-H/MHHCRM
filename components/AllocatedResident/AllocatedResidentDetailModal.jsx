@@ -13,31 +13,21 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   User, Calendar, Phone, Home, MapPin, UserCheck,
-  Briefcase, Shield, Link2, FileText, X, Edit, BedDouble, Building, Mail, Trash2
+  Heart, Shield, Link2, FileText, X, Edit, BedDouble, Building, Mail, Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
-
   if (url.includes('dropbox.com')) {
-    return url
-      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-      .replace('?dl=0', '')
-      .replace('?dl=1', '');
+    return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '').replace('?dl=1', '');
   }
-
   if (url.includes('drive.google.com')) {
     const fileIdMatch = url.match(/\/file\/d\/([^\/\?]+)/);
-    if (fileIdMatch) {
-      return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1000`;
-    }
+    if (fileIdMatch) return `https://drive.google.com/thumbnail?id=${fileIdMatch[1]}&sz=w1000`;
     const idMatch = url.match(/[?&]id=([^&]+)/);
-    if (idMatch) {
-      return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
-    }
+    if (idMatch) return `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w1000`;
   }
-
   return url;
 };
 
@@ -104,19 +94,10 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
                 <div className="flex items-center gap-4">
                   <div
                     className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center overflow-hidden border cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all flex-shrink-0"
-                    onClick={() => {
-                      if (photoIdUrl && !imageError) {
-                        setShowPhotoModal(true);
-                      }
-                    }}
+                    onClick={() => { if (photoIdUrl && !imageError) setShowPhotoModal(true); }}
                   >
                     {photoIdUrl && !imageError ? (
-                      <img
-                        src={previewUrl}
-                        alt={`${firstName} ${lastName}`}
-                        className="w-full h-full object-cover"
-                        onError={() => setImageError(true)}
-                      />
+                      <img src={previewUrl} alt={`${firstName} ${lastName}`} className="w-full h-full object-cover" onError={() => setImageError(true)} />
                     ) : (
                       <User className="w-8 h-8 text-slate-500" />
                     )}
@@ -158,10 +139,7 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
 
               {status === 'Moved On' && (
                 <>
-                  <h3 className="text-xl font-semibold text-blue-800 mb-4 flex items-center gap-2">
-                    <Home className="w-6 h-6" />
-                    Move-on Details
-                  </h3>
+                  <h3 className="text-xl font-semibold text-blue-800 mb-4 flex items-center gap-2"><Home className="w-6 h-6" /> Move-on Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-blue-50 p-6 rounded-xl border border-blue-100">
                     <DetailItem icon={<MapPin />} label="Future Address">{futureAddress}</DetailItem>
                     <DetailItem icon={<Home />} label="Housing Type">{futureHousingType}</DetailItem>
@@ -175,7 +153,7 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
                 <div>
                   <h3 className="text-xl font-semibold text-slate-800 mb-4">Health & Notes</h3>
                   <div className="space-y-4">
-                    <DetailItem icon={<Briefcase />} label="Medical Conditions">{medicalConditions}</DetailItem>
+                    <DetailItem icon={<Heart />} label="Medical Conditions">{medicalConditions}</DetailItem>
                     <DetailItem icon={<FileText />} label="Notes">{notes}</DetailItem>
                   </div>
                 </div>
@@ -186,8 +164,7 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
               {benefits?.length > 0 && (
                 <>
                   <h3 className="text-xl font-semibold text-slate-800 mb-4">Benefits</h3>
-                  <Table>
-                    <TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Payment Day</TableHead></TableRow></TableHeader>
+                  <Table><TableHeader><TableRow><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Payment Day</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {benefits.map((benefit, index) => (
                         <TableRow key={index}>
@@ -211,31 +188,27 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
                         <Home className="w-5 h-5 text-blue-600 mt-1" />
                         <div>
                           <p className="font-semibold text-blue-900">Initial Move-in</p>
-                          <p className="text-sm text-slate-700">
-                            {format(new Date(moveInDate), 'dd MMM yyyy')} → {propertyName} - Unit {unitRoomNumber}
-                          </p>
+                          <p className="text-sm text-slate-700">{format(new Date(moveInDate), 'dd MMM yyyy')} → {propertyName} - Unit {unitRoomNumber}</p>
                         </div>
                       </div>
                     )}
-                    {roomTransfers.map((transfer, index) => (
-                      <div key={`room-${index}`} className="flex gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                    {roomTransfers.map((t, i) => (
+                      <div key={i} className="flex gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
                         <BedDouble className="w-5 h-5 text-green-600 mt-1" />
                         <div>
-                          <p className="font-semibold text-green-900">Room Transfer #{index + 1}</p>
-                          <p className="text-sm text-slate-700">
-                            {transfer.transfer_date ? format(new Date(transfer.transfer_date), 'dd MMM yyyy') : 'N/A'} → {transfer.property_name} - From {transfer.from_room_number} to {transfer.to_room_number}
-                          </p>
+                          <p className="font-semibold text-green-900">Room Transfer #{i + 1}</p>
+                          <p className="text-sm text-slate-700">{t.transfer_date ? format(new Date(t.transfer_date), 'dd MMM yyyy') : 'N/A'} → {t.to_room_number}</p>
+                          {t.reason && <p className="text-xs text-slate-500 mt-1">Reason: {t.reason}</p>}
                         </div>
                       </div>
                     ))}
-                    {accommodationTransfers.map((transfer, index) => (
-                      <div key={`property-${index}`} className="flex gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    {accommodationTransfers.map((t, i) => (
+                      <div key={i} className="flex gap-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
                         <Building className="w-5 h-5 text-slate-600 mt-1" />
                         <div>
-                          <p className="font-semibold text-slate-900">Accommodation Transfer #{index + 1}</p>
-                          <p className="text-sm text-slate-700">
-                            {transfer.transfer_date ? format(new Date(transfer.transfer_date), 'dd MMM yyyy') : 'N/A'} → From {transfer.from_property} ({transfer.from_unit}) to {transfer.to_property} ({transfer.to_unit})
-                          </p>
+                          <p className="font-semibold text-slate-900">Accommodation Transfer #{i + 1}</p>
+                          <p className="text-sm text-slate-700">{t.transfer_date ? format(new Date(t.transfer_date), 'dd MMM yyyy') : 'N/A'} → {t.to_property} ({t.to_unit})</p>
+                          {t.reason && <p className="text-xs text-slate-500 mt-1">Reason: {t.reason}</p>}
                         </div>
                       </div>
                     ))}
@@ -250,10 +223,7 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
                    <div className="space-y-2">
                      {otherDocuments.map((doc, idx) => (
                        <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
-                         <div className="flex items-center gap-3">
-                           <FileText className="w-5 h-5 text-slate-400" />
-                           <span className="font-medium">{doc.title}</span>
-                         </div>
+                         <div className="flex items-center gap-3"><FileText className="w-5 h-5 text-slate-400" /><span className="font-medium">{doc.title}</span></div>
                          {doc.url && <a href={doc.url} target="_blank" rel="noopener noreferrer"><Button size="sm" variant="ghost">View</Button></a>}
                        </div>
                      ))}
@@ -264,37 +234,22 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
 
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Links</h3>
               <div className="flex gap-4 flex-wrap">
-                  {photoIdUrl && (
-                      <a href={photoIdUrl} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Photo ID</Button>
-                      </a>
-                  )}
-                  {signupGdriveUrl && (
-                      <a href={signupGdriveUrl} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Sign-up Docs</Button>
-                      </a>
-                  )}
+                  {photoIdUrl && (<a href={photoIdUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Photo ID</Button></a>)}
+                  {signupGdriveUrl && (<a href={signupGdriveUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Sign-up Docs</Button></a>)}
               </div>
             </div>
             <DialogFooter className="p-6 bg-slate-50 border-t sticky bottom-0">
-              {onDelete && (
-                <Button variant="destructive" onClick={() => onDelete(resident)} className="flex-1">
-                  <Trash2 className="w-4 h-4 mr-2" /> Delete Resident
-                </Button>
-              )}
+              {onDelete && (<Button variant="destructive" onClick={() => onDelete(resident)} className="flex-1"><Trash2 className="w-4 h-4 mr-2" /> Delete Resident</Button>)}
               <Button variant="outline" onClick={onClose}>Close</Button>
               <Button onClick={() => onEdit(resident)}><Edit className="w-4 h-4 mr-2"/>Edit Resident</Button>
             </DialogFooter>
           </ScrollArea>
         </DialogContent>
       </Dialog>
-
       {showPhotoModal && photoIdUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]" onClick={() => setShowPhotoModal(false)}>
           <div className="relative max-w-4xl max-h-[90vh] p-4 bg-white rounded-lg shadow-2xl overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowPhotoModal(false)} className="absolute -top-12 right-0 text-white hover:text-gray-300">
-              <X className="w-8 h-8" />
-            </button>
+            <button onClick={() => setShowPhotoModal(false)} className="absolute -top-12 right-0 text-white hover:text-gray-300"><X className="w-8 h-8" /></button>
             <div className="mb-2 text-center"><h3 className="text-lg font-semibold text-white">{firstName} {lastName} - Photo ID</h3></div>
             <PhotoModalContent imageUrl={previewUrl} residentName={`${firstName} ${lastName}`} />
           </div>
