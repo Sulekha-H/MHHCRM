@@ -9,5 +9,11 @@
  ✓ Starting...
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
  ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
- ✓ Ready in 2.9s
-[?25h
+ ✓ Ready in 1978ms
+ ○ Compiling / ...
+
+[35m
+[Clerk]:[0m You are running in keyless mode.
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=7frjs2qnye2mv5cyg2wqgk7okxzsnwt66lkh3741&return_url=http%3A%2F%2Flocalhost%3A3000%2F
+
+ GET / 200 in 9.9s (compile: 8.3s, proxy.ts: 144ms, render: 1486ms)

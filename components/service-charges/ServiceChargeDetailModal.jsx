@@ -54,6 +54,9 @@ export default function ServiceChargeDetailModal({
   const notes = charge.notes || charge.Notes;
   const loggedBy = charge.logged_by || charge["Logged By"];
 
+  const amountPaid = charge.amount_paid || 0;
+  const balanceOwed = charge.balance_owed || 0;
+
   const handleDelete = () => {
     onDelete(charge);
     setShowDeleteDialog(false);
@@ -99,6 +102,16 @@ export default function ServiceChargeDetailModal({
                     `£${monthlyAmount?.toFixed(2)}`
                   )}
                 </DetailItem>
+                {paymentStatus === 'partially_paid' && (
+                  <>
+                    <DetailItem icon={<PoundSterling />} label="Amount Paid">
+                      <span className="text-green-600">£{amountPaid.toFixed(2)}</span>
+                    </DetailItem>
+                    <DetailItem icon={<AlertCircle />} label="Balance Owed">
+                      <span className="text-red-600 font-bold">£{balanceOwed.toFixed(2)}</span>
+                    </DetailItem>
+                  </>
+                )}
                 <DetailItem icon={<Calendar />} label="Due Date">
                   {exempt ? (
                     <span className="text-blue-600">N/A (Exempt)</span>

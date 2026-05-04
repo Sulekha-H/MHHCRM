@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { X, Save, Receipt } from "lucide-react";
 
-export default function ServiceChargeLogForm({ charge, residents, users, currentUser, onSubmit, onCancel, accommodations, properties }) {
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+export default function ServiceChargeLogForm({ charge, residents, users, currentUser, onSubmit, onCancel, accommodations, properties, allCharges = [] }) {
   const [formData, setFormData] = useState(() => {
     if (charge) {
       return {
@@ -15,6 +18,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
         due_date: charge.due_date || "",
         date_paid: charge.date_paid || "",
         monthly_amount: charge.monthly_amount || 0,
+        amount_paid: charge.amount_paid || 0,
         payment_type: charge.payment_type === 'Card' ? 'bank_transfer' : charge.payment_type === 'bank_transfer' ? 'bank_transfer' : 'cash_payment',
         payment_status: charge.payment_status || "due",
         status: charge.status?.toLowerCase() || "active",
@@ -29,6 +33,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       due_date: "",
       date_paid: "",
       monthly_amount: 0,
+      amount_paid: 0,
       payment_type: "bank_transfer",
       payment_status: "due",
       status: "active",
@@ -38,6 +43,27 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       exempt_reason: ""
     };
   });
+
+  const [residentBalance, setResidentBalance] = useState(0);
+
+  useEffect(() => {
+    if (formData.resident_id && allCharges.length > 0) {
+      const balance = allCharges
+        .filter(c => (c.resident_id || c["Resident ID"]) === formData.resident_id)
+        .reduce((sum, c) => {
+          let chargeBalance = 0;
+          if (c.payment_status === 'partially_paid' || c["Payment Status"] === 'Partially Paid') {
+            chargeBalance = parseFloat(c.balance_owed || 0);
+          } else if (c.payment_status === 'overdue' || c.payment_status === 'due') {
+            chargeBalance = parseFloat(c.monthly_amount || c["Monthly Amount"] || 0);
+          }
+          return sum + chargeBalance;
+        }, 0);
+      setResidentBalance(balance);
+    } else {
+      setResidentBalance(0);
+    }
+  }, [formData.resident_id, allCharges]);
 
   // Helper function to get resident name - handles multiple field name formats
   const getResidentName = (resident) => {
@@ -91,8 +117,16 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       'paid': 'Paid',
       'due': 'Due',
       'overdue': 'Overdue',
-      'exempt': 'Exempt'
+      'exempt': 'Exempt',
+      'partially_paid': 'Partially Paid'
     };
+
+    let finalNotes = formData.notes || "";
+    if (formData.payment_status === 'partially_paid') {
+      const balanceOwed = Math.max(0, parseFloat(formData.monthly_amount) - parseFloat(formData.amount_paid));
+      const partialInfo = `[PARTIAL_PAYMENT: amount_paid=${formData.amount_paid}, balance_owed=${balanceOwed}]`;
+      finalNotes = `${partialInfo} ${finalNotes}`.trim();
+    }
 
     // Prepare the data with all fields (including denormalized ones)
     const submissionData = {
@@ -108,7 +142,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       "Status": statusMap[formData.status] || 'Active',
       "Exempt": formData.exempt || false,
       "Exempt Reason": formData.exempt ? formData.exempt_reason : null,
-      "Notes": formData.notes || null,
+      "Notes": finalNotes || null,
       "Logged By": formData.logged_by || currentUser?.full_name || '',
       "Updated Date": new Date().toISOString()
     };
@@ -140,6 +174,16 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {residentBalance > 0 && (
+            <Alert className="mb-6 bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">Outstanding Balance Detected</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                This resident currently owes a total of <span className="font-bold">£{residentBalance.toFixed(2)}</span> from previous service charges.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
@@ -157,6 +201,52 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                   </SelectContent>
                 </Select>
               </div>
+
+              <div>
+                <Label htmlFor="payment_status" className="mb-2 block">Payment Status *</Label>
+                <Select
+                  value={formData.payment_status}
+                  onValueChange={(value) => {
+                    handleChange("payment_status", value);
+                    if (value === 'paid' && !formData.date_paid) {
+                      handleChange("date_paid", new Date().toISOString().split('T')[0]);
+                    }
+                  }}
+                  required
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="due">Due</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="partially_paid">Partially Paid</SelectItem>
+                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="exempt">Exempt</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.payment_status === 'partially_paid' && (
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-4">
+                  <div>
+                    <Label htmlFor="amount_paid" className="mb-2 block text-amber-900 font-medium text-sm">Amount Paid (£) *</Label>
+                    <Input
+                      id="amount_paid"
+                      type="number"
+                      step="0.01"
+                      value={formData.amount_paid}
+                      onChange={(e) => handleChange("amount_paid", parseFloat(e.target.value) || 0)}
+                      className="border-amber-200 focus-visible:ring-amber-500"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-amber-700">Remaining Balance:</span>
+                    <span className="font-bold text-amber-900">
+                      £{Math.max(0, parseFloat(formData.monthly_amount || 0) - parseFloat(formData.amount_paid || 0)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="monthly_amount" className="mb-2 block">Amount Due (£) *</Label>
