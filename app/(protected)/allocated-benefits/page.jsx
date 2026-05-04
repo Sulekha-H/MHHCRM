@@ -58,15 +58,14 @@ const loadData = async () => {
   setError(null);
 
   try {
-    console.log("🔄 Loading Benefits page data...");
 
     // --- Load current user safely ---
     setCurrentUser(user);
 
     // --- Load residents & properties in parallel ---
     const [residentsRes, propertiesRes] = await Promise.all([
-      supabase.from('allocated_residents').select('*'),
-      supabase.from('properties').select('*')
+      supabase.from('allocated_residents').select('*').eq('"Deleted"', false),
+      supabase.from('properties').select('*').eq('"Deleted"', false)
     ]);
 
     if (residentsRes.error) console.error("❌ Residents error:", residentsRes.error);
@@ -78,13 +77,16 @@ const loadData = async () => {
     setResidents(residentsData);
     setProperties(propertiesData);
 
-    console.log(`✅ Loaded ${residentsData.length} residents`);
-    console.log(`✅ Loaded ${propertiesData.length} properties`);
+    const residentIds = (residentsRes.data || []).map(r => r.ID);
 
     // --- Load Housing Benefit & Universal Credit logs in parallel ---
     const [hbRes, ucRes] = await Promise.all([
-      supabase.from('housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
-      supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
+      residentIds.length > 0
+        ? supabase.from('housing_benefit_logs').select('*').eq('"Deleted"', false).in('"Resident ID"', residentIds)
+        : Promise.resolve({ data: [] }),
+      residentIds.length > 0
+        ? supabase.from('universal_credit_logs').select('*').eq('"Deleted"', false).in('"Resident ID"', residentIds)
+        : Promise.resolve({ data: [] })
     ]);
 
     if (hbRes.error) console.error("❌ HB logs error:", hbRes.error);
@@ -94,13 +96,11 @@ const loadData = async () => {
     const ucLogs = normalizeData(ucRes.data || []).map(log => ({ ...log, benefit_type: 'universal_credit' }));
 
     const combinedLogs = [...hbLogs, ...ucLogs]
-      .filter(log => !log.deleted && residentsData.some(r => r.id === log.resident_id))
+      .filter(log => !log.deleted)
       .sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
 
     setLogs(combinedLogs);
 
-    console.log(`✅ Loaded ${hbLogs.length} HB logs and ${ucLogs.length} UC logs`);
-    console.log(`✅ Combined logs count: ${combinedLogs.length}`);
 
   } catch (error) {
     console.error("❌ Error loading Benefits page data:", error);
@@ -134,13 +134,8 @@ useEffect(() => {
 
   const handleSubmit = async (logData) => {
     try {
-      console.log("🔍 RAW logData from form:", logData);
-
       if (!logData["Logged By"] && !logData.logged_by && currentUser) {
         const { data: userRecordData, error: userError } = await supabase.from('users').select('full_name').eq('email', currentUser.email).single();
-        if (userError && userError.code !== 'PGRST116') {
-          console.warn('Could not fetch full_name for current user:', userError.message);
-        }
         logData["Logged By"] = userRecordData?.full_name || currentUser.email;
       }
 
@@ -150,17 +145,10 @@ useEffect(() => {
       const normalizedBenefitType = benefitType?.toLowerCase().replace(/\s+/g, '_');
       const tableName = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
 
-      console.log(`📤 Inserting/updating to table: ${tableName}`);
-      console.log(`📤 Data being sent:`, logData);
-
       if (editingLog && (editingLog.id || editingLog.ID)) {
         const logId = editingLog.id || editingLog.ID;
-        const { data, error } = await supabase.from(tableName).update(logData).eq('ID', logId);
-        if (error) {
-          console.error(`❌ Update error:`, error);
-          throw error;
-        }
-        console.log(`✅ Log updated in ${tableName}:`, logId);
+        const { error } = await supabase.from(tableName).update(logData).eq('"ID"', logId);
+        if (error) throw error;
       } else {
         // Ensure ID exists for new records
         if (!logData.ID && !logData.id) {
@@ -168,12 +156,8 @@ useEffect(() => {
           logData["Created Date"] = new Date().toISOString();
         }
 
-        const { data, error } = await supabase.from(tableName).insert([logData]);
-        if (error) {
-          console.error(`❌ Insert error:`, error);
-          throw error;
-        }
-        console.log(`✅ Log inserted into ${tableName}`, data);
+        const { error } = await supabase.from(tableName).insert([logData]);
+        if (error) throw error;
 
         // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is created
         if (logData.benefit_type === 'housing_benefit' && logData.log_type === 'application_log') {
@@ -181,19 +165,20 @@ useEffect(() => {
           const residentFullName = resident ? `${resident.first_name} ${resident.last_name}` : 'Resident';
 
           const awaitingActivationLog = {
-            resident_id: logData.resident_id,
-            benefit_type: 'housing_benefit', // This log is specifically for HB
-            log_type: 'awaiting_activation',
-            title: `Awaiting Activation - ${residentFullName}`,
-            description: `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData.completed_application_submitted_date ? format(new Date(logData.completed_application_submitted_date), 'dd/MM/yyyy') : 'pending'}`,
-            log_date: new Date().toISOString().slice(0, 16),
-            status: 'awaiting_activation',
-            logged_by: logData.logged_by || '',
-            notes: `Linked to application: ${logData.title || 'HB Application'}`
+            "Resident ID": logData.resident_id,
+            "Benefit Type": 'Housing Benefit',
+            "Log Type": 'Awaiting Activation',
+            "Title": `Awaiting Activation - ${residentFullName}`,
+            "Description": `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData.completed_application_submitted_date ? format(new Date(logData.completed_application_submitted_date), 'dd/MM/yyyy') : 'pending'}`,
+            "Log Date": new Date().toISOString().slice(0, 16),
+            "Status": 'Awaiting Activation',
+            "Logged By": logData.logged_by || '',
+            "Notes": `Linked to application: ${logData.title || 'HB Application'}`,
+            "Created Date": new Date().toISOString(),
+            "ID": crypto.randomUUID()
           };
 
-          await supabase.from('housing_benefit_logs').insert([awaitingActivationLog]); // This always goes to HB table
-          console.log('✅ Auto-created Awaiting Activation log for resident:', logData.resident_id);
+          await supabase.from('housing_benefit_logs').insert([awaitingActivationLog]);
         }
       }
 
@@ -230,12 +215,6 @@ useEffect(() => {
       const targetTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
 
       try {
-        console.log('🗑️ Deleting log:', {
-          table: targetTable,
-          id: logToDelete.id,
-          benefit_type: logToDelete.benefit_type,
-          normalized: normalizedBenefitType
-        });
 
         const { data, error } = await supabase
           .from(targetTable)
@@ -252,12 +231,10 @@ useEffect(() => {
           throw error;
         }
 
-        console.log('✅ Delete response:', data);
 
         setLogToDelete(null);
         setViewingLog(null);
         await loadData();
-        console.log(`✅ Log soft-deleted from ${targetTable}:`, logToDelete.id);
       } catch (error) {
         console.error("❌ Error deleting benefit log:", error);
         alert("Error deleting benefit log: " + error.message);
@@ -408,7 +385,6 @@ useEffect(() => {
     const hbCalls = filteredLogs.filter(log => normalizeLogType(log.log_type) === 'hb_calls');
     const hbLeavers = filteredLogs.filter(log => normalizeLogType(log.log_type) === 'hb_leavers');
 
-    console.log('🔍 Section counts:', {
       applicationLogs: applicationLogs.length,
       requestedSupportNotes: requestedSupportNotes.length,
       requestedDocuments: requestedDocuments.length,
@@ -606,7 +582,6 @@ useEffect(() => {
       return hasNoProperty && hasUCLogs && residentStatus === 'active';
     });
 
-    console.log('🔍 UC Rendering Debug:', {
       totalProperties: properties.length,
       residentsWithoutProperties: residentsWithoutProperties.length,
       filteredLogs: filteredLogs.length,

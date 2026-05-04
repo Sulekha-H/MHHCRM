@@ -2,12 +2,24 @@
 > housing-dashboard@0.1.0 dev
 > next dev
 
+ ⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
    ▲ Next.js 16.0.10 (Turbopack)
-   - Local:         http://localhost:3000
-   - Network:       http://192.168.0.2:3000
+   - Local:         http://localhost:3001
+   - Network:       http://192.168.0.2:3001
 
  ✓ Starting...
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
  ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
- ✓ Ready in 2.9s
-[?25h
+ ✓ Ready in 1738ms
+ ○ Compiling / ...
+
+[35m
+[Clerk]:[0m You are running in keyless mode.
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=dp7kr1jxpfe3mu4zt3vpo8hojx2o49cm6t2yw1nl&return_url=http%3A%2F%2Flocalhost%3A3001%2F
+
+ GET / 200 in 9.2s (compile: 8.1s, proxy.ts: 243ms, render: 801ms)
+ POST / 200 in 70ms (compile: 8ms, proxy.ts: 22ms, render: 41ms)
+ GET / 404 in 1973ms (compile: 1732ms, proxy.ts: 31ms, render: 211ms)
+ POST / 303 in 2.1s (compile: 7ms, proxy.ts: 10ms, render: 2.1s)
+ GET /sign-in 200 in 1702ms (compile: 1656ms, proxy.ts: 19ms, render: 27ms)
+ GET / 404 in 139ms (compile: 12ms, proxy.ts: 18ms, render: 109ms)

@@ -117,7 +117,6 @@ const filterPlans = useCallback(() => {
 // Apply filters whenever dependencies change
 useEffect(() => {
   filterPlans();
-  console.log('🎯 Filtered Plans:', {
     activeTab,
     totalSupportPlans: supportPlans.length,
     filteredCount: filteredPlans.length,
@@ -130,30 +129,33 @@ useEffect(() => {
     try {
       setCurrentUser(user);
 
-      const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
-        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+      // 1. Load residents, properties, and accommodations first
+      const [residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
         supabase.from('allocated_residents').select('*').eq('"Deleted"', false),
-        supabase.from('properties').select('*').eq('Deleted', false),
-        supabase.from('accommodations').select('*').eq('Deleted', false),
+        supabase.from('properties').select('*').eq('"Deleted"', false),
+        supabase.from('accommodations').select('*').eq('"Deleted"', false),
         supabase.from('users').select('*')
       ]);
 
-      console.log('✅ Support notes loaded:', supportNotesResult.data?.length || 0);
-      console.log('📋 Raw support notes data sample:', supportNotesResult.data?.[0]);
-      console.log('✅ Quarterly reviews loaded:', quarterlyReviewsResult.data?.length || 0);
-      console.log('✅ Residents loaded:', residentsResult.data?.length || 0);
-      console.log('📋 Raw residents data sample:', residentsResult.data?.[0]);
-      console.log('✅ Properties loaded:', propertiesResult.data?.length || 0);
-      console.log('✅ Accommodations loaded:', accommodationsResult.data?.length || 0);
-      console.log('✅ Users loaded:', usersResult.data?.length || 0);
-
-      if (supportNotesResult.error) console.error('❌ Support notes error:', supportNotesResult.error);
-      if (quarterlyReviewsResult.error) console.error('❌ Quarterly reviews error:', quarterlyReviewsResult.error);
       if (residentsResult.error) console.error('❌ Residents error:', residentsResult.error);
       if (propertiesResult.error) console.error('❌ Properties error:', propertiesResult.error);
       if (accommodationsResult.error) console.error('❌ Accommodations error:', accommodationsResult.error);
       if (usersResult.error) console.error('❌ Users error:', usersResult.error);
+
+      const residentIds = (residentsResult.data || []).map(r => r.ID);
+
+      // 2. Load logs filtered by resident IDs
+      const [supportNotesResult, quarterlyReviewsResult] = await Promise.all([
+        residentIds.length > 0
+          ? supabase.from('support_notes').select('*').eq('"Deleted"', false).in('"Resident ID"', residentIds).order('"Created Date"', { ascending: false })
+          : Promise.resolve({ data: [] }),
+        residentIds.length > 0
+          ? supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).in('"Resident ID"', residentIds).order('"Created Date"', { ascending: false })
+          : Promise.resolve({ data: [] })
+      ]);
+
+      if (supportNotesResult.error) console.error('❌ Support notes error:', supportNotesResult.error);
+      if (quarterlyReviewsResult.error) console.error('❌ Quarterly reviews error:', quarterlyReviewsResult.error);
 
       // Combine support notes and quarterly reviews, adding plan_type field and normalizing
       // Helper function to normalize boolean values from database
@@ -199,7 +201,6 @@ useEffect(() => {
           created_by: note['Created By']
         };
 
-        console.log('📋 Support Note Mapping:', note.ID, {
           rawAttendedInPerson: note['Attended In Person'],
           rawAttendedTelephone: note['Attended Telephone'],
           rawDidNotAttend: note['Did Not Attend'],
@@ -246,15 +247,10 @@ useEffect(() => {
         ...quarterlyReviewsWithType
       ];
 
-      console.log('🔥 Combined Plans Sample:', combinedPlans?.[0]);
-      console.log('🔥 Total Combined Plans:', combinedPlans.length);
-      console.log('🔥 Support Notes with resident_id:', supportNotesWithType.filter(n => n.resident_id).map(n => ({ id: n.id, resident_id: n.resident_id })));
 
       setSupportPlans(combinedPlans);
 
       const normalizedResidents = normalizeData(residentsResult.data) || [];
-      console.log('🔥 Normalized Residents Sample:', normalizedResidents?.[0]);
-      console.log('🔥 Resident IDs:', normalizedResidents.map(r => ({ name: r.first_name, id: r.id })));
 
       setResidents(normalizedResidents);
       setProperties(normalizeData(propertiesResult.data) || []);
@@ -271,11 +267,7 @@ useEffect(() => {
 
   const handleSubmit = async (planData) => {
     try {
-      console.log('📝 Received planData from form:', planData);
-
       const tableName = planData["Plan Type"] === 'quarterly_reviews' ? 'quarterly_reviews' : 'support_notes';
-      console.log('🗃️ Using table:', tableName);
-      console.log('✏️ Edit mode:', !!editingPlan, editingPlan?.id);
 
       let result;
       if (editingPlan && editingPlan.id) {
@@ -283,7 +275,6 @@ useEffect(() => {
       } else {
         // Ensure ID is present before insert
         if (!planData.ID) {
-          console.error('❌ Missing ID in planData before insert');
           alert('Error: Missing ID field. Please try again.');
           return;
         }
@@ -296,7 +287,6 @@ useEffect(() => {
         return;
       }
 
-      console.log('✅ Successfully saved to Supabase:', result);
       setShowForm(false);
       setEditingPlan(null);
       loadData();
@@ -856,7 +846,6 @@ useEffect(() => {
                           {residentsToDisplayForProperty.map(resident => {
                             const residentPlans = filteredPlans.filter(p => p.resident_id === resident.id && p.plan_type === 'support_notes');
 
-                            console.log(`🔍 Resident ${resident.first_name} ${resident.last_name}:`, {
                               totalPlans: residentPlans.length,
                               plans: residentPlans.map(p => ({
                                 id: p.id,
@@ -893,7 +882,6 @@ useEffect(() => {
                                     const matches = planLogDate >= weekStart && planLogDate < weekEnd;
 
                                     if (matches) {
-                                      console.log('🎯 Found plan for week:', {
                                         resident: resident.first_name,
                                         weekStart: weekStart.toISOString(),
                                         planLogDate: planLogDate.toISOString(),

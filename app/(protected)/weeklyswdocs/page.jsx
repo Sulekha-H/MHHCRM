@@ -63,9 +63,13 @@ const loadData = async () => {
   .select('*');
 if (propsError) throw propsError;
 
-    const activeProperties = (propertiesData || []).filter(p =>
-      p['Status'] === 'Active' && !p['Name']?.toLowerCase().includes('ryland')
-    );
+    const activeProperties = (propertiesData || []).filter(p => {
+      const name = p['Name']?.toLowerCase() || '';
+      return p['Status'] === 'Active' &&
+             !name.includes('ryland') &&
+             !name.includes('789') &&
+             !name.includes('105');
+    });
     setProperties(activeProperties);
     console.log(`✅ Loaded ${activeProperties.length} active properties`);
 
