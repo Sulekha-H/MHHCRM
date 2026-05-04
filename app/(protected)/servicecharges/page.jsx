@@ -244,6 +244,17 @@ try {
       // Normalize Supabase data and calculate auto status
       const chargesWithAutoStatus = (chargesData || []).map(charge => {
         // Normalize column names to lowercase with underscores
+        let amountPaid = 0;
+        let balanceOwed = 0;
+        let cleanNotes = charge.Notes || "";
+
+        const partialMatch = cleanNotes.match(/\[PARTIAL_PAYMENT: amount_paid=([\d.]+), balance_owed=([\d.]+)\]/);
+        if (partialMatch) {
+          amountPaid = parseFloat(partialMatch[1]);
+          balanceOwed = parseFloat(partialMatch[2]);
+          cleanNotes = cleanNotes.replace(/\[PARTIAL_PAYMENT: amount_paid=[\d.]+, balance_owed=[\d.]+\]\s*/, "");
+        }
+
         const normalizedCharge = {
           id: charge.ID,
           created_date: charge["Created Date"],
@@ -256,12 +267,15 @@ try {
           due_date: charge["Due Date"],
           date_paid: charge["Date Paid"],
           monthly_amount: parseFloat(charge["Monthly Amount"]),
+          amount_paid: amountPaid,
+          balance_owed: balanceOwed,
           payment_type: charge["Payment Type"],
           payment_status_stored: charge["Payment Status"],
           status: charge.Status,
           exempt: charge.Exempt,
           exempt_reason: charge["Exempt Reason"],
-          notes: charge.Notes,
+          notes: cleanNotes,
+          raw_notes: charge.Notes,
           logged_by: charge["Logged By"],
           deleted: charge.Deleted,
           deleted_date: charge["Deleted Date"],
@@ -272,9 +286,12 @@ try {
         const exempt = normalizedCharge.exempt;
         const datePaid = normalizedCharge.date_paid;
         const dueDate = normalizedCharge.due_date;
+        const storedStatus = normalizedCharge.payment_status_stored;
         
         if (exempt) {
           normalizedCharge.payment_status = 'exempt';
+        } else if (storedStatus === 'Partially Paid') {
+          normalizedCharge.payment_status = 'partially_paid';
         } else if (datePaid) {
           normalizedCharge.payment_status = 'paid';
         } else if (dueDate) {
@@ -573,7 +590,8 @@ try {
       paid: "bg-green-100 text-green-800",
       due: "bg-yellow-100 text-yellow-800",
       overdue: "bg-red-100 text-red-800",
-      exempt: "bg-blue-100 text-blue-800"
+      exempt: "bg-blue-100 text-blue-800",
+      partially_paid: "bg-amber-100 text-amber-800"
     };
     return colors[status] || colors.due;
   };
@@ -743,6 +761,7 @@ try {
                 accommodations={accommodations}
                 properties={properties}
                 currentUser={currentUser}
+                allCharges={serviceCharges}
                 onSubmit={handleSubmit}
                 onCancel={() => { setShowForm(false); setEditingCharge(null); }}
               />
@@ -949,6 +968,11 @@ try {
                                               <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">Exempt</span>
                                             ) : chargeForMonth.payment_status === 'paid' ? (
                                               <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">Paid</span>
+                                            ) : chargeForMonth.payment_status === 'partially_paid' ? (
+                                              <div className="flex flex-col items-center gap-1">
+                                                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded leading-none uppercase">Partial</span>
+                                                <span className="text-[10px] font-medium text-amber-900 leading-none">£{(chargeForMonth.balance_owed || 0).toFixed(2)}</span>
+                                              </div>
                                             ) : isOverdue ? (
                                               <span className="text-xs font-bold text-red-700 bg-red-200 px-2 py-1 rounded animate-pulse border-2 border-red-700">OVERDUE</span>
                                             ) : (
