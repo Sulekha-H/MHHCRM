@@ -76,8 +76,8 @@ export default function SidebarNavigation() {
 
 
   const  allocatedResidentNav= [
-  { name: "Support Plans", href: "/allocated-support-plans", icon: Heart, current: pathname === "/allocated-support-plans" },
-  { name: "Benefits", href: "/allocated-benefits", icon: Heart, current: pathname === "/allocated-benefits" },
+  { name: "Support Plans", href: "/supportplans", icon: Heart, current: pathname === "/supportplans" },
+  { name: "Benefits", href: "/benefits", icon: Heart, current: pathname === "/benefits" },
   ];
 
   const complianceNav = [
