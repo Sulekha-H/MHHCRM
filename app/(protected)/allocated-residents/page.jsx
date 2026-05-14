@@ -198,7 +198,7 @@ export default function AllocatedResidentsPage() {
         }
         if (newAccId) {
           await supabase.from('accommodations').update({
-            '"Availability Status"': 'Occupied',
+            '"Availability Status"': 'Allocated Residents',
             '"Current Resident ID"': saved.ID || saved.id,
             '"Current Resident Name"': name,
             '"Lease Start Date"': saved["Move-in Date"] || saved.move_in_date || now

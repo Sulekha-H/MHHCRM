@@ -67,8 +67,8 @@ export default function AccommodationForm({ accommodation, properties, residents
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const selectedProperty = properties?.find(p => p.ID === formData.property_id);
-    const selectedResident = residents?.find(r => r.ID === formData.current_resident_id);
+    const selectedProperty = properties?.find(p => (p.ID || p.id) === formData.property_id);
+    const selectedResident = residents?.find(r => (r.ID || r.id) === formData.current_resident_id);
 
     // Value mapping for constraints
     const statusMap = {
@@ -76,7 +76,8 @@ export default function AccommodationForm({ accommodation, properties, residents
       'occupied': 'Occupied',
       'reserved': 'Reserved',
       'maintenance': 'Maintenance',
-      'out_of_service': 'Out of Service'
+      'out_of_service': 'Out of Service',
+      'allocated_residents': 'Allocated Residents'
     };
 
     const conditionMap = {
@@ -133,12 +134,22 @@ export default function AccommodationForm({ accommodation, properties, residents
   };
 
   const handleChange = (field, value) => {
-    // Simplified: allow direct control over availability_status
-    // No longer automatically setting based on current_resident_id
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const newState = {
+        ...prev,
+        [field]: value
+      };
+
+      // Automatically set status if an allocated resident is selected
+      if (field === "current_resident_id" && value) {
+        const selectedResident = residents?.find(r => (r.ID || r.id) === value);
+        if (selectedResident?.isAllocated) {
+          newState.availability_status = "allocated_residents";
+        }
+      }
+
+      return newState;
+    });
   };
 
   const handleAmenityChange = (amenity, checked) => {
@@ -173,7 +184,7 @@ export default function AccommodationForm({ accommodation, properties, residents
                   <SelectContent>
                     {properties?.map((property) => (
                       <SelectItem key={property.ID} value={property.ID}>
-                        {property.Name}
+                        {property.Name || property.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -248,9 +259,9 @@ export default function AccommodationForm({ accommodation, properties, residents
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>No resident (Available)</SelectItem>
-                    {residents?.filter(r => (r.Status || '').toLowerCase() === 'active').map((resident) => (
-                      <SelectItem key={resident.ID} value={resident.ID}>
-                        {resident["First Name"]} {resident["Last Name"]}
+                    {residents?.filter(r => (r.Status || r.status || '').toLowerCase() === 'active').map((resident) => (
+                      <SelectItem key={resident.ID || resident.id} value={resident.ID || resident.id}>
+                        {resident["First Name"] || resident.first_name} {resident["Last Name"] || resident.last_name} {resident.isAllocated ? "(Allocated)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -265,6 +276,7 @@ export default function AccommodationForm({ accommodation, properties, residents
                   <SelectContent>
                     <SelectItem value="available">Available</SelectItem>
                     <SelectItem value="occupied">Occupied</SelectItem>
+                    <SelectItem value="allocated_residents">Allocated Residents</SelectItem>
                     <SelectItem value="reserved">Reserved</SelectItem>
                     <SelectItem value="maintenance">Maintenance</SelectItem>
                     <SelectItem value="out_of_service">Out of Service</SelectItem>

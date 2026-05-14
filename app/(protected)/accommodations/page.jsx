@@ -26,6 +26,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
+  const [allocatedResidents, setAllocatedResidents] = useState([]);
   const [filteredAccommodations, setFilteredAccommodations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -41,15 +42,17 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
       setLoading(true);
       console.log("🔄 [SUPABASE] Loading accommodations data...");
 
-      const [accommodationsRes, propertiesRes, residentsRes] = await Promise.all([
+      const [accommodationsRes, propertiesRes, residentsRes, allocatedResidentsRes] = await Promise.all([
         supabase.from('accommodations').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false }),
         supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'),
-        supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false')
+        supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false'),
+        supabase.from('allocated_residents').select('*').or('Deleted.is.null,Deleted.eq.false')
       ]);
 
       if (accommodationsRes.error) throw accommodationsRes.error;
       if (propertiesRes.error) throw propertiesRes.error;
       if (residentsRes.error) throw residentsRes.error;
+      if (allocatedResidentsRes.error) throw allocatedResidentsRes.error;
 
       const propertiesData = (propertiesRes.data || []).sort((a, b) => {
         const aIsRyland = a.Name?.toLowerCase().includes('ryland');
@@ -64,6 +67,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
       setAccommodations(accommodationsRes.data || []);
       setProperties(activeProperties);
       setResidents(residentsRes.data || []);
+      setAllocatedResidents(allocatedResidentsRes.data || []);
       setExpandedProperties(new Set(activeProperties.map(p => p.ID)));
 
       console.log("✅ [SUPABASE] All data loaded successfully");
@@ -83,41 +87,41 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   
   const accommodationsWithOccupancy = useMemo(() => {
     console.log("🔄 [SUPABASE] Calculating occupancy for accommodations...");
-    console.log("   Total accommodations:", accommodations.length);
-    console.log("   Total residents:", residents.length);
     
+    const allResidents = [
+      ...(residents || []).map(r => ({ ...r, isAllocated: false })),
+      ...(allocatedResidents || []).map(r => ({ ...r, isAllocated: true }))
+    ];
+
     return accommodations.map(accommodation => {
       const accommodationId = accommodation.ID;
       
-      // Count active residents in this accommodation
-      const activeResidentsCount = residents.filter(resident => {
-        const residentAccommodationId = resident["Accommodation ID"];
-        const residentStatus = (resident.Status || '').toLowerCase();
-        const isMatch = residentAccommodationId === accommodationId && residentStatus === 'active';
-        
-        if (isMatch) {
-          console.log(`   ✅ [SUPABASE] Resident "${resident["First Name"]} ${resident["Last Name"]}" in ${accommodation["Room Number"]}`);
-        }
-        return isMatch;
-      }).length;
+      const activeResidents = allResidents.filter(resident => {
+        const residentAccommodationId = resident["Accommodation ID"] || resident.accommodation_id;
+        const residentStatus = (resident.Status || resident.status || '').toLowerCase();
+        return residentAccommodationId === accommodationId && residentStatus === 'active';
+      });
+
+      const activeResidentsCount = activeResidents.length;
+      const hasAllocatedResident = activeResidents.some(r => r.isAllocated);
       
-      console.log(`   [SUPABASE] ${accommodation["Room Number"]} (ID: ${accommodationId}): ${activeResidentsCount} active resident(s)`);
-      
-      // CRITICAL FIX: Override availability status if there are active residents
       let overriddenStatus = accommodation["Availability_Status"] || accommodation["Availability Status"] || accommodation.availability_status;
-      if (activeResidentsCount > 0 && overriddenStatus?.toLowerCase() === 'available') {
-        console.log(`   ⚠️  OVERRIDING ${accommodation["Room Number"]} status from ${overriddenStatus} to occupied`);
+
+      if (hasAllocatedResident) {
+        overriddenStatus = 'Allocated Residents';
+      } else if (activeResidentsCount > 0 && overriddenStatus?.toLowerCase() === 'available') {
         overriddenStatus = 'occupied';
       }
       
       return {
         ...accommodation,
         current_occupancy: activeResidentsCount,
+        has_allocated_resident: hasAllocatedResident,
         "Availability_Status": overriddenStatus,
         "Availability Status": overriddenStatus
       };
     });
-  }, [accommodations, residents]);
+  }, [accommodations, residents, allocatedResidents]);
 
   const filterAccommodations = useCallback(() => {
     let filtered = accommodationsWithOccupancy;
@@ -132,8 +136,8 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
 
     if (searchTerm) {
       filtered = filtered.filter(accommodation => {
-        const property = properties.find(p => p.ID === accommodation["Property ID"]);
-        const resident = residents.find(r => r.ID === accommodation["Current Resident ID"]);
+        const property = properties.find(p => (p.ID || p.id) === accommodation["Property ID"]);
+        const resident = residents.find(r => (r.ID || r.id) === accommodation["Current Resident ID"]);
         
         return accommodation["Room Number"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                accommodation["Accommodation Type"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,7 +224,8 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
       "occupied": "bg-blue-100 text-blue-800 border-blue-200",
       "reserved": "bg-yellow-100 text-yellow-800 border-yellow-200",
       "maintenance": "bg-orange-100 text-orange-800 border-orange-200",
-      "out of service": "bg-red-100 text-red-800 border-red-200"
+      "out of service": "bg-red-100 text-red-800 border-red-200",
+      "allocated residents": "bg-indigo-100 text-indigo-800 border-indigo-200"
     };
     return colors[statusLower] || colors["available"];
   };
@@ -238,13 +243,16 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   };
 
   const getPropertyName = (propertyId) => {
-    const property = properties.find(p => p.ID === propertyId);
-    return property?.Name || "Unknown Property";
+    const property = properties.find(p => (p.ID || p.id) === propertyId);
+    return property?.Name || property?.name || "Unknown Property";
   };
 
   const getResidentName = (residentId) => {
-    const resident = residents.find(r => r.ID === residentId);
-    return resident ? `${resident["First Name"]} ${resident["Last Name"]}` : null;
+    const resident = residents.find(r => (r.ID || r.id) === residentId);
+    if (!resident) return null;
+    const firstName = resident["First Name"] || resident.first_name || "";
+    const lastName = resident["Last Name"] || resident.last_name || "";
+    return `${firstName} ${lastName}`.trim() || null;
   };
 
   const getAccommodationsByProperty = () => {
@@ -308,10 +316,11 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
 
       <div className="px-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:grid-cols-7">
             <TabsTrigger value="all">All Units</TabsTrigger>
             <TabsTrigger value="available">Available</TabsTrigger>
             <TabsTrigger value="occupied">Occupied</TabsTrigger>
+            <TabsTrigger value="allocated_residents">Allocated</TabsTrigger>
             <TabsTrigger value="reserved">Reserved</TabsTrigger>
             <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
             <TabsTrigger value="out_of_service">Out of Service</TabsTrigger>
@@ -324,7 +333,10 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
           <AccommodationForm_Supabase
             accommodation={editingAccommodation}
             properties={properties}
-            residents={residents}
+            residents={[
+              ...residents.map(r => ({ ...r, isAllocated: false })),
+              ...allocatedResidents.map(r => ({ ...r, isAllocated: true }))
+            ]}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);
@@ -416,7 +428,10 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
                               isDuplicate={accommodation["Room Number"] && roomNumberCounts[accommodation["Room Number"]] > 1}
                               isAdmin={true}
                               properties={properties}
-                              residents={residents}
+                              residents={[
+                                ...residents.map(r => ({ ...r, isAllocated: false })),
+                                ...allocatedResidents.map(r => ({ ...r, isAllocated: true }))
+                              ]}
                             />
                           );
                         })}
@@ -497,7 +512,10 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
         <AccommodationDetailModal
           accommodation={viewingAccommodation}
           properties={properties}
-          residents={residents}
+          residents={[
+            ...residents.map(r => ({ ...r, isAllocated: false })),
+            ...allocatedResidents.map(r => ({ ...r, isAllocated: true }))
+          ]}
           getStatusColor={getStatusColor}
           getConditionColor={getConditionColor}
           getPropertyName={getPropertyName}
