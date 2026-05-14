@@ -49,7 +49,7 @@ export default function AccommodationDetailModal({
   // Handle both Supabase and base44 field formats
   const roomNumber = accommodation["Room Number"] || accommodation.room_number;
   const accommodationType = accommodation["Accommodation Type"] || accommodation.accommodation_type;
-  const availabilityStatus = accommodation["Availability Status"] || accommodation.availability_status;
+  let availabilityStatus = accommodation["Availability Status"] || accommodation.availability_status;
   const condition = accommodation["Condition"] || accommodation.condition;
   const furnished = accommodation["Furnished"] !== undefined ? accommodation["Furnished"] : accommodation.furnished;
   const propertyId = accommodation["Property ID"] || accommodation.property_id;
@@ -81,6 +81,16 @@ export default function AccommodationDetailModal({
     console.log(`   📋 [DETAIL MODAL] Found ${activeResidentsList.length} active resident(s) in ${roomNumber}:`, 
       activeResidentsList.map(r => `${r["First Name"] || r.first_name} ${r["Last Name"] || r.last_name}`).join(', ')
     );
+
+    // Safety override for status
+    if (activeResidentsList.length > 0) {
+      const hasAllocatedResident = activeResidentsList.some(r => r.isAllocated);
+      if (hasAllocatedResident) {
+        availabilityStatus = 'Allocated Residents';
+      } else if (availabilityStatus?.toLowerCase() === 'available') {
+        availabilityStatus = 'Occupied';
+      }
+    }
   }
 
   // Get property name - handle both passed function and manual lookup
@@ -99,7 +109,7 @@ export default function AccommodationDetailModal({
           <div className="p-6">
             <DialogHeader className="mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
                   <span className="text-white font-bold text-2xl">
                     {roomNumber?.charAt(0) || 'R'}
                   </span>

@@ -34,15 +34,6 @@ export default function AccommodationCard({
   const currentOccupancy = accommodation.current_occupancy || 0;
   const accommodationId = accommodation.ID || accommodation.id;
   
-  // CRITICAL FIX: Override status based on current_occupancy
-  // If there are active residents, force status to "Occupied"
-  console.log(`🏠 ${roomNumber}: current_occupancy = ${currentOccupancy}, status = ${availabilityStatus}`);
-  
-  if (currentOccupancy > 0) {
-    console.log(`   ⚠️  OVERRIDING status to Occupied (was: ${availabilityStatus})`);
-    availabilityStatus = 'Occupied';
-  }
-  
   // IMPROVED: Get ALL active residents in this accommodation, not just the one in currentResidentId
   let activeResidentsList = [];
   if (residents && accommodationId) {
@@ -55,6 +46,19 @@ export default function AccommodationCard({
     console.log(`   📋 Found ${activeResidentsList.length} active resident(s) in ${roomNumber}:`, 
       activeResidentsList.map(r => `${r["First Name"] || r.first_name} ${r["Last Name"] || r.last_name}`).join(', ')
     );
+  }
+
+  // CRITICAL FIX: Override status based on current_occupancy
+  // If there are active residents, force status to "Occupied" or "Allocated Residents"
+  console.log(`🏠 ${roomNumber}: current_occupancy = ${currentOccupancy}, status = ${availabilityStatus}`);
+
+  if (activeResidentsList.length > 0) {
+    const hasAllocatedResident = activeResidentsList.some(r => r.isAllocated);
+    if (hasAllocatedResident) {
+      availabilityStatus = 'Allocated Residents';
+    } else if (availabilityStatus?.toLowerCase() === 'available') {
+      availabilityStatus = 'Occupied';
+    }
   }
   
   // Get property name if needed and not passed as function
