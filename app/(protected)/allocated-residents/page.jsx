@@ -20,6 +20,7 @@ export default function AllocatedResidentsPage() {
   const supabase = useClerkSupabaseClient();
   const { user } = useUser();
   const [allocatedResidents, setAllocatedResidents] = useState([]);
+  const [residents, setResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [filteredAllocatedResidents, setFilteredAllocatedResidents] = useState([]);
@@ -42,8 +43,9 @@ export default function AllocatedResidentsPage() {
       setError(null);
       console.log("🔄 Loading allocated residents data...");
 
-      const [allocatedRes, accsRes, propsRes] = await Promise.all([
+      const [allocatedRes, residentsRes, accsRes, propsRes] = await Promise.all([
         supabase.from('allocated_residents').select('*').order('"Created Date"', { ascending: false }),
+        supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false'),
         supabase.from('accommodations').select('*').eq('"Deleted"', false),
         supabase.from('properties').select('*').eq('"Deleted"', false)
       ]);
@@ -51,6 +53,10 @@ export default function AllocatedResidentsPage() {
       if (allocatedRes.error) {
         console.error("❌ Error fetching allocated residents:", allocatedRes.error);
         throw allocatedRes.error;
+      }
+      if (residentsRes.error) {
+        console.error("❌ Error fetching residents:", residentsRes.error);
+        throw residentsRes.error;
       }
       if (accsRes.error) {
         console.error("❌ Error fetching accommodations:", accsRes.error);
@@ -91,6 +97,7 @@ export default function AllocatedResidentsPage() {
       console.log(`👥 Active allocated residents: ${active.length}`);
 
       setAllocatedResidents(active);
+      setResidents(residentsRes.data || []);
       setAccommodations(accsRes.data || []);
       setProperties(sortedProps);
 
@@ -181,26 +188,59 @@ export default function AllocatedResidentsPage() {
       const status = (saved.Status || saved.status || '');
 
       if (status === 'Moved On' && oldAccId) {
-        await supabase.from('accommodations').update({
-          '"Availability Status"': 'Available',
-          '"Current Resident ID"': null,
-          '"Current Resident Name"': null,
-          '"Lease End Date"': saved["Move-out Date"] || saved.move_out_date || now
-        }).eq('"ID"', oldAccId);
-      } else if (status === 'Active') {
-        if (oldAccId && oldAccId !== newAccId) {
+        const others = [
+          ...residents.filter(r => (r["Accommodation ID"] || r.accommodation_id) === oldAccId && (r.Status || r.status || '').toLowerCase() === 'active'),
+          ...allocatedResidents.filter(ar => (ar.ID || ar.id) !== residentId && (ar["Accommodation ID"] || ar.accommodation_id) === oldAccId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+        ];
+        if (others.length === 0) {
           await supabase.from('accommodations').update({
             '"Availability Status"': 'Available',
             '"Current Resident ID"': null,
             '"Current Resident Name"': null,
-            '"Lease End Date"': now
+            '"Lease End Date"': saved["Move-out Date"] || saved.move_out_date || now
+          }).eq('"ID"', oldAccId);
+        } else {
+          const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+          const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+          await supabase.from('accommodations').update({
+            '"Availability Status"': hasAllocated ? 'Allocated Residents' : 'Occupied',
+            '"Current Resident ID"': others[0].ID || others[0].id,
+            '"Current Resident Name"': names.join(', ')
           }).eq('"ID"', oldAccId);
         }
+      } else if (status === 'Active') {
+        if (oldAccId && oldAccId !== newAccId) {
+          const others = [
+            ...residents.filter(r => (r["Accommodation ID"] || r.accommodation_id) === oldAccId && (r.Status || r.status || '').toLowerCase() === 'active'),
+            ...allocatedResidents.filter(ar => (ar.ID || ar.id) !== residentId && (ar["Accommodation ID"] || ar.accommodation_id) === oldAccId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+          if (others.length === 0) {
+            await supabase.from('accommodations').update({
+              '"Availability Status"': 'Available',
+              '"Current Resident ID"': null,
+              '"Current Resident Name"': null,
+              '"Lease End Date"': now
+            }).eq('"ID"', oldAccId);
+          } else {
+            const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+            const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+            await supabase.from('accommodations').update({
+              '"Availability Status"': hasAllocated ? 'Allocated Residents' : 'Occupied',
+              '"Current Resident ID"': others[0].ID || others[0].id,
+              '"Current Resident Name"': names.join(', ')
+            }).eq('"ID"', oldAccId);
+          }
+        }
         if (newAccId) {
+          const others = [
+            ...residents.filter(r => (r["Accommodation ID"] || r.accommodation_id) === newAccId && (r.Status || r.status || '').toLowerCase() === 'active'),
+            ...allocatedResidents.filter(ar => (ar.ID || ar.id) !== residentId && (ar["Accommodation ID"] || ar.accommodation_id) === newAccId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+          const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`), name];
           await supabase.from('accommodations').update({
             '"Availability Status"': 'Allocated Residents',
             '"Current Resident ID"': saved.ID || saved.id,
-            '"Current Resident Name"': name,
+            '"Current Resident Name"': [...new Set(allNames)].join(', '),
             '"Lease Start Date"': saved["Move-in Date"] || saved.move_in_date || now
           }).eq('"ID"', newAccId);
         }
@@ -225,12 +265,26 @@ export default function AllocatedResidentsPage() {
 
       const accId = r["Accommodation ID"] || r.accommodation_id;
       if (accId) {
-        await supabase.from('accommodations').update({
-          '"Availability Status"': 'Available',
-          '"Current Resident ID"': null,
-          '"Current Resident Name"': null,
-          '"Lease End Date"': new Date().toISOString().slice(0, 10)
-        }).eq('"ID"', accId);
+        const others = [
+          ...residents.filter(res => (res["Accommodation ID"] || res.accommodation_id) === accId && (res.Status || res.status || '').toLowerCase() === 'active'),
+          ...allocatedResidents.filter(ar => (ar.ID || ar.id) !== rId && (ar["Accommodation ID"] || ar.accommodation_id) === accId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+        ];
+        if (others.length === 0) {
+          await supabase.from('accommodations').update({
+            '"Availability Status"': 'Available',
+            '"Current Resident ID"': null,
+            '"Current Resident Name"': null,
+            '"Lease End Date"': new Date().toISOString().slice(0, 10)
+          }).eq('"ID"', accId);
+        } else {
+          const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+          const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+          await supabase.from('accommodations').update({
+            '"Availability Status"': hasAllocated ? 'Allocated Residents' : 'Occupied',
+            '"Current Resident ID"': others[0].ID || others[0].id,
+            '"Current Resident Name"': names.join(', ')
+          }).eq('"ID"', accId);
+        }
       }
       await loadData();
     } catch (e) { alert("Error deleting: " + e.message); }
@@ -276,7 +330,7 @@ export default function AllocatedResidentsPage() {
 
       <div className="px-6"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList><TabsTrigger value="all">All Allocated</TabsTrigger><TabsTrigger value="Active">Active</TabsTrigger><TabsTrigger value="Moved On">Moved On</TabsTrigger></TabsList></Tabs></div>
 
-      {showForm && <div className="px-6"><AllocatedResidentForm resident={editingResident} accommodations={accommodations} onSubmit={handleSubmit} onCancel={() => { setShowForm(false); setEditingResident(null); }} /></div>}
+      {showForm && <div className="px-6"><AllocatedResidentForm resident={editingResident} accommodations={accommodations} allocatedResidents={allocatedResidents} otherResidents={residents} onSubmit={handleSubmit} onCancel={() => { setShowForm(false); setEditingResident(null); }} /></div>}
 
       {viewingResident && <AllocatedResidentDetailModal resident={viewingResident} onClose={() => setViewingResident(null)} onEdit={(r) => { setViewingResident(null); setEditingResident(r); setShowForm(true); }} onDelete={handleDelete} />}
 
