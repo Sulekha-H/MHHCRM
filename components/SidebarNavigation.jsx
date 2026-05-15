@@ -55,7 +55,7 @@ export default function SidebarNavigation() {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home, current: pathname === "/" },
-    { name: "Residents", href: "/residents", icon: Users, current: pathname === "/residents" },
+    { name: "Standard Residents", href: "/residents", icon: Users, current: pathname === "/residents" },
     { name: "Properties", href: "/properties", icon: Building, current: pathname === "/properties" },
     { name: "Accommodations", href: "/accommodations", icon: Bed, current: pathname === "/accommodations" },
   ];
@@ -76,7 +76,7 @@ export default function SidebarNavigation() {
 
 
   const  allocatedResidentNav= [
-    { name: "Residents", href: "/allocated-residents", icon: Users, current: pathname === "/allocated-residents" },
+    { name: "Allocated Residents", href: "/allocated-residents", icon: Users, current: pathname === "/allocated-residents" },
     { name: "Support Plans", href: "/allocated-support-plans", icon: Heart, current: pathname === "/allocated-support-plans" },
     { name: "Benefits", href: "/allocated-benefits", icon: Heart, current: pathname === "/allocated-benefits" },
   ];
