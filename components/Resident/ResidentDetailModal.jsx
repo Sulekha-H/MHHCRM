@@ -94,7 +94,7 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const benefits = resident["Benefits"] || resident.Benefits || resident.benefits || [];
   const roomTransfers = resident["Room Transfers"] || resident.Room_Transfers || resident.room_transfers || [];
   const accommodationTransfers = resident["Accommodation Transfers"] || resident.Accommodation_Transfers || resident.accommodation_transfers || [];
-  const signupGdriveUrl = resident["Sign-up Documents URL"] || resident.Signup_Gdrive_Url || resident.signup_gdrive_url;
+  const googleDriveLink = resident["Google Drive Link"] || resident.Google_Drive_Link || resident.google_drive_link;
   const photoIdUrl = resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
   const futureAddress = resident["Future Address"] || resident.Future_Address || resident.future_address;
   const futureHousingType = resident["Future Housing Type"] || resident.Future_Housing_Type || resident.future_housing_type;
@@ -111,15 +111,13 @@ export default function ResidentDetailModal({ resident, accommodations, properti
     return colors[level?.toLowerCase()] || colors.medium;
   };
 
-  const getPropertyName = (propertyId) => {
-    const property = properties.find(p => (p["ID"] || p.Id || p.id) === propertyId);
-    return property?.["Name"] || property?.Name || property?.name || "N/A";
-  };
+  const selectedProperty = properties?.find(p => (p["ID"] || p.Id || p.id) === propertyId);
+  const selectedAccommodation = accommodations?.find(a => (a["ID"] || a.Id || a.id) === accommodationId);
 
-  const getAccommodationName = (accommodationId) => {
-    const accommodation = accommodations.find(a => (a["ID"] || a.Id || a.id) === accommodationId);
-    return accommodation?.["Room Number"] || accommodation?.Room_Number || accommodation?.room_number || "N/A";
-  };
+  const propertyName = selectedProperty?.["Name"] || selectedProperty?.name || "N/A";
+  const accommodationName = selectedAccommodation?.["Room Number"] || selectedAccommodation?.room_number || "N/A";
+  const propertyGdriveLink = selectedProperty?.["Google Drive Link"] || selectedProperty?.google_drive_link;
+  const accommodationGdriveLink = selectedAccommodation?.["Google Drive Link"] || selectedAccommodation?.google_drive_link;
 
   return (
     <>
@@ -177,8 +175,22 @@ export default function ResidentDetailModal({ resident, accommodations, properti
               {/* Accommodation & Support */}
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Accommodation & Support</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <DetailItem icon={<Building />} label="Property">{getPropertyName(propertyId)}</DetailItem>
-                <DetailItem icon={<BedDouble />} label="Unit/Room">{getAccommodationName(accommodationId)}</DetailItem>
+                <DetailItem icon={<Building />} label="Property">
+                  {propertyName}
+                  {propertyGdriveLink && (
+                    <a href={propertyGdriveLink} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800">
+                      <Link2 className="w-3 h-3" />
+                    </a>
+                  )}
+                </DetailItem>
+                <DetailItem icon={<BedDouble />} label="Unit/Room">
+                  {accommodationName}
+                  {accommodationGdriveLink && (
+                    <a href={accommodationGdriveLink} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800">
+                      <Link2 className="w-3 h-3" />
+                    </a>
+                  )}
+                </DetailItem>
                 <DetailItem icon={<MapPin />} label="Address">{address}</DetailItem>
                 <DetailItem icon={<Calendar />} label="Move-in Date">{moveInDate ? format(new Date(moveInDate), 'dd MMMM yyyy') : null}</DetailItem>
                 {moveOutDate && <DetailItem icon={<Calendar />} label="Move-out Date">{format(new Date(moveOutDate), 'dd MMMM yyyy')}</DetailItem>}
@@ -284,9 +296,9 @@ export default function ResidentDetailModal({ resident, accommodations, properti
                           <p className="text-sm text-slate-700 break-words">
                             <span className="font-medium">{format(new Date(moveInDate), 'dd MMM yyyy')}</span>
                             {' → '}
-                            <span className="font-medium">{getPropertyName(propertyId)}</span>
+                      <span className="font-medium">{propertyName}</span>
                             {' - Unit '}
-                            <span className="font-medium">{getAccommodationName(accommodationId)}</span>
+                      <span className="font-medium">{accommodationName}</span>
                           </p>
                         </div>
                       </div>
@@ -377,16 +389,16 @@ export default function ResidentDetailModal({ resident, accommodations, properti
                               <p className="text-sm text-slate-700 break-words">
                                 <span className="text-slate-500">From:</span>
                                 {' '}
-                                <span className="font-medium">{transfer.from_property || getPropertyName(transfer.from_property_id) || 'N/A'}</span>
+                                <span className="font-medium">{transfer.from_property || properties?.find(p => (p.ID || p.id) === transfer.from_property_id)?.Name || 'N/A'}</span>
                                 {' - Unit '}
-                                <span className="font-medium">{transfer.from_unit || getAccommodationName(transfer.from_accommodation_id) || 'N/A'}</span>
+                                <span className="font-medium">{transfer.from_unit || accommodations?.find(a => (a.ID || a.id) === transfer.from_accommodation_id)?.["Room Number"] || 'N/A'}</span>
                               </p>
                               <p className="text-sm text-slate-700 break-words">
                                 <span className="text-slate-500">To:</span>
                                 {' '}
-                                <span className="font-medium">{transfer.to_property || getPropertyName(transfer.to_property_id) || 'N/A'}</span>
+                                <span className="font-medium">{transfer.to_property || properties?.find(p => (p.ID || p.id) === transfer.to_property_id)?.Name || 'N/A'}</span>
                                 {' - Unit '}
-                                <span className="font-medium">{transfer.to_unit || getAccommodationName(transfer.to_accommodation_id) || 'N/A'}</span>
+                                <span className="font-medium">{transfer.to_unit || accommodations?.find(a => (a.ID || a.id) === transfer.to_accommodation_id)?.["Room Number"] || 'N/A'}</span>
                               </p>
                               {transfer.reason && (
                                 <p className="text-xs text-slate-600 mt-1 break-words">Reason: {transfer.reason}</p>
@@ -413,9 +425,9 @@ export default function ResidentDetailModal({ resident, accommodations, properti
                           <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Photo ID</Button>
                       </a>
                   )}
-                  {signupGdriveUrl && (
-                      <a href={signupGdriveUrl} target="_blank" rel="noopener noreferrer" className="inline-block">
-                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Sign-up Docs</Button>
+                  {googleDriveLink && (
+                      <a href={googleDriveLink} target="_blank" rel="noopener noreferrer" className="inline-block">
+                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Google Drive Link</Button>
                       </a>
                   )}
               </div>

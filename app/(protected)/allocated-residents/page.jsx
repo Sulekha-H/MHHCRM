@@ -291,7 +291,7 @@ export default function AllocatedResidentsPage() {
   };
 
   const exportCSV = () => {
-    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW"];
+    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW", "Google Drive Link"];
     const rows = filteredAllocatedResidents.map(r => [
       r.ID || r.id,
       r["First Name"] || r.first_name,
@@ -300,7 +300,8 @@ export default function AllocatedResidentsPage() {
       r["Property Name"] || r.property_name,
       r["Unit/Room Number"] || r.unit_room_number,
       r.Status || r.status,
-      r["Support Worker"] || r.support_worker
+      r["Support Worker"] || r.support_worker,
+      r["Google Drive Link"] || ""
     ]);
     const escape = (v) => { const s = String(v ?? ""); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s; };
     const csv = [headers.map(escape).join(','), ...rows.map(row => row.map(escape).join(','))].join('\n');
@@ -332,7 +333,16 @@ export default function AllocatedResidentsPage() {
 
       {showForm && <div className="px-6"><AllocatedResidentForm resident={editingResident} accommodations={accommodations} allocatedResidents={allocatedResidents} otherResidents={residents} onSubmit={handleSubmit} onCancel={() => { setShowForm(false); setEditingResident(null); }} /></div>}
 
-      {viewingResident && <AllocatedResidentDetailModal resident={viewingResident} onClose={() => setViewingResident(null)} onEdit={(r) => { setViewingResident(null); setEditingResident(r); setShowForm(true); }} onDelete={handleDelete} />}
+      {viewingResident && (
+        <AllocatedResidentDetailModal
+          resident={viewingResident}
+          properties={properties}
+          accommodations={accommodations}
+          onClose={() => setViewingResident(null)}
+          onEdit={(r) => { setViewingResident(null); setEditingResident(r); setShowForm(true); }}
+          onDelete={handleDelete}
+        />
+      )}
 
       {loading ? (
         <div className="px-6 grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -86,7 +86,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     "Benefits": [],
     "Room Transfers": [],
     "Accommodation Transfers": [],
-    "Sign-up Documents URL": "",
+    "Google Drive Link": "",
     "Photo ID URL": "",
     "PA/Worker Name": "",
     "PA/Worker Contact": "",
@@ -147,7 +147,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Medical Conditions": "",
         "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
         "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
-        "Sign-up Documents URL": "", "Photo ID URL": "",
+        "Google Drive Link": "", "Photo ID URL": "",
         "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
         "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
       });
@@ -1268,14 +1268,14 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Documents & Links</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="signup_gdrive_url" className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="google_drive_link" className="flex items-center gap-2 mb-2">
                     <Link2 className="w-4 h-4" />
-                    Sign-up Documents URL (Google Drive)
+                    Google Drive Link
                   </Label>
                   <Input
-                    id="signup_gdrive_url"
-                    value={formData["Sign-up Documents URL"]}
-                    onChange={(e) => handleChange("Sign-up Documents URL", e.target.value)}
+                    id="google_drive_link"
+                    value={formData["Google Drive Link"]}
+                    onChange={(e) => handleChange("Google Drive Link", e.target.value)}
                     placeholder="https://drive.google.com/..."
                   />
                 </div>

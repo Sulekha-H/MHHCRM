@@ -43,7 +43,7 @@ const DetailItem = ({ icon, label, children }) => (
   </div>
 );
 
-export default function AllocatedResidentDetailModal({ resident, onClose, onEdit, onDelete, isAdmin }) {
+export default function AllocatedResidentDetailModal({ resident, properties, accommodations, onClose, onEdit, onDelete, isAdmin }) {
   const [showPhotoModal, setShowPhotoModal] = React.useState(false);
   const [imageError, setImageError] = React.useState(false);
 
@@ -68,7 +68,7 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
   const benefits = resident["Benefits"] || [];
   const roomTransfers = resident["Room Transfers"] || [];
   const accommodationTransfers = resident["Accommodation Transfers"] || [];
-  const signupGdriveUrl = resident["Sign-up Documents URL"];
+  const googleDriveLink = resident["Google Drive Link"];
   const photoIdUrl = resident["Photo ID URL"];
   const futureAddress = resident["Future Address"];
   const futureHousingType = resident["Future Housing Type"];
@@ -77,12 +77,20 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
   const unitRoomNumber = resident["Unit/Room Number"];
   const residentType = resident["Resident Type"];
   const otherDocuments = resident["Other Documents"] || [];
+  const propertyId = resident["Property ID"] || resident.property_id;
+  const accommodationId = resident["Accommodation ID"] || resident.accommodation_id;
 
   const previewUrl = convertToDirectImageUrl(photoIdUrl);
 
   const getStatusColor = (status) => {
     return status === 'Active' ? "bg-green-100 text-green-800 border-green-200" : "bg-blue-100 text-blue-800 border-blue-200";
   };
+
+  const selectedProperty = properties?.find(p => (p["ID"] || p.Id || p.id) === propertyId);
+  const selectedAccommodation = accommodations?.find(a => (a["ID"] || a.Id || a.id) === accommodationId);
+
+  const propertyGdriveLink = selectedProperty?.["Google Drive Link"] || selectedProperty?.google_drive_link;
+  const accommodationGdriveLink = selectedAccommodation?.["Google Drive Link"] || selectedAccommodation?.google_drive_link;
 
   return (
     <>
@@ -126,8 +134,22 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
 
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Accommodation</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <DetailItem icon={<Building />} label="Property Name">{propertyName}</DetailItem>
-                <DetailItem icon={<BedDouble />} label="Unit/Room">{unitRoomNumber}</DetailItem>
+                <DetailItem icon={<Building />} label="Property Name">
+                  {propertyName}
+                  {propertyGdriveLink && (
+                    <a href={propertyGdriveLink} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800">
+                      <Link2 className="w-3 h-3" />
+                    </a>
+                  )}
+                </DetailItem>
+                <DetailItem icon={<BedDouble />} label="Unit/Room">
+                  {unitRoomNumber}
+                  {accommodationGdriveLink && (
+                    <a href={accommodationGdriveLink} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800">
+                      <Link2 className="w-3 h-3" />
+                    </a>
+                  )}
+                </DetailItem>
                 <DetailItem icon={<MapPin />} label="Property Address">{address}</DetailItem>
                 <DetailItem icon={<Calendar />} label="Move-in Date">{moveInDate ? format(new Date(moveInDate), 'dd MMMM yyyy') : null}</DetailItem>
                 {moveOutDate && <DetailItem icon={<Calendar />} label="Move-out Date">{format(new Date(moveOutDate), 'dd MMMM yyyy')}</DetailItem>}
@@ -235,7 +257,7 @@ export default function AllocatedResidentDetailModal({ resident, onClose, onEdit
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Links</h3>
               <div className="flex gap-4 flex-wrap">
                   {photoIdUrl && (<a href={photoIdUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Photo ID</Button></a>)}
-                  {signupGdriveUrl && (<a href={signupGdriveUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Sign-up Docs</Button></a>)}
+                  {googleDriveLink && (<a href={googleDriveLink} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Google Drive Link</Button></a>)}
               </div>
             </div>
             <DialogFooter className="p-6 bg-slate-50 border-t sticky bottom-0">
