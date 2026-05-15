@@ -11,9 +11,38 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    Home, MapPin, Users, PoundSterling, Calendar, Wrench, User, Edit, CheckCircle, Building2, Trash2
+    Home, MapPin, Users, PoundSterling, Calendar, Wrench, User, Edit, CheckCircle, Building2, Trash2, ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+const convertToDirectImageUrl = (url) => {
+  if (!url) return url;
+
+  if (url.includes('dropbox.com')) {
+    return url
+      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+      .replace('?dl=0', '')
+      .replace('?dl=1', '');
+  }
+
+  if (url.includes('drive.google.com')) {
+    let fileId = null;
+    const match1 = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (match1) {
+      fileId = match1[1];
+    }
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2 && !fileId) {
+      fileId = match2[1];
+    }
+
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
+  }
+
+  return url;
+};
 
 const DetailItem = ({ icon, label, children }) => (
   <div className="flex items-start gap-4">
@@ -66,8 +95,10 @@ export default function AccommodationDetailModal({
   const leaseEndDate = accommodation["Lease End Date"] || accommodation.lease_end_date;
   const amenities = accommodation["Amenities"] || accommodation.amenities;
   const accessibilityFeatures = accommodation["Accessibility Features"] || accommodation.accessibility_features;
+  const googleDriveLink = accommodation["Google Drive Link"] || accommodation.google_drive_link;
   const notes = accommodation["Notes"] || accommodation.notes;
   const accommodationId = accommodation.ID || accommodation.id;
+  const previewUrl = convertToDirectImageUrl(googleDriveLink);
 
   // IMPROVED: Get ALL active residents in this accommodation
   let activeResidentsList = [];
@@ -109,11 +140,31 @@ export default function AccommodationDetailModal({
           <div className="p-6">
             <DialogHeader className="mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
-                  <span className="text-white font-bold text-2xl">
-                    {roomNumber?.charAt(0) || 'R'}
-                  </span>
-                </div>
+                {previewUrl ? (
+                  <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
+                    <img
+                      src={previewUrl}
+                      alt={roomNumber}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600">
+                      <span className="text-white font-bold text-2xl">
+                        {roomNumber?.charAt(0) || 'R'}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span className="text-white font-bold text-2xl">
+                      {roomNumber?.charAt(0) || 'R'}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <DialogTitle className="text-3xl font-bold text-slate-900">{roomNumber}</DialogTitle>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -206,6 +257,24 @@ export default function AccommodationDetailModal({
                     </Badge>
                   ))}
                 </div>
+              </>
+            )}
+
+            {googleDriveLink && (
+              <>
+                <Separator className="my-6" />
+                <h3 className="text-xl font-semibold text-slate-800 mb-4">Google Drive Link</h3>
+                <DetailItem icon={<ExternalLink />} label="Images/Folder">
+                  <a
+                    href={googleDriveLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:underline flex items-center gap-1"
+                  >
+                    View Folder/Images
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </DetailItem>
               </>
             )}
 

@@ -2,8 +2,37 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, MapPin, Users, Calendar, Phone, Settings, Wrench, Building2, Trash2 } from "lucide-react";
+import { Edit, MapPin, Users, Calendar, Phone, Settings, Wrench, Building2, Trash2, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+
+const convertToDirectImageUrl = (url) => {
+  if (!url) return url;
+
+  if (url.includes('dropbox.com')) {
+    return url
+      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+      .replace('?dl=0', '')
+      .replace('?dl=1', '');
+  }
+
+  if (url.includes('drive.google.com')) {
+    let fileId = null;
+    const match1 = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (match1) {
+      fileId = match1[1];
+    }
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2 && !fileId) {
+      fileId = match2[1];
+    }
+
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
+  }
+
+  return url;
+};
 
 export default function PropertyCard({ property, accommodations, residents, onEdit, onViewDetails, onDelete, isAdmin }) {
   // Use the pre-calculated current_occupancy from the property object
@@ -80,6 +109,8 @@ export default function PropertyCard({ property, accommodations, residents, onEd
   const nextInspectionDue = property["Next Inspection Due"] || property.Next_Inspection_Due || property.next_inspection_due;
   const contactPhone = property["Contact Phone"] || property.Contact_Phone || property.contact_phone;
   const accessibilityFeatures = property["Accessibility Features"] || property.Accessibility_Features || property.accessibility_features;
+  const googleDriveLink = property["Google Drive Link"] || property.google_drive_link;
+  const previewUrl = convertToDirectImageUrl(googleDriveLink);
 
   return (
     <Card
@@ -89,9 +120,27 @@ export default function PropertyCard({ property, accommodations, residents, onEd
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
+            {previewUrl ? (
+              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
+                <img
+                  src={previewUrl}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-500">
+                  <Building2 className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            ) : (
+              <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <CardTitle className="text-xl text-slate-900 mb-1 break-words line-clamp-2">{name}</CardTitle>
               <Badge className={getStatusColor(status)}>

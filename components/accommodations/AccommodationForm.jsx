@@ -29,6 +29,7 @@ export default function AccommodationForm({ accommodation, properties, residents
     next_maintenance_due: accommodation["Next Maintenance Due"] || accommodation.Next_Maintenance_Due || accommodation.next_maintenance_due || "",
     availability_status: (accommodation["Availability Status"] || accommodation.Availability_Status || accommodation.availability_status || "available").toLowerCase().replace(/ /g, '_'),
     available_from: accommodation["Available From"] || accommodation.Available_From || accommodation.available_from || "",
+    google_drive_link: accommodation["Google Drive Link"] || accommodation.google_drive_link || "",
     notes: accommodation["Notes"] || accommodation.Notes || accommodation.notes || "",
     images: accommodation["Images"] || accommodation.Images || accommodation.images || []
   } : {
@@ -49,6 +50,7 @@ export default function AccommodationForm({ accommodation, properties, residents
     next_maintenance_due: "",
     availability_status: "available",
     available_from: "",
+    google_drive_link: "",
     notes: "",
     images: []
   });
@@ -118,6 +120,7 @@ export default function AccommodationForm({ accommodation, properties, residents
       "Next Maintenance Due": formData.next_maintenance_due || null,
       "Availability Status": statusMap[formData.availability_status] || 'Available',
       "Available From": formData.available_from || null,
+      "Google Drive Link": formData.google_drive_link || null,
       "Notes": formData.notes || null,
       "Images": formData.images,
       "Updated Date": new Date().toISOString()
@@ -315,6 +318,15 @@ export default function AccommodationForm({ accommodation, properties, residents
                   type="date"
                   value={formData.available_from}
                   onChange={(e) => handleChange("available_from", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="google_drive_link">Google Drive Link (Images/Folder)</Label>
+                <Input
+                  id="google_drive_link"
+                  value={formData.google_drive_link}
+                  onChange={(e) => handleChange("google_drive_link", e.target.value)}
+                  placeholder="https://drive.google.com/..."
                 />
               </div>
             </div>

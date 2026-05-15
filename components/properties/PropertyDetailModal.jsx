@@ -12,9 +12,38 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    Building2, MapPin, Users, PoundSterling, Wrench, Calendar, Phone, ShieldCheck, Edit, FileText, Fingerprint, Trash2
+    Building2, MapPin, Users, PoundSterling, Wrench, Calendar, Phone, ShieldCheck, Edit, FileText, Fingerprint, Trash2, ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+const convertToDirectImageUrl = (url) => {
+  if (!url) return url;
+
+  if (url.includes('dropbox.com')) {
+    return url
+      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+      .replace('?dl=0', '')
+      .replace('?dl=1', '');
+  }
+
+  if (url.includes('drive.google.com')) {
+    let fileId = null;
+    const match1 = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (match1) {
+      fileId = match1[1];
+    }
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2 && !fileId) {
+      fileId = match2[1];
+    }
+
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
+  }
+
+  return url;
+};
 
 const DetailItem = ({ icon, label, children, isId = false }) => (
   <div className="flex items-start gap-4">
@@ -56,7 +85,9 @@ export default function PropertyDetailModal({ property, accommodations, resident
   const nextInspectionDue = property["Next Inspection Due"] || property.next_inspection_due;
   const contactPhone = property["Contact Phone"] || property.contact_phone;
   const emergencyContact = property["Emergency Contact"] || property.emergency_contact;
+  const googleDriveLink = property["Google Drive Link"] || property.google_drive_link;
   const notes = property["Notes"] || property.notes;
+  const previewUrl = convertToDirectImageUrl(googleDriveLink);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -65,9 +96,27 @@ export default function PropertyDetailModal({ property, accommodations, resident
           <div className="p-6">
             <DialogHeader className="mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm">
-                  <Building2 className="w-8 h-8 text-white" />
-                </div>
+                {previewUrl ? (
+                  <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
+                    <img
+                      src={previewUrl}
+                      alt={name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-500">
+                      <Building2 className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <Building2 className="w-8 h-8 text-white" />
+                  </div>
+                )}
                 <div>
                   <DialogTitle className="text-3xl font-bold text-slate-900">{name}</DialogTitle>
                   <Badge className={`mt-2 ${getStatusColor ? getStatusColor(status) : 'bg-slate-100 text-slate-800'}`}>
@@ -125,6 +174,19 @@ export default function PropertyDetailModal({ property, accommodations, resident
                 <div>
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Additional Information</h3>
                     <div className="space-y-4">
+                        {googleDriveLink && (
+                          <DetailItem icon={<ExternalLink />} label="Google Drive Link">
+                            <a
+                              href={googleDriveLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Folder/Images
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
                         <DetailItem icon={<Users />} label="Accessibility">{accessibilityFeatures}</DetailItem>
                         <DetailItem icon={<FileText />} label="Notes">{notes}</DetailItem>
                     </div>
