@@ -26,6 +26,7 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
     next_inspection_due: "",
     contact_phone: "",
     emergency_contact: "",
+    google_drive_link: "",
     notes: "",
     status: "active"
   });
@@ -78,6 +79,7 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
         next_inspection_due: property["Next Inspection Due"] || property.next_inspection_due || "",
         contact_phone: property["Contact Phone"] || property.contact_phone || "",
         emergency_contact: property["Emergency Contact"] || property.emergency_contact || "",
+        google_drive_link: property["Google Drive Link"] || property.google_drive_link || "",
         notes: property.Notes || property.notes || "",
         status: statusReverseMap[property.Status] || property.status || "active"
       });
@@ -128,6 +130,7 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
       "Next Inspection Due": formData.next_inspection_due || null,
       "Contact Phone": formData.contact_phone || null,
       "Emergency Contact": formData.emergency_contact || null,
+      "Google Drive Link": formData.google_drive_link || null,
       Status: statusMap[formData.status] || 'Active',
       Notes: formData.notes || null,
       "Updated Date": new Date().toISOString()
@@ -379,6 +382,15 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
                   value={formData.emergency_contact}
                   onChange={(e) => handleChange("emergency_contact", e.target.value)}
                   placeholder="Emergency contact for property"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label htmlFor="google_drive_link" className="mb-2 block">Google Drive Link (Images/Folder)</Label>
+                <Input
+                  id="google_drive_link"
+                  value={formData.google_drive_link}
+                  onChange={(e) => handleChange("google_drive_link", e.target.value)}
+                  placeholder="https://drive.google.com/..."
                 />
               </div>
             </div>

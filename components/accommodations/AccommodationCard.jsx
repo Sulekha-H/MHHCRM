@@ -2,8 +2,37 @@ import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, User, Home, Calendar, AlertTriangle, Trash2 } from "lucide-react";
+import { Edit, User, Home, Calendar, AlertTriangle, Trash2, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+
+const convertToDirectImageUrl = (url) => {
+  if (!url) return url;
+
+  if (url.includes('dropbox.com')) {
+    return url
+      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+      .replace('?dl=0', '')
+      .replace('?dl=1', '');
+  }
+
+  if (url.includes('drive.google.com')) {
+    let fileId = null;
+    const match1 = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (match1) {
+      fileId = match1[1];
+    }
+    const match2 = url.match(/[?&]id=([^&]+)/);
+    if (match2 && !fileId) {
+      fileId = match2[1];
+    }
+
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+    }
+  }
+
+  return url;
+};
 
 export default function AccommodationCard({ 
   accommodation, 
@@ -33,6 +62,8 @@ export default function AccommodationCard({
   const availableFrom = accommodation["Available From"] || accommodation.available_from;
   const currentOccupancy = accommodation.current_occupancy || 0;
   const accommodationId = accommodation.ID || accommodation.id;
+  const googleDriveLink = accommodation["Google Drive Link"] || accommodation.google_drive_link;
+  const previewUrl = convertToDirectImageUrl(googleDriveLink);
   
   // IMPROVED: Get ALL active residents in this accommodation, not just the one in currentResidentId
   let activeResidentsList = [];
@@ -75,6 +106,18 @@ export default function AccommodationCard({
     >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
+          {previewUrl && (
+            <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
+              <img
+                src={previewUrl}
+                alt={roomNumber}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-slate-900 text-lg truncate" title={roomNumber}>
