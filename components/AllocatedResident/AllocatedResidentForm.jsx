@@ -47,7 +47,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
     "Move-in Date": "", "Move-out Date": "", "Support Worker": "", "Medical Conditions": "",
     "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
     "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
-    "Sign-up Documents URL": "", "Photo ID URL": "", "Future Address": "", "Future Housing Type": "",
+    "Google Drive Link": "", "Photo ID URL": "", "Future Address": "", "Future Housing Type": "",
     "Move-on Outcome": "", "Other Documents": []
   });
 
@@ -238,6 +238,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
                   const isOccupied = curCount > 0;
                   const maxOcc = u["Max Occupancy"] || 1;
                   const labelSuffix = isOccupied ? ` (Occupied: ${curCount}/${maxOcc})` : "";
+                  const isFullyOccupied = curCount >= maxOcc;
                   return (<SelectItem key={u.ID} value={u.ID}>{u["Room Number"]} ({u["Accommodation Type"]}){labelSuffix}</SelectItem>);
                 })}</SelectContent></Select></div>
                 <div><Label>Support Worker</Label><Select value={formData["Support Worker"]} onValueChange={(v) => handleChange("Support Worker", v)}><SelectTrigger><SelectValue placeholder="Select SW" /></SelectTrigger><SelectContent><SelectItem value="none">None</SelectItem><SelectItem value="Hasib">Hasib</SelectItem></SelectContent></Select></div>
@@ -281,7 +282,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Documents</h3>
               <div className="space-y-4">
                 <div><Label>Medical Conditions</Label><Textarea value={formData["Medical Conditions"]} onChange={(e) => handleChange("Medical Conditions", e.target.value)} /></div>
-                <div><Label>Sign-up Documents URL</Label><Input value={formData["Sign-up Documents URL"]} onChange={(e) => handleChange("Sign-up Documents URL", e.target.value)} /></div>
+                <div><Label>Google Drive Link</Label><Input value={formData["Google Drive Link"]} onChange={(e) => handleChange("Google Drive Link", e.target.value)} /></div>
                 <div><Label>Photo ID URL</Label><div className="flex gap-2"><Input value={photoUrlInput} onChange={(e) => { setPhotoUrlInput(e.target.value); handleChange("Photo ID URL", e.target.value); }} className="flex-1" /><Button type="button" variant="outline" onClick={() => setShowPhotoModal(true)}><Camera className="w-4 h-4 mr-2" />Preview</Button></div></div>
                 <div><Label>Other Documents</Label>
                   <div className="space-y-2 mt-2">{formData["Other Documents"].map((doc, idx) => (<div key={idx} className="flex gap-2 items-center"><Input placeholder="Title" value={doc.title} onChange={(e) => updateListField("Other Documents", idx, "title", e.target.value)} className="flex-1" /><Input placeholder="URL" value={doc.url} onChange={(e) => updateListField("Other Documents", idx, "url", e.target.value)} className="flex-2" /><Button type="button" variant="destructive" size="icon" onClick={() => setFormData(prev => ({ ...prev, "Other Documents": prev["Other Documents"].filter((_, i) => i !== idx) }))}><Trash2 className="w-4 h-4" /></Button></div>))}<Button type="button" variant="outline" onClick={() => setFormData(prev => ({ ...prev, "Other Documents": [...prev["Other Documents"], { title: "", url: "" }] }))} className="w-full"><Plus className="w-4 h-4 mr-2" /> Add Document Link</Button></div>

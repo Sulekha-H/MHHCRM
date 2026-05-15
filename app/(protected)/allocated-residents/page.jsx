@@ -184,7 +184,7 @@ export default function AllocatedResidentsPage() {
       const newAccId = saved["Accommodation ID"] || saved.accommodation_id;
       const firstName = saved["First Name"] || saved.first_name || '';
       const lastName = saved["Last Name"] || saved.last_name || '';
-      const name = `${firstName} ${lastName}`;
+      const fullName = `${firstName} ${lastName}`.trim();
       const status = (saved.Status || saved.status || '');
 
       if (status === 'Moved On' && oldAccId) {
@@ -194,18 +194,18 @@ export default function AllocatedResidentsPage() {
         ];
         if (others.length === 0) {
           await supabase.from('accommodations').update({
-            '"Availability Status"': 'Available',
-            '"Current Resident ID"': null,
-            '"Current Resident Name"': null,
-            '"Lease End Date"': saved["Move-out Date"] || saved.move_out_date || now
+            "Availability Status": 'Available',
+            "Current Resident ID": null,
+            "Current Resident Name": null,
+            "Lease End Date": saved["Move-out Date"] || saved.move_out_date || now
           }).eq('"ID"', oldAccId);
         } else {
-          const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
-          const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+          const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`.trim());
+          const hasAllocated = others.some(o => (allocatedResidents || []).some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
           await supabase.from('accommodations').update({
-            '"Availability Status"': hasAllocated ? 'Allocated Residents' : 'Occupied',
-            '"Current Resident ID"': others[0].ID || others[0].id,
-            '"Current Resident Name"': names.join(', ')
+            "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+            "Current Resident ID": others[0].ID || others[0].id,
+            "Current Resident Name": names.join(', ')
           }).eq('"ID"', oldAccId);
         }
       } else if (status === 'Active') {
@@ -216,18 +216,18 @@ export default function AllocatedResidentsPage() {
           ];
           if (others.length === 0) {
             await supabase.from('accommodations').update({
-              '"Availability Status"': 'Available',
-              '"Current Resident ID"': null,
-              '"Current Resident Name"': null,
-              '"Lease End Date"': now
+              "Availability Status": 'Available',
+              "Current Resident ID": null,
+              "Current Resident Name": null,
+              "Lease End Date": now
             }).eq('"ID"', oldAccId);
           } else {
-            const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
-            const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+            const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`.trim());
+            const hasAllocated = (allocatedResidents || []).some(ar => (ar.ID || ar.id) !== residentId && (ar["Accommodation ID"] || ar.accommodation_id) === oldAccId && (ar.Status || ar.status || '').toLowerCase() === 'active');
             await supabase.from('accommodations').update({
-              '"Availability Status"': hasAllocated ? 'Allocated Residents' : 'Occupied',
-              '"Current Resident ID"': others[0].ID || others[0].id,
-              '"Current Resident Name"': names.join(', ')
+              "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+              "Current Resident ID": others[0].ID || others[0].id,
+              "Current Resident Name": names.join(', ')
             }).eq('"ID"', oldAccId);
           }
         }
@@ -236,12 +236,12 @@ export default function AllocatedResidentsPage() {
             ...residents.filter(r => (r["Accommodation ID"] || r.accommodation_id) === newAccId && (r.Status || r.status || '').toLowerCase() === 'active'),
             ...allocatedResidents.filter(ar => (ar.ID || ar.id) !== residentId && (ar["Accommodation ID"] || ar.accommodation_id) === newAccId && (ar.Status || ar.status || '').toLowerCase() === 'active')
           ];
-          const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`), name];
+          const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`.trim()), fullName];
           await supabase.from('accommodations').update({
-            '"Availability Status"': 'Allocated Residents',
-            '"Current Resident ID"': saved.ID || saved.id,
-            '"Current Resident Name"': [...new Set(allNames)].join(', '),
-            '"Lease Start Date"': saved["Move-in Date"] || saved.move_in_date || now
+            "Availability Status": 'Allocated Residents',
+            "Current Resident ID": saved.ID || saved.id,
+            "Current Resident Name": [...new Set(allNames)].join(', '),
+            "Lease Start Date": saved["Move-in Date"] || saved.move_in_date || now
           }).eq('"ID"', newAccId);
         }
       }
@@ -271,18 +271,18 @@ export default function AllocatedResidentsPage() {
         ];
         if (others.length === 0) {
           await supabase.from('accommodations').update({
-            '"Availability Status"': 'Available',
-            '"Current Resident ID"': null,
-            '"Current Resident Name"': null,
-            '"Lease End Date"': new Date().toISOString().slice(0, 10)
+            "Availability Status": 'Available',
+            "Current Resident ID": null,
+            "Current Resident Name": null,
+            "Lease End Date": new Date().toISOString().slice(0, 10)
           }).eq('"ID"', accId);
         } else {
-          const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
-          const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+          const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`.trim());
+          const hasAllocated = (allocatedResidents || []).some(ar => (ar.ID || ar.id) !== rId && (ar["Accommodation ID"] || ar.accommodation_id) === accId && (ar.Status || ar.status || '').toLowerCase() === 'active');
           await supabase.from('accommodations').update({
-            '"Availability Status"': hasAllocated ? 'Allocated Residents' : 'Occupied',
-            '"Current Resident ID"': others[0].ID || others[0].id,
-            '"Current Resident Name"': names.join(', ')
+            "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+            "Current Resident ID": others[0].ID || others[0].id,
+            "Current Resident Name": names.join(', ')
           }).eq('"ID"', accId);
         }
       }
@@ -291,7 +291,7 @@ export default function AllocatedResidentsPage() {
   };
 
   const exportCSV = () => {
-    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW"];
+    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW", "Google Drive Link"];
     const rows = filteredAllocatedResidents.map(r => [
       r.ID || r.id,
       r["First Name"] || r.first_name,
@@ -300,7 +300,8 @@ export default function AllocatedResidentsPage() {
       r["Property Name"] || r.property_name,
       r["Unit/Room Number"] || r.unit_room_number,
       r.Status || r.status,
-      r["Support Worker"] || r.support_worker
+      r["Support Worker"] || r.support_worker,
+      r["Google Drive Link"] || ""
     ]);
     const escape = (v) => { const s = String(v ?? ""); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s; };
     const csv = [headers.map(escape).join(','), ...rows.map(row => row.map(escape).join(','))].join('\n');
@@ -332,7 +333,16 @@ export default function AllocatedResidentsPage() {
 
       {showForm && <div className="px-6"><AllocatedResidentForm resident={editingResident} accommodations={accommodations} allocatedResidents={allocatedResidents} otherResidents={residents} onSubmit={handleSubmit} onCancel={() => { setShowForm(false); setEditingResident(null); }} /></div>}
 
-      {viewingResident && <AllocatedResidentDetailModal resident={viewingResident} onClose={() => setViewingResident(null)} onEdit={(r) => { setViewingResident(null); setEditingResident(r); setShowForm(true); }} onDelete={handleDelete} />}
+      {viewingResident && (
+        <AllocatedResidentDetailModal
+          resident={viewingResident}
+          properties={properties}
+          accommodations={accommodations}
+          onClose={() => setViewingResident(null)}
+          onEdit={(r) => { setViewingResident(null); setEditingResident(r); setShowForm(true); }}
+          onDelete={handleDelete}
+        />
+      )}
 
       {loading ? (
         <div className="px-6 grid grid-cols-1 md:grid-cols-3 gap-6">

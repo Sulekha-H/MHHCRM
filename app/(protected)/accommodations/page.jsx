@@ -135,15 +135,30 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
     }
 
     if (searchTerm) {
+      const s = searchTerm.toLowerCase();
       filtered = filtered.filter(accommodation => {
         const property = properties.find(p => (p.ID || p.id) === accommodation["Property ID"]);
-        const resident = residents.find(r => (r.ID || r.id) === accommodation["Current Resident ID"]);
         
-        return accommodation["Room Number"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               accommodation["Accommodation Type"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               property?.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               resident?.["First Name"]?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               resident?.["Last Name"]?.toLowerCase().includes(searchTerm.toLowerCase());
+        // Find ALL residents assigned to this accommodation for searching
+        const allResidents = [
+          ...(residents || []).map(r => ({ ...r, isAllocated: false })),
+          ...(allocatedResidents || []).map(r => ({ ...r, isAllocated: true }))
+        ];
+        const assignedResidents = allResidents.filter(resident => {
+          const resAccId = resident["Accommodation ID"] || resident.accommodation_id;
+          const resStatus = (resident.Status || resident.status || '').toLowerCase();
+          return resAccId === (accommodation.ID || accommodation.id) && resStatus === 'active';
+        });
+
+        const residentMatch = assignedResidents.some(r =>
+          (r["First Name"] || r.first_name || '').toLowerCase().includes(s) ||
+          (r["Last Name"] || r.last_name || '').toLowerCase().includes(s)
+        );
+
+        return accommodation["Room Number"]?.toLowerCase().includes(s) ||
+               accommodation["Accommodation Type"]?.toLowerCase().includes(s) ||
+               property?.Name?.toLowerCase().includes(s) ||
+               residentMatch;
       });
     }
 
@@ -157,7 +172,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
   const handleSubmit = async (accommodationData) => {
     try {
       if (editingAccommodation) {
-        const { error } = await supabase.from('accommodations').update(accommodationData).eq('ID', editingAccommodation.ID);
+        const { error } = await supabase.from('accommodations').update(accommodationData).eq('"ID"', editingAccommodation.ID);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('accommodations').insert([accommodationData]);
@@ -193,7 +208,7 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
     
     if (window.confirm(message)) {
       try {
-        const { error } = await supabase.from('accommodations').delete().eq('ID', accommodation.ID);
+        const { error } = await supabase.from('accommodations').delete().eq('"ID"', accommodation.ID);
         if (error) throw error;
         console.log(`Accommodation ${accommodation.ID} deleted successfully.`);
         setViewingAccommodation(null);
