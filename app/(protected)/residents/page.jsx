@@ -24,6 +24,7 @@ export default function Residents_Supabase() {
   const { user } = useUser();
   const { session } = useSession()
   const [residents, setResidents] = useState([]);
+  const [allocatedResidents, setAllocatedResidents] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [properties, setProperties] = useState([]);
   const [filteredResidents, setFilteredResidents] = useState([]);
@@ -73,30 +74,27 @@ useEffect(() => {
       setLoading(true);
       setError(null);
 
-      const { data: residentsData, error: residentsError } = await supabase
-        .from('residents')
-        .select('*')
-        .order('Created Date', { ascending: false });
+      const [residentsRes, allocatedRes, accommodationsRes, propertiesRes] = await Promise.all([
+        supabase.from('residents').select('*').order('Created Date', { ascending: false }),
+        supabase.from('allocated_residents').select('*'),
+        supabase.from('accommodations').select('*'),
+        supabase.from('properties').select('*')
+      ]);
 
-      if (residentsError) throw residentsError;
+      if (residentsRes.error) throw residentsRes.error;
+      if (allocatedRes.error) throw allocatedRes.error;
+      if (accommodationsRes.error) throw accommodationsRes.error;
+      if (propertiesRes.error) throw propertiesRes.error;
       
       // Filter out soft-deleted residents
-      const activeResidents = (residentsData || []).filter(r => !r.Deleted && !r["Deleted"]);
-      console.log("✅ Loaded residents:", activeResidents.length, `(filtered out ${(residentsData?.length || 0) - activeResidents.length} deleted)`);
+      const activeResidents = (residentsRes.data || []).filter(r => !r.Deleted && !r["Deleted"]);
+      const activeAllocated = (allocatedRes.data || []).filter(r => !r.Deleted && !r["Deleted"]);
 
-      const { data: accommodationsData, error: accommodationsError } = await supabase
-        .from('accommodations')
-        .select('*');
+      console.log("✅ Loaded residents:", activeResidents.length);
+      console.log("✅ Loaded allocated residents:", activeAllocated.length);
 
-      if (accommodationsError) throw accommodationsError;
-      console.log("✅ Loaded accommodations:", accommodationsData?.length);
-
-      const { data: propertiesDataRaw, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*');
-
-      if (propertiesError) throw propertiesError;
-      console.log("✅ Loaded properties:", propertiesDataRaw?.length);
+      const accommodationsData = accommodationsRes.data || [];
+      const propertiesDataRaw = propertiesRes.data || [];
 
       const propertiesData = (propertiesDataRaw || []).sort((a, b) => {
         const nameA = a.Name?.toLowerCase();
@@ -108,7 +106,8 @@ useEffect(() => {
       });
 
       setResidents(activeResidents);
-      setAccommodations(accommodationsData || []);
+      setAllocatedResidents(activeAllocated);
+      setAccommodations(accommodationsData);
       setProperties(propertiesData);
       setExpandedProperties(new Set(propertiesData.map(p => p.ID).concat('unassigned')));
 
@@ -218,31 +217,60 @@ useEffect(() => {
 
         // Handle accommodation updates
         if (newStatus === 'Moved On' && originalStatus === 'Active' && originalAccommodationId) {
-          console.log("📍 Marking old accommodation as available:", originalAccommodationId);
-          console.log("  - originalResident status:", originalResident?.Status); // <--- ADD THIS LINE HERE
-          console.log("  - originalAccommodationId:", originalAccommodationId); // <--- ADD THIS LINE HERE
-          // Mark old accommodation as available
-          await supabase
-            .from('accommodations')
-            .update({
-              "Availability Status": 'Available',
-              "Current Resident ID": null,
-              "Lease Start Date": null,
-              "Lease End Date": residentData["Move-out Date"] || now,
-              "Current Resident Name": null
-            })
-            .eq('ID', originalAccommodationId);
+          console.log("📍 Marking old accommodation logic:", originalAccommodationId);
+
+          const others = [
+            ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === originalAccommodationId && r.Status === 'Active'),
+            ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === originalAccommodationId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+
+          if (others.length === 0) {
+            await supabase
+              .from('accommodations')
+              .update({
+                "Availability Status": 'Available',
+                "Current Resident ID": null,
+                "Lease Start Date": null,
+                "Lease End Date": residentData["Move-out Date"] || now,
+                "Current Resident Name": null
+              })
+              .eq('ID', originalAccommodationId);
+          } else {
+            const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+            const hasAllocated = (allocatedResidents || []).some(ar =>
+              (ar["Accommodation ID"] || ar.accommodation_id) === originalAccommodationId &&
+              (ar.Status || ar.status || '').toLowerCase() === 'active'
+            );
+            await supabase
+              .from('accommodations')
+              .update({
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+                "Current Resident ID": others[0].ID || others[0].id,
+                "Current Resident Name": names.join(', ')
+              })
+              .eq('ID', originalAccommodationId);
+          }
         }
         else if (newStatus === 'Active' && originalStatus !== 'Active' && newAccommodationId) {
           console.log("📍 Marking new accommodation as occupied:", newAccommodationId);
-          // Mark new accommodation as occupied
+
+          const others = [
+            ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === newAccommodationId && r.Status === 'Active'),
+            ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === newAccommodationId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+          const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`), `${savedResident["First Name"]} ${savedResident["Last Name"]}`];
+          const hasAllocated = (allocatedResidents || []).some(ar =>
+            (ar["Accommodation ID"] || ar.accommodation_id) === newAccommodationId &&
+            (ar.Status || ar.status || '').toLowerCase() === 'active'
+          );
+
           await supabase
             .from('accommodations')
             .update({
-              "Availability Status": 'Occupied',
+              "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
               "Current Resident ID": editingResident.ID,
               "Lease Start Date": residentData["Move-in Date"] || now,
-              "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
+              "Current Resident Name": [...new Set(allNames)].join(', ')
             })
             .eq('ID', newAccommodationId);
         }
@@ -254,29 +282,55 @@ useEffect(() => {
           console.log("📍 Direct accommodation change without transfer");
           // Free up old accommodation
           if (originalAccommodationId) {
-            console.log("  - Freeing old accommodation:", originalAccommodationId);
-            await supabase
-              .from('accommodations')
-              .update({
-                "Availability Status": 'Available',
-                "Current Resident ID": null,
-                "Lease Start Date": null,
-                "Lease End Date": now,
-                "Current Resident Name": null
-              })
-              .eq('ID', originalAccommodationId);
+            console.log("  - Freeing old accommodation logic:", originalAccommodationId);
+            const others = [
+              ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === originalAccommodationId && r.Status === 'Active'),
+              ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === originalAccommodationId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+            ];
+            if (others.length === 0) {
+              await supabase
+                .from('accommodations')
+                .update({
+                  "Availability Status": 'Available',
+                  "Current Resident ID": null,
+                  "Lease Start Date": null,
+                  "Lease End Date": now,
+                  "Current Resident Name": null
+                })
+                .eq('ID', originalAccommodationId);
+            } else {
+              const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+              const hasAllocated = others.some(o => allocatedResidents.some(ar => (ar.ID || ar.id) === (o.ID || o.id)));
+              await supabase
+                .from('accommodations')
+                .update({
+                  "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+                  "Current Resident ID": others[0].ID || others[0].id,
+                  "Current Resident Name": names.join(', ')
+                })
+                .eq('ID', originalAccommodationId);
+            }
           }
           
           // Assign new accommodation
           if (newAccommodationId) {
             console.log("  - Assigning new accommodation:", newAccommodationId);
+            const others = [
+              ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === newAccommodationId && r.Status === 'Active'),
+              ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === newAccommodationId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+            ];
+            const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`), `${savedResident["First Name"]} ${savedResident["Last Name"]}`];
+            const hasAllocated = (allocatedResidents || []).some(ar =>
+              (ar["Accommodation ID"] || ar.accommodation_id) === newAccommodationId &&
+              (ar.Status || ar.status || '').toLowerCase() === 'active'
+            );
             await supabase
               .from('accommodations')
               .update({
-                "Availability Status": 'Occupied',
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
                 "Current Resident ID": editingResident.ID,
                 "Lease Start Date": residentData["Move-in Date"] || now,
-                 "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}`
+                 "Current Resident Name": [...new Set(allNames)].join(', ')
               })
               .eq('ID', newAccommodationId);
           }
@@ -287,29 +341,50 @@ useEffect(() => {
           
           // Free up old accommodation
           if (latestTransfer.from_accommodation_id) {
-            console.log("  - Freeing old accommodation:", latestTransfer.from_accommodation_id);
-            await supabase
-              .from('accommodations')
-              .update({
-                "Availability Status": 'Available',
-                "Current Resident ID": null,
-                "Lease Start Date": null,
-                "Lease End Date": latestTransfer.move_out_date || latestTransfer.transfer_date || now,
-                "Current Resident Name": null
-              })
-              .eq('ID', latestTransfer.from_accommodation_id);
+            console.log("  - Freeing old accommodation logic:", latestTransfer.from_accommodation_id);
+            const others = [
+              ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === latestTransfer.from_accommodation_id && r.Status === 'Active'),
+              ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestTransfer.from_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active')
+            ];
+            if (others.length === 0) {
+              await supabase
+                .from('accommodations')
+                .update({
+                  "Availability Status": 'Available',
+                  "Current Resident ID": null,
+                  "Lease Start Date": null,
+                  "Lease End Date": latestTransfer.move_out_date || latestTransfer.transfer_date || now,
+                  "Current Resident Name": null
+                })
+                .eq('ID', latestTransfer.from_accommodation_id);
+            } else {
+              const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+              const hasAllocated = (allocatedResidents || []).some(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestTransfer.from_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active');
+              await supabase.from('accommodations').update({
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+                "Current Resident ID": others[0].ID || others[0].id,
+                "Current Resident Name": names.join(', ')
+              }).eq('ID', latestTransfer.from_accommodation_id);
+            }
           }
           
           // Assign new accommodation
           if (latestTransfer.to_accommodation_id) {
-            console.log("  - Assigning new accommodation:", latestTransfer.to_accommodation_id);
+            console.log("  - Assigning new accommodation logic:", latestTransfer.to_accommodation_id);
+            const others = [
+              ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === latestTransfer.to_accommodation_id && r.Status === 'Active'),
+              ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestTransfer.to_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active')
+            ];
+            const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`), `${savedResident["First Name"]} ${savedResident["Last Name"]}`];
+            const hasAllocated = (allocatedResidents || []).some(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestTransfer.to_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active');
+
             await supabase
               .from('accommodations')
               .update({
-                "Availability Status": 'Occupied',
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
                 "Current Resident ID": editingResident.ID,
                 "Lease Start Date": latestTransfer.transfer_date || now,
-                  "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
+                "Current Resident Name": [...new Set(allNames)].join(', ')
               })
               .eq('ID', latestTransfer.to_accommodation_id);
           }
@@ -320,46 +395,88 @@ useEffect(() => {
           
           // Free up old room
           if (latestRoomTransfer.from_accommodation_id) {
-            console.log("  - Freeing old room:", latestRoomTransfer.from_accommodation_id);
+            console.log("  - Freeing old room logic:", latestRoomTransfer.from_accommodation_id);
+            const others = [
+              ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === latestRoomTransfer.from_accommodation_id && r.Status === 'Active'),
+              ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestRoomTransfer.from_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active')
+            ];
+            if (others.length === 0) {
+              await supabase
+                .from('accommodations')
+                .update({
+                  "Availability Status": 'Available',
+                  "Current Resident ID": null,
+                  "Lease Start Date": null,
+                  "Lease End Date": latestRoomTransfer.transfer_date || now,
+                  "Current Resident Name": null
+                })
+                .eq('ID', latestRoomTransfer.from_accommodation_id);
+            } else {
+              const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+              const hasAllocated = (allocatedResidents || []).some(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestRoomTransfer.from_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active');
+              await supabase.from('accommodations').update({
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+                "Current Resident ID": others[0].ID || others[0].id,
+                "Current Resident Name": names.join(', ')
+              }).eq('ID', latestRoomTransfer.from_accommodation_id);
+            }
+          }
+          
+          // Assign new room
+          if (latestRoomTransfer.to_accommodation_id) {
+            console.log("  - Assigning new room logic:", latestRoomTransfer.to_accommodation_id);
+            const others = [
+              ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === latestRoomTransfer.to_accommodation_id && r.Status === 'Active'),
+              ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestRoomTransfer.to_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active')
+            ];
+            const allNames = [...others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`), `${savedResident["First Name"]} ${savedResident["Last Name"]}`];
+            const hasAllocated = (allocatedResidents || []).some(ar => (ar["Accommodation ID"] || ar.accommodation_id) === latestRoomTransfer.to_accommodation_id && (ar.Status || ar.status || '').toLowerCase() === 'active');
+
+            await supabase
+              .from('accommodations')
+              .update({
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+                "Current Resident ID": editingResident.ID,
+                "Lease Start Date": latestRoomTransfer.transfer_date || now,
+                "Current Resident Name": [...new Set(allNames)].join(', ')
+              })
+              .eq('ID', latestRoomTransfer.to_accommodation_id);
+          }
+        }
+        else if (newStatus === 'Active' && !newAccommodationId && originalAccommodationId) {
+          console.log("📍 Removing accommodation assignment logic:", originalAccommodationId);
+
+          const others = [
+            ...residents.filter(r => r.ID !== editingResident.ID && r["Accommodation ID"] === originalAccommodationId && r.Status === 'Active'),
+            ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === originalAccommodationId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+
+          if (others.length === 0) {
             await supabase
               .from('accommodations')
               .update({
                 "Availability Status": 'Available',
                 "Current Resident ID": null,
                 "Lease Start Date": null,
-                "Lease End Date": latestRoomTransfer.transfer_date || now,
+                "Lease End Date": residentData["Move-out Date"] || now,
                 "Current Resident Name": null
               })
-              .eq('ID', latestRoomTransfer.from_accommodation_id);
-          }
-          
-          // Assign new room
-          if (latestRoomTransfer.to_accommodation_id) {
-            console.log("  - Assigning new room:", latestRoomTransfer.to_accommodation_id);
+              .eq('ID', originalAccommodationId);
+          } else {
+            const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+            const hasAllocated = (allocatedResidents || []).some(ar =>
+              (ar["Accommodation ID"] || ar.accommodation_id) === originalAccommodationId &&
+              (ar.Status || ar.status || '').toLowerCase() === 'active'
+            );
             await supabase
               .from('accommodations')
               .update({
-                "Availability Status": 'Occupied',
-                "Current Resident ID": editingResident.ID,
-                "Lease Start Date": latestRoomTransfer.transfer_date || now,
-                 "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}` 
+                "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+                "Current Resident ID": others[0].ID || others[0].id,
+                "Current Resident Name": names.join(', ')
               })
-              .eq('ID', latestRoomTransfer.to_accommodation_id);
+              .eq('ID', originalAccommodationId);
           }
-        }
-        else if (newStatus === 'Active' && !newAccommodationId && originalAccommodationId) {
-          console.log("📍 Removing accommodation assignment:", originalAccommodationId);
-          // Remove accommodation assignment
-          await supabase
-            .from('accommodations')
-            .update({
-              "Availability Status": 'Available',
-              "Current Resident ID": null,
-              "Lease Start Date": null,
-              "Lease End Date": residentData["Move-out Date"] || now,
-              "Current Resident Name": null
-            })
-            .eq('ID', originalAccommodationId);
         }
 
       } else {
@@ -388,17 +505,31 @@ useEffect(() => {
         console.log("✅ New resident created:", savedResident.ID + savedResident["First Name"]);
         
         // Mark accommodation as occupied if assigned
-        console.log("New Resident Status for accommodation update:", savedResident.Status); // <--- ADD THIS
-      console.log("New Resident Accommodation ID for accommodation update:", savedResident["Accommodation ID"]); // <--- ADD THIS
         if (savedResident.Status === 'Active' && savedResident["Accommodation ID"]) {
           console.log("📍 Marking accommodation as occupied:", savedResident["Accommodation ID"]);
+
+          const othersInRoom = [
+            ...(residents || []).filter(r => r.ID !== savedResident.ID && r["Accommodation ID"] === savedResident["Accommodation ID"] && r.Status === 'Active'),
+            ...(allocatedResidents || []).filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === savedResident["Accommodation ID"] && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+
+          const allNames = [
+            ...othersInRoom.map(r => `${r["First Name"] || r.first_name} ${r["Last Name"] || r.last_name}`),
+            `${savedResident["First Name"]} ${savedResident["Last Name"]}`
+          ];
+
+          const hasAllocated = (allocatedResidents || []).some(ar =>
+            (ar["Accommodation ID"] || ar.accommodation_id) === savedResident["Accommodation ID"] &&
+            (ar.Status || ar.status || '').toLowerCase() === 'active'
+          );
+
           await supabase
             .from('accommodations')
             .update({
-              "Availability Status": 'Occupied',
+              "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
               "Current Resident ID": savedResident.ID,
               "Lease Start Date": savedResident["Move-in Date"] || now,
-               "Current Resident Name": `${savedResident["First Name"]} ${savedResident["Last Name"]}`
+               "Current Resident Name": [...new Set(allNames)].join(', ')
             })
             .eq('ID', savedResident["Accommodation ID"]);
         }
@@ -443,6 +574,32 @@ useEffect(() => {
 
         if (error) throw error;
         console.log(`✅ Soft deleted resident ${resident.ID}`);
+
+        const accId = resident["Accommodation ID"];
+        if (accId) {
+          const others = [
+            ...residents.filter(r => r.ID !== resident.ID && r["Accommodation ID"] === accId && r.Status === 'Active'),
+            ...allocatedResidents.filter(ar => (ar["Accommodation ID"] || ar.accommodation_id) === accId && (ar.Status || ar.status || '').toLowerCase() === 'active')
+          ];
+
+          if (others.length === 0) {
+            await supabase.from('accommodations').update({
+              "Availability Status": 'Available',
+              "Current Resident ID": null,
+              "Current Resident Name": null,
+              "Lease End Date": new Date().toISOString().slice(0, 10)
+            }).eq('ID', accId);
+          } else {
+            const names = others.map(o => `${o["First Name"] || o.first_name} ${o["Last Name"] || o.last_name}`);
+            const hasAllocated = (allocatedResidents || []).some(ar => (ar["Accommodation ID"] || ar.accommodation_id) === accId && (ar.Status || ar.status || '').toLowerCase() === 'active');
+            await supabase.from('accommodations').update({
+              "Availability Status": hasAllocated ? 'Allocated Residents' : 'Occupied',
+              "Current Resident ID": others[0].ID || others[0].id,
+              "Current Resident Name": names.join(', ')
+            }).eq('ID', accId);
+          }
+        }
+
         await loadData();
       } catch (error) {
         console.error("Error deleting resident:", error);
@@ -756,6 +913,8 @@ useEffect(() => {
             <ResidentForm_Supabase
               resident={editingResident}
               accommodations={accommodations}
+              residents={residents}
+              otherResidents={allocatedResidents}
               onSubmit={handleSubmit}
               onCancel={() => {
                 setShowForm(false);
@@ -771,6 +930,8 @@ useEffect(() => {
           <ResidentForm_Supabase
             resident={null}
             accommodations={accommodations}
+            residents={residents}
+            otherResidents={allocatedResidents}
             onSubmit={handleSubmit}
             onCancel={() => {
               setShowForm(false);

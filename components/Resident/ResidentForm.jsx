@@ -52,7 +52,7 @@ const getDaySuffix = (day) => {
   }
 };
 
-export default function ResidentForm_Supabase({ resident, accommodations, onSubmit, onCancel }) {
+export default function ResidentForm_Supabase({ resident, accommodations, residents, otherResidents, onSubmit, onCancel }) {
   console.log("Accommodations prop received by ResidentForm:", accommodations); // Add this line here
   const [properties, setProperties] = useState([]);
     const supabase = useClerkSupabaseClient()
@@ -829,13 +829,20 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
                             // Only show units for the selected property
                             if (unit["Property ID"] !== formData["Property ID"]) return false;
                             
-                            // If editing an existing resident, allow their current accommodation
-                            if (resident && unit.ID === resident["Accommodation ID"]) return true;
+                            // Calculate current occupancy including both resident types
+                            const currentResidentsCount = (residents || []).filter(r =>
+                              (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
+                              (r.Status || r.status || '').toLowerCase() === 'active' &&
+                              r.ID !== resident?.ID
+                            ).length + (otherResidents || []).filter(r =>
+                              (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
+                              (r.Status || r.status || '').toLowerCase() === 'active'
+                            ).length;
+
+                            const maxOccupancy = unit["Max Occupancy"] || 1;
                             
-                            // Otherwise, only show available rooms (not occupied by another resident)
-                            const isOccupied = unit["Availability Status"] === "Occupied" || 
-                                              (unit["Current Resident ID"] && unit["Current Resident ID"] !== resident?.ID);
-                            return !isOccupied;
+                            // Show room if there is space available
+                            return currentResidentsCount < maxOccupancy || (resident && unit.ID === resident["Accommodation ID"]);
                           })
                           .map(unit => (
                               <SelectItem key={unit.ID} value={unit.ID}>
@@ -851,10 +858,18 @@ export default function ResidentForm_Supabase({ resident, accommodations, onSubm
                   )}
                   {formData["Property ID"] && accommodations.filter(unit => {
                     if (unit["Property ID"] !== formData["Property ID"]) return false;
-                    if (resident && unit.ID === resident["Accommodation ID"]) return false;
-                    const isOccupied = unit["Availability Status"] === "Occupied" || 
-                                      (unit["Current Resident ID"] && unit["Current Resident ID"] !== resident?.ID);
-                    return !isOccupied;
+
+                    const currentResidentsCount = (residents || []).filter(r =>
+                      (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
+                      (r.Status || r.status || '').toLowerCase() === 'active' &&
+                      r.ID !== resident?.ID
+                    ).length + (otherResidents || []).filter(r =>
+                      (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
+                      (r.Status || r.status || '').toLowerCase() === 'active'
+                    ).length;
+
+                    const maxOccupancy = unit["Max Occupancy"] || 1;
+                    return currentResidentsCount < maxOccupancy || (resident && unit.ID === resident["Accommodation ID"]);
                   }).length === 0 && (
                     <p className="text-xs text-amber-600 mt-1">
                       ⚠️ No available rooms in this property. All rooms are currently occupied.
