@@ -74,6 +74,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
 
   useEffect(() => {
     const loadProperties = async () => {
+      if (!supabase) return;
       const { data, error } = await supabase.from('properties').select('*');
       if (!error) setProperties(data || []);
     };
@@ -232,11 +233,13 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
                 <div><Label>Status *</Label><Select value={formData.Status} onValueChange={(v) => handleChange("Status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Moved On">Moved On</SelectItem></SelectContent></Select></div>
                 <div><Label>Move-in Date</Label><Input type="date" value={formData["Move-in Date"]} onChange={(e) => handleChange("Move-in Date", e.target.value)} /></div>
                 <div className="md:col-span-2"><Label>Property Address</Label><Select value={formData["Property ID"]} onValueChange={(v) => { const p = properties.find(prop => prop.ID === v); setFormData(prev => ({ ...prev, "Property ID": v, "Property Name": p?.Name || "", "Property Address": p?.Address || "", "Accommodation ID": "", "Unit/Room Number": "" })); }}><SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger><SelectContent>{properties.map(p => <SelectItem key={p.ID} value={p.ID}>{p.Name} - {p.Address}</SelectItem>)}</SelectContent></Select></div>
-                <div className="md:col-span-2"><Label>Unit/Room</Label><Select value={formData["Accommodation ID"]} onValueChange={(v) => { const a = accommodations.find(acc => acc.ID === v); setFormData(prev => ({ ...prev, "Accommodation ID": v, "Unit/Room Number": a?.["Room Number"] || "", "Accommodation Type": a?.["Accommodation Type"] || prev["Accommodation Type"] })); }} disabled={!formData["Property ID"]}><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger><SelectContent>{accommodations.filter(u => {
-                  if (u["Property ID"] !== formData["Property ID"]) return false;
+                <div className="md:col-span-2"><Label>Unit/Room</Label><Select value={formData["Accommodation ID"]} onValueChange={(v) => { const a = accommodations.find(acc => acc.ID === v); setFormData(prev => ({ ...prev, "Accommodation ID": v, "Unit/Room Number": a?.["Room Number"] || "", "Accommodation Type": a?.["Accommodation Type"] || prev["Accommodation Type"] })); }} disabled={!formData["Property ID"]}><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger><SelectContent>{accommodations.filter(u => u["Property ID"] === formData["Property ID"]).map(u => {
                   const curCount = (allocatedResidents || []).filter(r => (r["Accommodation ID"] || r.accommodation_id) === u.ID && (r.Status || r.status || '').toLowerCase() === 'active' && (r.ID || r.id) !== (resident?.ID || resident?.id)).length + (otherResidents || []).filter(r => (r["Accommodation ID"] || r.accommodation_id) === u.ID && (r.Status || r.status || '').toLowerCase() === 'active').length;
-                  return curCount < (u["Max Occupancy"] || 1) || u.ID === resident?.["Accommodation ID"];
-                }).map(u => (<SelectItem key={u.ID} value={u.ID}>{u["Room Number"]} ({u["Accommodation Type"]})</SelectItem>))}</SelectContent></Select></div>
+                  const isOccupied = curCount > 0;
+                  const maxOcc = u["Max Occupancy"] || 1;
+                  const labelSuffix = isOccupied ? ` (Occupied: ${curCount}/${maxOcc})` : "";
+                  return (<SelectItem key={u.ID} value={u.ID}>{u["Room Number"]} ({u["Accommodation Type"]}){labelSuffix}</SelectItem>);
+                })}</SelectContent></Select></div>
                 <div><Label>Support Worker</Label><Select value={formData["Support Worker"]} onValueChange={(v) => handleChange("Support Worker", v)}><SelectTrigger><SelectValue placeholder="Select SW" /></SelectTrigger><SelectContent><SelectItem value="none">None</SelectItem><SelectItem value="Hasib">Hasib</SelectItem></SelectContent></Select></div>
               </div>
             </div>

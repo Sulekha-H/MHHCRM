@@ -159,6 +159,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
 
   useEffect(() => {
     const loadInitialData = async () => {
+      if (!supabase) return;
       try {
         const { data: propertiesData, error } = await supabase.from('properties').select('*');
         if (error) throw error;
@@ -168,7 +169,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
       }
     };
     loadInitialData();
-  }, []);
+  }, [supabase]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -825,11 +826,8 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     </SelectTrigger>
                     <SelectContent>
                       {accommodations
-                          .filter(unit => {
-                            // Only show units for the selected property
-                            if (unit["Property ID"] !== formData["Property ID"]) return false;
-                            
-                            // Calculate current occupancy including both resident types
+                          .filter(unit => unit["Property ID"] === formData["Property ID"])
+                          .map(unit => {
                             const currentResidentsCount = (residents || []).filter(r =>
                               (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
                               (r.Status || r.status || '').toLowerCase() === 'active' &&
@@ -839,16 +837,16 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                               (r.Status || r.status || '').toLowerCase() === 'active'
                             ).length;
 
-                            const maxOccupancy = unit["Max Occupancy"] || 1;
-                            
-                            // Show room if there is space available
-                            return currentResidentsCount < maxOccupancy || (resident && unit.ID === resident["Accommodation ID"]);
-                          })
-                          .map(unit => (
+                            const isOccupied = currentResidentsCount > 0;
+                            const maxOcc = unit["Max Occupancy"] || 1;
+                            const labelSuffix = isOccupied ? ` (Occupied: ${currentResidentsCount}/${maxOcc})` : "";
+
+                            return (
                               <SelectItem key={unit.ID} value={unit.ID}>
-                                {unit["Room Number"]} ({unit["Accommodation Type"]})
+                                {unit["Room Number"]} ({unit["Accommodation Type"]}){labelSuffix}
                               </SelectItem>
-                          ))}
+                            );
+                          })}
                     </SelectContent>
                   </Select>
                   {formData["Accommodation ID"] && (
@@ -856,23 +854,9 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                       Selected: {accommodations.find(a => a.ID === formData["Accommodation ID"])?.["Room Number"] || "N/A"}
                     </p>
                   )}
-                  {formData["Property ID"] && accommodations.filter(unit => {
-                    if (unit["Property ID"] !== formData["Property ID"]) return false;
-
-                    const currentResidentsCount = (residents || []).filter(r =>
-                      (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
-                      (r.Status || r.status || '').toLowerCase() === 'active' &&
-                      r.ID !== resident?.ID
-                    ).length + (otherResidents || []).filter(r =>
-                      (r["Accommodation ID"] || r.accommodation_id) === unit.ID &&
-                      (r.Status || r.status || '').toLowerCase() === 'active'
-                    ).length;
-
-                    const maxOccupancy = unit["Max Occupancy"] || 1;
-                    return currentResidentsCount < maxOccupancy || (resident && unit.ID === resident["Accommodation ID"]);
-                  }).length === 0 && (
+                  {formData["Property ID"] && accommodations.filter(unit => unit["Property ID"] === formData["Property ID"]).length === 0 && (
                     <p className="text-xs text-amber-600 mt-1">
-                      ⚠️ No available rooms in this property. All rooms are currently occupied.
+                      ⚠️ No rooms found in this property.
                     </p>
                   )}
                 </div>
