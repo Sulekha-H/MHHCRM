@@ -840,6 +840,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                             const isOccupied = currentResidentsCount > 0;
                             const maxOcc = unit["Max Occupancy"] || 1;
                             const labelSuffix = isOccupied ? ` (Occupied: ${currentResidentsCount}/${maxOcc})` : "";
+                            const isFullyOccupied = currentResidentsCount >= maxOcc;
 
                             return (
                               <SelectItem key={unit.ID} value={unit.ID}>

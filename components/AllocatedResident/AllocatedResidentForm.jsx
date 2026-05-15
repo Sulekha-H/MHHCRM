@@ -238,6 +238,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
                   const isOccupied = curCount > 0;
                   const maxOcc = u["Max Occupancy"] || 1;
                   const labelSuffix = isOccupied ? ` (Occupied: ${curCount}/${maxOcc})` : "";
+                  const isFullyOccupied = curCount >= maxOcc;
                   return (<SelectItem key={u.ID} value={u.ID}>{u["Room Number"]} ({u["Accommodation Type"]}){labelSuffix}</SelectItem>);
                 })}</SelectContent></Select></div>
                 <div><Label>Support Worker</Label><Select value={formData["Support Worker"]} onValueChange={(v) => handleChange("Support Worker", v)}><SelectTrigger><SelectValue placeholder="Select SW" /></SelectTrigger><SelectContent><SelectItem value="none">None</SelectItem><SelectItem value="Hasib">Hasib</SelectItem></SelectContent></Select></div>

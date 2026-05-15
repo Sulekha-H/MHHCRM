@@ -106,16 +106,25 @@ export default function AccommodationCard({
     >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
-          {previewUrl && (
+          {previewUrl ? (
             <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
               <img
                 src={previewUrl}
                 alt={roomNumber}
                 className="w-full h-full object-cover"
                 onError={(e) => {
+                  e.target.onerror = null;
                   e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
                 }}
               />
+              <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600">
+                <Home className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          ) : (
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+              <Home className="w-6 h-6 text-white" />
             </div>
           )}
           <div className="flex-1 min-w-0">
