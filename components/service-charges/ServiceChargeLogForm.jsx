@@ -210,14 +210,50 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
               </div>
 
               <div>
+                <Label htmlFor="monthly_amount" className="mb-2 block">Amount Due (£) *</Label>
+                <Input
+                  id="monthly_amount"
+                  type="number"
+                  step="0.01"
+                  value={formData.monthly_amount}
+                  onChange={(e) => {
+                    const valStr = e.target.value;
+                    const val = parseFloat(valStr) || 0;
+                    setFormData(prev => {
+                      const newState = { ...prev, monthly_amount: valStr };
+                      if (prev.payment_status === 'partially_paid') {
+                        const amountPaid = parseFloat(prev.amount_paid) || 0;
+                        newState.balance_owed = Math.max(0, val - amountPaid).toString();
+                      }
+                      return newState;
+                    });
+                  }}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  required
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="payment_status" className="mb-2 block">Payment Status *</Label>
                 <Select
                   value={formData.payment_status}
                   onValueChange={(value) => {
-                    handleChange("payment_status", value);
-                    if (value === 'paid' && !formData.date_paid) {
-                      handleChange("date_paid", new Date().toISOString().split('T')[0]);
-                    }
+                    setFormData(prev => {
+                      const newState = { ...prev, payment_status: value };
+                      if (value === 'paid' && !prev.date_paid) {
+                        newState.date_paid = new Date().toISOString().split('T')[0];
+                      }
+                      if (value === 'partially_paid') {
+                        const monthly = parseFloat(prev.monthly_amount) || 0;
+                        const paid = parseFloat(prev.amount_paid) || 0;
+                        if (paid === 0) {
+                          newState.balance_owed = monthly.toString();
+                        } else {
+                          newState.balance_owed = Math.max(0, monthly - paid).toString();
+                        }
+                      }
+                      return newState;
+                    });
                   }}
                   required
                 >
@@ -247,11 +283,14 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                           const val = parseFloat(valStr) || 0;
                           setFormData(prev => {
                             const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
-                            return {
-                              ...prev,
-                              amount_paid: valStr,
-                              balance_owed: monthlyAmount > 0 ? Math.max(0, monthlyAmount - val).toString() : prev.balance_owed
-                            };
+                            const balanceOwed = parseFloat(prev.balance_owed) || 0;
+                            const newState = { ...prev, amount_paid: valStr };
+                            if (monthlyAmount > 0 && val <= monthlyAmount) {
+                              newState.balance_owed = Math.max(0, monthlyAmount - val).toString();
+                            } else {
+                              newState.monthly_amount = (val + balanceOwed).toString();
+                            }
+                            return newState;
                           });
                         }}
                         className="border-amber-200 focus-visible:ring-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -269,11 +308,11 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                           const valStr = e.target.value;
                           const val = parseFloat(valStr) || 0;
                           setFormData(prev => {
-                            const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
+                            const amountPaid = parseFloat(prev.amount_paid) || 0;
                             return {
                               ...prev,
                               balance_owed: valStr,
-                              amount_paid: monthlyAmount > 0 ? Math.max(0, monthlyAmount - val).toString() : prev.amount_paid
+                              monthly_amount: (amountPaid + val).toString()
                             };
                           });
                         }}
@@ -290,30 +329,6 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                   </div>
                 </div>
               )}
-
-              <div>
-                <Label htmlFor="monthly_amount" className="mb-2 block">Amount Due (£) *</Label>
-                <Input
-                  id="monthly_amount"
-                  type="number"
-                  step="0.01"
-                  value={formData.monthly_amount}
-                  onChange={(e) => {
-                    const valStr = e.target.value;
-                    const val = parseFloat(valStr) || 0;
-                    setFormData(prev => ({
-                      ...prev,
-                      monthly_amount: valStr,
-                      // When amount due changes, reset amount paid/balance owed if it's partially paid
-                      ...(prev.payment_status === 'partially_paid' ? {
-                        balance_owed: Math.max(0, val - (parseFloat(prev.amount_paid) || 0)).toString()
-                      } : {})
-                    }));
-                  }}
-                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  required
-                />
-              </div>
 
               <div>
                 <Label htmlFor="payment_type" className="mb-2 block">Payment Type *</Label>

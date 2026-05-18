@@ -599,7 +599,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                       />
                       <Label
                         htmlFor="uasc_info_added"
-                        className="text-red-600 font-bold text-[10px] uppercase leading-tight cursor-pointer"
+                        className="text-red-600 font-bold text-xs uppercase leading-tight cursor-pointer"
                       >
                         info added to "NEW PLACEMENTS- OFFICE" GC *
                       </Label>
