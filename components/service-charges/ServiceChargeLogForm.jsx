@@ -210,7 +210,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
               </div>
 
               <div>
-                <Label htmlFor="monthly_amount" className="mb-2 block">Total Amount Due (£) *</Label>
+                <Label htmlFor="monthly_amount" className="mb-2 block">Amount Owed (£) *</Label>
                 <Input
                   id="monthly_amount"
                   type="number"
@@ -223,7 +223,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                       const newState = { ...prev, monthly_amount: valStr };
                       if (prev.payment_status === 'partially_paid') {
                         const amountPaid = parseFloat(prev.amount_paid) || 0;
-                        newState.balance_owed = Math.max(0, val - amountPaid).toString();
+                        newState.balance_owed = (val - amountPaid).toString();
                       } else if (prev.payment_status === 'paid') {
                         newState.amount_paid = valStr;
                         newState.balance_owed = "0";
@@ -298,7 +298,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                             const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
                             const newState = { ...prev, amount_paid: valStr };
                             if (monthlyAmount > 0) {
-                              newState.balance_owed = Math.max(0, monthlyAmount - val).toString();
+                              newState.balance_owed = (monthlyAmount - val).toString();
                             }
                             return newState;
                           });
@@ -321,7 +321,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                             const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
                             const newState = { ...prev, balance_owed: valStr };
                             if (monthlyAmount > 0) {
-                              newState.amount_paid = Math.max(0, monthlyAmount - val).toString();
+                              newState.amount_paid = (monthlyAmount - val).toString();
                             }
                             return newState;
                           });
@@ -336,6 +336,9 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                     <span className="font-semibold text-amber-900">
                       £{parseFloat(formData.monthly_amount || 0).toFixed(2)}
                     </span>
+                  </div>
+                  <div className="text-[10px] text-amber-600 italic mt-1">
+                    Formula: Remaining Balance = Amount Owed - Amount Paid
                   </div>
                 </div>
               )}
