@@ -62,7 +62,8 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     "Date of Birth": "",
     "Phone Number": "",
     "Email Address": "",
-    "Resident Type": "Standard resident", // <--- Add this line
+    "Resident Type": "Standard resident",
+    "UASC Info Added": false,
     "Accommodation Type": "Shared House",
     "Property Address": "",
     "Property ID": "",
@@ -118,7 +119,8 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
       
       setFormData({
         ...resident,
-        "Resident Type": resident["Resident Type"] || "Standard resident", // <--- ADD THIS LINE
+        "Resident Type": resident["Resident Type"] || "Standard resident",
+        "UASC Info Added": resident["UASC Info Added"] || false,
         "Fluent English": resident["Fluent English"] || false,
         "Partial English": resident["Partial English"] || false,
         "Language Spoken": resident["Language Spoken"] || "",
@@ -140,6 +142,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     } else {
       setFormData({
         "First Name": "", "Last Name": "", "Date of Birth": "", "Phone Number": "", "Email Address": "",
+        "Resident Type": "Standard resident", "UASC Info Added": false,
         "Accommodation Type": "Shared House", "Property Address": "", "Property ID": "", "Accommodation ID": "",
         "Move-in Date": "", "Move-out Date": "", "Support Level": "Medium", "Support Worker": "",
         "Emergency Contact Name": "", "Emergency Contact Phone": "",
@@ -175,6 +178,11 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     e.preventDefault();
     
     console.log("🚀 FORM SUBMIT - Starting...");
+
+    if (formData["Resident Type"] === "UASC placement" && !formData["UASC Info Added"]) {
+      alert("Please confirm that info has been added to 'NEW PLACEMENTS- OFFICE' GC");
+      return;
+    }
     console.log("   Form Data Property ID:", formData["Property ID"]);
     console.log("   Form Data Accommodation ID:", formData["Accommodation ID"]);
     
@@ -579,6 +587,24 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                       <SelectItem value="UASC placement">UASC Placement</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {formData["Resident Type"] === "UASC placement" && (
+                    <div className="flex items-center space-x-2 mt-3 p-2 border border-red-200 bg-red-50 rounded-md">
+                      <input
+                        type="checkbox"
+                        id="uasc_info_added"
+                        checked={formData["UASC Info Added"]}
+                        onChange={(e) => handleChange("UASC Info Added", e.target.checked)}
+                        className="w-4 h-4 accent-red-600"
+                      />
+                      <Label
+                        htmlFor="uasc_info_added"
+                        className="text-red-600 font-bold text-[10px] uppercase leading-tight cursor-pointer"
+                      >
+                        info added to "NEW PLACEMENTS- OFFICE" GC *
+                      </Label>
+                    </div>
+                  )}
                 </div>
                 {/* --- END RESIDENT TYPE DROPDOWN --- */}
                 <div>
