@@ -308,7 +308,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                       />
                     </div>
                     <div>
-                      <Label htmlFor="balance_owed" className="mb-2 block text-amber-900 font-medium text-sm">Remaining Balance (£) *</Label>
+                      <Label htmlFor="balance_owed" className="mb-2 block text-amber-900 font-medium text-sm">Balance Remaining (£) *</Label>
                       <Input
                         id="balance_owed"
                         type="number"

@@ -89,6 +89,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     "Accommodation Transfers": [],
     "Google Drive Link": "",
     "Photo ID URL": "",
+    "Resident Photographic Link": "",
     "PA/Worker Name": "",
     "PA/Worker Contact": "",
     "PA/Worker Email": "",
@@ -128,6 +129,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "PA/Worker Name": resident["PA/Worker Name"] || "",
         "PA/Worker Contact": resident["PA/Worker Contact"] || "",
         "PA/Worker Email": resident["PA/Worker Email"] || "",
+        "Resident Photographic Link": resident["Resident Photographic Link"] || "",
         "PA/Worker Borough": resident["PA/Worker Borough"] || "",
         "PA/Worker Team": resident["PA/Worker Team"] || "",
         "PA/Worker Duty Line": resident["PA/Worker Duty Line"] || "",
@@ -150,7 +152,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Medical Conditions": "",
         "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
         "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
-        "Google Drive Link": "", "Photo ID URL": "",
+        "Google Drive Link": "", "Photo ID URL": "", "Resident Photographic Link": "",
         "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
         "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
       });
@@ -1308,7 +1310,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                 <div>
                   <Label htmlFor="photo_id_url" className="flex items-center gap-2 mb-2">
                     <Camera className="w-4 h-4" />
-                    Photo ID URL (Google Drive)
+                    Photo of Individual (Google Drive)
                   </Label>
                   <div className="flex gap-2">
                     <Input
@@ -1349,6 +1351,19 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                       Unable to load preview. The link may not be publicly accessible or may not be a direct image link.
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="resident_photographic_link" className="flex items-center gap-2 mb-2">
+                    <Link2 className="w-4 h-4" />
+                    Resident Photographic Link (Google Drive)
+                  </Label>
+                  <Input
+                    id="resident_photographic_link"
+                    value={formData["Resident Photographic Link"] || ""}
+                    onChange={(e) => handleChange("Resident Photographic Link", e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                  />
                 </div>
                 
                 <div>
