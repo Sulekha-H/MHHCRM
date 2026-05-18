@@ -17,9 +17,9 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
         resident_id: charge.resident_id || "",
         due_date: charge.due_date || "",
         date_paid: charge.date_paid || "",
-        monthly_amount: charge.monthly_amount || 0,
-        amount_paid: charge.amount_paid || 0,
-        balance_owed: charge.balance_owed || 0,
+        monthly_amount: charge.monthly_amount?.toString() || "0",
+        amount_paid: charge.amount_paid?.toString() || "0",
+        balance_owed: charge.balance_owed?.toString() || "0",
         payment_type: charge.payment_type === 'Card' ? 'bank_transfer' : charge.payment_type === 'bank_transfer' ? 'bank_transfer' : 'cash_payment',
         payment_status: charge.payment_status || "due",
         status: charge.status?.toLowerCase() || "active",
@@ -33,9 +33,9 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       resident_id: "",
       due_date: "",
       date_paid: "",
-      monthly_amount: 0,
-      amount_paid: 0,
-      balance_owed: 0,
+      monthly_amount: "0",
+      amount_paid: "0",
+      balance_owed: "0",
       payment_type: "bank_transfer",
       payment_status: "due",
       status: "active",
@@ -243,12 +243,16 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                         step="0.01"
                         value={formData.amount_paid}
                         onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setFormData(prev => ({
-                            ...prev,
-                            amount_paid: val,
-                            balance_owed: Math.max(0, parseFloat(prev.monthly_amount || 0) - val)
-                          }));
+                          const valStr = e.target.value;
+                          const val = parseFloat(valStr) || 0;
+                          setFormData(prev => {
+                            const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
+                            return {
+                              ...prev,
+                              amount_paid: valStr,
+                              balance_owed: monthlyAmount > 0 ? Math.max(0, monthlyAmount - val).toString() : prev.balance_owed
+                            };
+                          });
                         }}
                         className="border-amber-200 focus-visible:ring-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         required
@@ -262,12 +266,16 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                         step="0.01"
                         value={formData.balance_owed}
                         onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 0;
-                          setFormData(prev => ({
-                            ...prev,
-                            balance_owed: val,
-                            amount_paid: Math.max(0, parseFloat(prev.monthly_amount || 0) - val)
-                          }));
+                          const valStr = e.target.value;
+                          const val = parseFloat(valStr) || 0;
+                          setFormData(prev => {
+                            const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
+                            return {
+                              ...prev,
+                              balance_owed: valStr,
+                              amount_paid: monthlyAmount > 0 ? Math.max(0, monthlyAmount - val).toString() : prev.amount_paid
+                            };
+                          });
                         }}
                         className="border-amber-200 focus-visible:ring-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         required
@@ -291,13 +299,14 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                   step="0.01"
                   value={formData.monthly_amount}
                   onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
+                    const valStr = e.target.value;
+                    const val = parseFloat(valStr) || 0;
                     setFormData(prev => ({
                       ...prev,
-                      monthly_amount: val,
+                      monthly_amount: valStr,
                       // When amount due changes, reset amount paid/balance owed if it's partially paid
                       ...(prev.payment_status === 'partially_paid' ? {
-                        balance_owed: Math.max(0, val - parseFloat(prev.amount_paid || 0))
+                        balance_owed: Math.max(0, val - (parseFloat(prev.amount_paid) || 0)).toString()
                       } : {})
                     }));
                   }}
