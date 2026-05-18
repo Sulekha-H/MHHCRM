@@ -19,6 +19,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
         date_paid: charge.date_paid || "",
         monthly_amount: charge.monthly_amount || 0,
         amount_paid: charge.amount_paid || 0,
+        balance_owed: charge.balance_owed || 0,
         payment_type: charge.payment_type === 'Card' ? 'bank_transfer' : charge.payment_type === 'bank_transfer' ? 'bank_transfer' : 'cash_payment',
         payment_status: charge.payment_status || "due",
         status: charge.status?.toLowerCase() || "active",
@@ -34,6 +35,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
       date_paid: "",
       monthly_amount: 0,
       amount_paid: 0,
+      balance_owed: 0,
       payment_type: "bank_transfer",
       payment_status: "due",
       status: "active",
@@ -122,9 +124,14 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
     };
 
     let finalNotes = formData.notes || "";
+
+    // First, remove any existing partial payment tags to avoid duplication
+    finalNotes = finalNotes.replace(/\[PARTIAL_PAYMENT: amount_paid=[\d.]+, balance_owed=[\d.]+\]\s*/g, "").trim();
+
     if (formData.payment_status === 'partially_paid') {
-      const balanceOwed = Math.max(0, parseFloat(formData.monthly_amount) - parseFloat(formData.amount_paid));
-      const partialInfo = `[PARTIAL_PAYMENT: amount_paid=${formData.amount_paid}, balance_owed=${balanceOwed}]`;
+      const amountPaid = parseFloat(formData.amount_paid) || 0;
+      const balanceOwed = parseFloat(formData.balance_owed) || 0;
+      const partialInfo = `[PARTIAL_PAYMENT: amount_paid=${amountPaid}, balance_owed=${balanceOwed}]`;
       finalNotes = `${partialInfo} ${finalNotes}`.trim();
     }
 
@@ -227,22 +234,50 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
 
               {formData.payment_status === 'partially_paid' && (
                 <div className="bg-amber-50 p-4 rounded-lg border border-amber-100 space-y-4">
-                  <div>
-                    <Label htmlFor="amount_paid" className="mb-2 block text-amber-900 font-medium text-sm">Amount Paid (£) *</Label>
-                    <Input
-                      id="amount_paid"
-                      type="number"
-                      step="0.01"
-                      value={formData.amount_paid}
-                      onChange={(e) => handleChange("amount_paid", parseFloat(e.target.value) || 0)}
-                      className="border-amber-200 focus-visible:ring-amber-500"
-                      required
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="amount_paid" className="mb-2 block text-amber-900 font-medium text-sm">Amount Paid (£) *</Label>
+                      <Input
+                        id="amount_paid"
+                        type="number"
+                        step="0.01"
+                        value={formData.amount_paid}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setFormData(prev => ({
+                            ...prev,
+                            amount_paid: val,
+                            balance_owed: Math.max(0, parseFloat(prev.monthly_amount || 0) - val)
+                          }));
+                        }}
+                        className="border-amber-200 focus-visible:ring-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="balance_owed" className="mb-2 block text-amber-900 font-medium text-sm">Balance Owed (£) *</Label>
+                      <Input
+                        id="balance_owed"
+                        type="number"
+                        step="0.01"
+                        value={formData.balance_owed}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setFormData(prev => ({
+                            ...prev,
+                            balance_owed: val,
+                            amount_paid: Math.max(0, parseFloat(prev.monthly_amount || 0) - val)
+                          }));
+                        }}
+                        className="border-amber-200 focus-visible:ring-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        required
+                      />
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-amber-700">Remaining Balance:</span>
-                    <span className="font-bold text-amber-900">
-                      £{Math.max(0, parseFloat(formData.monthly_amount || 0) - parseFloat(formData.amount_paid || 0)).toFixed(2)}
+                  <div className="flex justify-between items-center text-xs pt-2 border-t border-amber-200">
+                    <span className="text-amber-700 italic">Total Due check:</span>
+                    <span className="font-semibold text-amber-900">
+                      £{(parseFloat(formData.amount_paid || 0) + parseFloat(formData.balance_owed || 0)).toFixed(2)} / £{parseFloat(formData.monthly_amount || 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -255,7 +290,17 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                   type="number"
                   step="0.01"
                   value={formData.monthly_amount}
-                  onChange={(e) => handleChange("monthly_amount", parseFloat(e.target.value))}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    setFormData(prev => ({
+                      ...prev,
+                      monthly_amount: val,
+                      // When amount due changes, reset amount paid/balance owed if it's partially paid
+                      ...(prev.payment_status === 'partially_paid' ? {
+                        balance_owed: Math.max(0, val - parseFloat(prev.amount_paid || 0))
+                      } : {})
+                    }));
+                  }}
                   className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   required
                 />
