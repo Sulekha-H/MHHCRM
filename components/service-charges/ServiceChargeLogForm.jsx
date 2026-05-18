@@ -210,7 +210,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
               </div>
 
               <div>
-                <Label htmlFor="monthly_amount" className="mb-2 block">Amount Due (£) *</Label>
+                <Label htmlFor="monthly_amount" className="mb-2 block">Total Amount Due (£) *</Label>
                 <Input
                   id="monthly_amount"
                   type="number"
@@ -224,6 +224,12 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                       if (prev.payment_status === 'partially_paid') {
                         const amountPaid = parseFloat(prev.amount_paid) || 0;
                         newState.balance_owed = Math.max(0, val - amountPaid).toString();
+                      } else if (prev.payment_status === 'paid') {
+                        newState.amount_paid = valStr;
+                        newState.balance_owed = "0";
+                      } else {
+                        newState.balance_owed = valStr;
+                        newState.amount_paid = "0";
                       }
                       return newState;
                     });
@@ -240,17 +246,24 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                   onValueChange={(value) => {
                     setFormData(prev => {
                       const newState = { ...prev, payment_status: value };
-                      if (value === 'paid' && !prev.date_paid) {
-                        newState.date_paid = new Date().toISOString().split('T')[0];
-                      }
-                      if (value === 'partially_paid') {
-                        const monthly = parseFloat(prev.monthly_amount) || 0;
+                      const monthly = parseFloat(prev.monthly_amount) || 0;
+
+                      if (value === 'paid') {
+                        if (!prev.date_paid) {
+                          newState.date_paid = new Date().toISOString().split('T')[0];
+                        }
+                        newState.amount_paid = monthly.toString();
+                        newState.balance_owed = "0";
+                      } else if (value === 'partially_paid') {
                         const paid = parseFloat(prev.amount_paid) || 0;
                         if (paid === 0) {
                           newState.balance_owed = monthly.toString();
                         } else {
                           newState.balance_owed = Math.max(0, monthly - paid).toString();
                         }
+                      } else {
+                        newState.amount_paid = "0";
+                        newState.balance_owed = monthly.toString();
                       }
                       return newState;
                     });
@@ -283,12 +296,9 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                           const val = parseFloat(valStr) || 0;
                           setFormData(prev => {
                             const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
-                            const balanceOwed = parseFloat(prev.balance_owed) || 0;
                             const newState = { ...prev, amount_paid: valStr };
-                            if (monthlyAmount > 0 && val <= monthlyAmount) {
+                            if (monthlyAmount > 0) {
                               newState.balance_owed = Math.max(0, monthlyAmount - val).toString();
-                            } else {
-                              newState.monthly_amount = (val + balanceOwed).toString();
                             }
                             return newState;
                           });
@@ -298,7 +308,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                       />
                     </div>
                     <div>
-                      <Label htmlFor="balance_owed" className="mb-2 block text-amber-900 font-medium text-sm">Balance Owed (£) *</Label>
+                      <Label htmlFor="balance_owed" className="mb-2 block text-amber-900 font-medium text-sm">Remaining Balance (£) *</Label>
                       <Input
                         id="balance_owed"
                         type="number"
@@ -308,12 +318,12 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                           const valStr = e.target.value;
                           const val = parseFloat(valStr) || 0;
                           setFormData(prev => {
-                            const amountPaid = parseFloat(prev.amount_paid) || 0;
-                            return {
-                              ...prev,
-                              balance_owed: valStr,
-                              monthly_amount: (amountPaid + val).toString()
-                            };
+                            const monthlyAmount = parseFloat(prev.monthly_amount) || 0;
+                            const newState = { ...prev, balance_owed: valStr };
+                            if (monthlyAmount > 0) {
+                              newState.amount_paid = Math.max(0, monthlyAmount - val).toString();
+                            }
+                            return newState;
                           });
                         }}
                         className="border-amber-200 focus-visible:ring-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -322,9 +332,9 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-xs pt-2 border-t border-amber-200">
-                    <span className="text-amber-700 italic">Total Due check:</span>
+                    <span className="text-amber-700 italic">Confirmed Total:</span>
                     <span className="font-semibold text-amber-900">
-                      £{(parseFloat(formData.amount_paid || 0) + parseFloat(formData.balance_owed || 0)).toFixed(2)} / £{parseFloat(formData.monthly_amount || 0).toFixed(2)}
+                      £{parseFloat(formData.monthly_amount || 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
