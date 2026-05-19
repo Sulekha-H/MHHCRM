@@ -306,9 +306,9 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
             </div>
           </div>
 
-          {/* Maintenance & Inspections */}
+          {/* Landlord Inspections */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Maintenance & Inspections</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Landlord Inspections</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="last_inspection_date" className="mb-2 block">Last Inspection Date</Label>

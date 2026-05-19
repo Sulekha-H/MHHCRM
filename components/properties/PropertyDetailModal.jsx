@@ -150,7 +150,7 @@ export default function PropertyDetailModal({ property, accommodations, resident
 
             <Separator className="my-6" />
 
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">Maintenance & Inspections</h3>
+            <h3 className="text-xl font-semibold text-slate-800 mb-4">Landlord Inspections</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DetailItem icon={<Calendar />} label="Last Inspection">{lastInspectionDate ? format(new Date(lastInspectionDate), 'dd MMMM yyyy') : null}</DetailItem>
                 <DetailItem icon={<Calendar />} label="Next Inspection Due">{nextInspectionDue ? format(new Date(nextInspectionDue), 'dd MMMM yyyy') : null}</DetailItem>
