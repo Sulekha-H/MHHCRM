@@ -5,6 +5,7 @@ import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Zap, Building2, Download } from "lucide-react";
 import UtilityForm from "@/components/utilities/UtilityForm";
@@ -61,6 +62,24 @@ export default function UtilitiesPage() {
       return matchesSearch && matchesProperty;
     });
   }, [utilities, searchTerm, propertyFilter]);
+
+  const groupedUtilities = useMemo(() => {
+    const groups = {};
+    filteredUtilities.forEach(utility => {
+      const propertyId = utility["Property ID"];
+      if (!groups[propertyId]) {
+        groups[propertyId] = [];
+      }
+      groups[propertyId].push(utility);
+    });
+
+    // Convert to array and sort by property name
+    return Object.entries(groups).sort(([idA], [idB]) => {
+      const nameA = properties.find(p => (p.ID || p.id) === idA)?.Name || "";
+      const nameB = properties.find(p => (p.ID || p.id) === idB)?.Name || "";
+      return nameA.localeCompare(nameB);
+    });
+  }, [filteredUtilities, properties]);
 
   const handleSubmit = async (utilityData) => {
     try {
@@ -233,20 +252,51 @@ export default function UtilitiesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUtilities.map((utility) => (
-            <UtilityCard
-              key={utility.ID}
-              utility={utility}
-              propertyName={properties.find(p => (p.ID || p.id) === utility["Property ID"])?.Name}
-              onEdit={(u) => {
-                setEditingUtility(u);
-                setShowForm(true);
-              }}
-              onViewDetails={(u) => setViewingUtility(u)}
-              onDelete={handleDelete}
-            />
-          ))}
+        <div className="space-y-10">
+          {groupedUtilities.map(([propertyId, propertyUtilities]) => {
+            const property = properties.find(p => (p.ID || p.id) === propertyId);
+            return (
+              <div key={propertyId} className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b-2 border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center shadow-sm">
+                      <Building2 className="w-6 h-6 text-teal-600" />
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                      <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+                        {property?.Name || "Unknown Property"}
+                      </h2>
+                      <Badge variant="secondary" className="bg-teal-100/50 text-teal-700 border-teal-200 font-semibold px-2.5 py-0.5 rounded-full text-xs">
+                        {propertyUtilities.length} {propertyUtilities.length === 1 ? 'Utility' : 'Utilities'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {property && (
+                    <div className="hidden md:block">
+                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-1 rounded">
+                        ID: {property.ID || property.id}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {propertyUtilities.map((utility) => (
+                    <UtilityCard
+                      key={utility.ID}
+                      utility={utility}
+                      propertyName={property?.Name}
+                      onEdit={(u) => {
+                        setEditingUtility(u);
+                        setShowForm(true);
+                      }}
+                      onViewDetails={(u) => setViewingUtility(u)}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
