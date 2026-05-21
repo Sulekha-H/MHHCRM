@@ -230,8 +230,18 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Accommodation</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Accommodation Type</Label>
+                  <Select value={formData["Accommodation Type"]} onValueChange={(v) => handleChange("Accommodation Type", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {["Shared House", "Studio Flat", "Bedsit", "Supported Flat"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Status *</Label><Select value={formData.Status} onValueChange={(v) => handleChange("Status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Moved On">Moved On</SelectItem></SelectContent></Select></div>
                 <div><Label>Move-in Date</Label><Input type="date" value={formData["Move-in Date"]} onChange={(e) => handleChange("Move-in Date", e.target.value)} /></div>
+                <div><Label>Move-out Date</Label><Input type="date" value={formData["Move-out Date"]} onChange={(e) => handleChange("Move-out Date", e.target.value)} /></div>
                 <div className="md:col-span-2"><Label>Property Address</Label><Select value={formData["Property ID"]} onValueChange={(v) => { const p = properties.find(prop => prop.ID === v); setFormData(prev => ({ ...prev, "Property ID": v, "Property Name": p?.Name || "", "Property Address": p?.Address || "", "Accommodation ID": "", "Unit/Room Number": "" })); }}><SelectTrigger><SelectValue placeholder="Select property" /></SelectTrigger><SelectContent>{properties.map(p => <SelectItem key={p.ID} value={p.ID}>{p.Name} - {p.Address}</SelectItem>)}</SelectContent></Select></div>
                 <div className="md:col-span-2"><Label>Unit/Room</Label><Select value={formData["Accommodation ID"]} onValueChange={(v) => { const a = accommodations.find(acc => acc.ID === v); setFormData(prev => ({ ...prev, "Accommodation ID": v, "Unit/Room Number": a?.["Room Number"] || "", "Accommodation Type": a?.["Accommodation Type"] || prev["Accommodation Type"] })); }} disabled={!formData["Property ID"]}><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger><SelectContent>{accommodations.filter(u => u["Property ID"] === formData["Property ID"]).map(u => {
                   const curCount = (allocatedResidents || []).filter(r => (r["Accommodation ID"] || r.accommodation_id) === u.ID && (r.Status || r.status || '').toLowerCase() === 'active' && (r.ID || r.id) !== (resident?.ID || resident?.id)).length + (otherResidents || []).filter(r => (r["Accommodation ID"] || r.accommodation_id) === u.ID && (r.Status || r.status || '').toLowerCase() === 'active').length;
