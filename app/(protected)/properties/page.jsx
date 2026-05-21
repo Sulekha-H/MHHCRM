@@ -21,6 +21,7 @@ export default function Properties() {
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
   const [residents, setResidents] = useState([]);
+  const [utilities, setUtilities] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,10 +100,21 @@ export default function Properties() {
         if (residentsError) throw residentsError;
         console.log(`✅ Loaded ${residentsData?.length || 0} residents`);
 
+        // Load utilities
+        console.log("📥 Loading utilities...");
+        const { data: utilitiesData, error: utilitiesError } = await supabase
+          .from('Utilities')
+          .select('*')
+          .or('Deleted.is.null,Deleted.eq.false');
+
+        if (utilitiesError) throw utilitiesError;
+        console.log(`✅ Loaded ${utilitiesData?.length || 0} utilities`);
+
         if (mounted) {
           setProperties(propertiesData || []);
           setAccommodations(accommodationsData || []);
           setResidents(residentsData || []);
+          setUtilities(utilitiesData || []);
           console.log("✅ All data loaded successfully");
         }
       } catch (error) {
@@ -531,6 +543,7 @@ export default function Properties() {
           property={viewingProperty}
           accommodations={accommodations}
           residents={residents}
+          utilities={utilities}
           getStatusColor={getStatusColor}
           getMaintenanceColor={getMaintenanceColor}
           onClose={() => setViewingProperty(null)}

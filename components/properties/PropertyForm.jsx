@@ -6,9 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { X, Save, Building2 } from "lucide-react";
+import { X, Save, Building2, Zap, Plus, Edit, Trash2 } from "lucide-react";
+import UtilityForm from "@/components/utilities/UtilityForm";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 
 export default function PropertyForm({ property, onSubmit, onCancel }) {
+  const supabase = useClerkSupabaseClient();
+  const [propertyUtilities, setPropertyUtilities] = useState([]);
+  const [showUtilityForm, setShowUtilityForm] = useState(false);
+  const [editingUtility, setEditingUtility] = useState(null);
+  const [loadingUtilities, setLoadingUtilities] = useState(false);
+
   const [formData, setFormData] = useState(property || {
     name: "",
     address: "",
@@ -37,8 +45,30 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
     "Ring doorbell", "kitchenette"
   ];
 
+  const loadPropertyUtilities = async () => {
+    const propertyId = property?.ID || property?.id;
+    if (!propertyId || !supabase) return;
+
+    try {
+      setLoadingUtilities(true);
+      const { data, error } = await supabase
+        .from("Utilities")
+        .select("*")
+        .eq("Property ID", propertyId)
+        .or('Deleted.is.null,Deleted.eq.false');
+
+      if (error) throw error;
+      setPropertyUtilities(data || []);
+    } catch (error) {
+      console.error("Error loading property utilities:", error);
+    } finally {
+      setLoadingUtilities(false);
+    }
+  };
+
   useEffect(() => {
     if (property) {
+      loadPropertyUtilities();
       // Normalize database format to form format
       const maintenanceStatusReverseMap = {
         'Good': 'good',
@@ -161,6 +191,44 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
         ? [...(prev.facilities || []), facility]
         : (prev.facilities || []).filter(f => f !== facility)
     }));
+  };
+
+  const handleUtilitySubmit = async (utilityData) => {
+    try {
+      if (editingUtility) {
+        const { error } = await supabase
+          .from("Utilities")
+          .update(utilityData)
+          .eq("ID", editingUtility.ID);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("Utilities")
+          .insert([utilityData]);
+        if (error) throw error;
+      }
+      setShowUtilityForm(false);
+      setEditingUtility(null);
+      loadPropertyUtilities();
+    } catch (error) {
+      console.error("Error saving utility:", error);
+      alert("Error saving utility: " + error.message);
+    }
+  };
+
+  const handleUtilityDelete = async (utility) => {
+    if (!window.confirm("Are you sure you want to delete this utility?")) return;
+    try {
+      const { error } = await supabase
+        .from("Utilities")
+        .update({ Deleted: true, "Deleted Date": new Date().toISOString() })
+        .eq("ID", utility.ID);
+      if (error) throw error;
+      loadPropertyUtilities();
+    } catch (error) {
+      console.error("Error deleting utility:", error);
+      alert("Error deleting utility: " + error.message);
+    }
   };
 
   return (
@@ -361,6 +429,92 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
               ))}
             </div>
           </div>
+
+          {/* Utilities Section (Only for existing properties) */}
+          {property && (
+            <div className="border-t pt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-teal-600" />
+                  Utilities
+                </h3>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingUtility(null);
+                    setShowUtilityForm(true);
+                  }}
+                  className="text-teal-600 border-teal-600 hover:bg-teal-50"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Utility
+                </Button>
+              </div>
+
+              {showUtilityForm && (
+                <div className="mb-6 border rounded-lg p-4 bg-slate-50">
+                  <UtilityForm
+                    utility={editingUtility}
+                    properties={[{ ID: property.ID || property.id, Name: formData.name }]}
+                    initialPropertyId={property.ID || property.id}
+                    onSubmit={handleUtilitySubmit}
+                    onCancel={() => {
+                      setShowUtilityForm(false);
+                      setEditingUtility(null);
+                    }}
+                  />
+                </div>
+              )}
+
+              {loadingUtilities ? (
+                <p className="text-sm text-slate-500 italic">Loading utilities...</p>
+              ) : propertyUtilities.length === 0 ? (
+                <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed">
+                  <p className="text-sm text-slate-500">No utilities registered for this property</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {propertyUtilities.map((u) => (
+                    <div key={u.ID} className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm hover:border-teal-200 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
+                          <Zap className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{u["Utility Type"]}</p>
+                          <p className="text-xs text-slate-500">{u["Company Name"]}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-slate-400 hover:text-teal-600"
+                          onClick={() => {
+                            setEditingUtility(u);
+                            setShowUtilityForm(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-slate-400 hover:text-red-600"
+                          onClick={() => handleUtilityDelete(u)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Contact & Additional Info */}
           <div>

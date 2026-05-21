@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    Building2, MapPin, Users, PoundSterling, Wrench, Calendar, Phone, ShieldCheck, Edit, FileText, Fingerprint, Trash2, ExternalLink
+    Building2, MapPin, Users, PoundSterling, Wrench, Calendar, Phone, ShieldCheck, Edit, FileText, Fingerprint, Trash2, ExternalLink, Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -57,7 +57,7 @@ const DetailItem = ({ icon, label, children, isId = false }) => (
   </div>
 );
 
-export default function PropertyDetailModal({ property, accommodations, residents, getStatusColor, getMaintenanceColor, onEdit, onClose, onDelete, isAdmin }) {
+export default function PropertyDetailModal({ property, accommodations, residents, utilities = [], getStatusColor, getMaintenanceColor, onEdit, onClose, onDelete, isAdmin }) {
   if (!property) return null;
 
   // Use the pre-calculated current_occupancy from the property object
@@ -203,6 +203,27 @@ export default function PropertyDetailModal({ property, accommodations, resident
                         ))}
                     </div>
                 </>
+            )}
+
+            {utilities && utilities.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <h3 className="text-xl font-semibold text-slate-800 mb-4">Utilities</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {utilities.filter(u => u["Property ID"] === (property.ID || property.id)).map(utility => (
+                    <div key={utility.ID} className="flex items-center gap-4 p-4 border rounded-xl bg-slate-50">
+                      <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Zap className="w-6 h-6 text-teal-600" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">{utility["Utility Type"]}</p>
+                        <p className="text-md font-bold text-slate-900 truncate">{utility["Company Name"]}</p>
+                        <p className="text-xs text-slate-500 truncate">Account: {utility["Account Number"] || utility["Company Account Number"] || 'N/A'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
           </div>

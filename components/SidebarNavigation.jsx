@@ -29,7 +29,8 @@ import {
   Settings,
   Lock,
   FileStack,
-  Trash2
+  Trash2,
+  Zap
 } from "lucide-react";
 
 export default function SidebarNavigation() {
@@ -84,6 +85,7 @@ export default function SidebarNavigation() {
   const complianceNav = [
     { name: "Service Charges", href: "/servicecharges", icon: PoundSterling, current: pathname === "/servicecharges" },
     { name: "Compliance", href: "/compliance", icon: Shield, current: pathname === "/compliance" },
+    { name: "Utilities", href: "/utilities", icon: Zap, current: pathname === "/utilities" },
     { name: "Documents", href: "/documents", icon: Folder, current: pathname === "/documents" },
   ];
 
