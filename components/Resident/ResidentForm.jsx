@@ -87,9 +87,9 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     "Benefits": [],
     "Room Transfers": [],
     "Accommodation Transfers": [],
-    "Google Drive Link": "",
-    "Photo ID URL": "",
-    "Resident Photographic Link": "",
+    "Sign Up Google Drive Link": "",
+    "Photo Of Individual (Google Drive)": "",
+    "Resident Photographic ID Link (Google Drive)": "",
     "PA/Worker Name": "",
     "PA/Worker Contact": "",
     "PA/Worker Email": "",
@@ -109,7 +109,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
   const [showGoogleDriveHelp, setShowGoogleDriveHelp] = useState(false);
 
   const getPreviewUrl = () => {
-    return convertToDirectImageUrl(formData["Photo ID URL"]);
+    return convertToDirectImageUrl(formData["Photo Of Individual (Google Drive)"]);
   };
 
   useEffect(() => {
@@ -129,7 +129,9 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "PA/Worker Name": resident["PA/Worker Name"] || "",
         "PA/Worker Contact": resident["PA/Worker Contact"] || "",
         "PA/Worker Email": resident["PA/Worker Email"] || "",
-        "Resident Photographic Link": resident["Resident Photographic Link"] || "",
+        "Resident Photographic ID Link (Google Drive)": resident["Resident Photographic ID Link (Google Drive)"] || resident["Resident Photographic Link"] || "",
+        "Sign Up Google Drive Link": resident["Sign Up Google Drive Link"] || resident["Google Drive Link"] || "",
+        "Photo Of Individual (Google Drive)": resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"] || "",
         "PA/Worker Borough": resident["PA/Worker Borough"] || "",
         "PA/Worker Team": resident["PA/Worker Team"] || "",
         "PA/Worker Duty Line": resident["PA/Worker Duty Line"] || "",
@@ -139,8 +141,8 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Future Housing Type": resident["Future Housing Type"] || "",
         "Move-on Outcome": resident["Move-on Outcome"] || "",
       });
-      setPhotoUrlInput(resident["Photo ID URL"] || "");
-      setShowGoogleDriveHelp(resident["Photo ID URL"]?.includes('drive.google.com') || false);
+      setPhotoUrlInput(resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"] || "");
+      setShowGoogleDriveHelp((resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"])?.includes('drive.google.com') || false);
     } else {
       setFormData({
         "First Name": "", "Last Name": "", "Date of Birth": "", "Phone Number": "", "Email Address": "",
@@ -152,7 +154,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Medical Conditions": "",
         "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
         "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
-        "Google Drive Link": "", "Photo ID URL": "", "Resident Photographic Link": "",
+        "Sign Up Google Drive Link": "", "Photo Of Individual (Google Drive)": "", "Resident Photographic ID Link (Google Drive)": "",
         "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
         "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
       });
@@ -334,7 +336,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
 
   const handlePhotoUrlChange = (value) => {
     setPhotoUrlInput(value);
-    handleChange("Photo ID URL", value);
+    handleChange("Photo Of Individual (Google Drive)", value);
     setPhotoPreviewError(false);
     setShowGoogleDriveHelp(value.includes('drive.google.com'));
   };
@@ -1296,31 +1298,31 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Documents & Links</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label htmlFor="google_drive_link" className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="sign_up_google_drive_link" className="flex items-center gap-2 mb-2">
                     <Link2 className="w-4 h-4" />
-                    Google Drive Link
+                    Sign Up Google Drive Link
                   </Label>
                   <Input
-                    id="google_drive_link"
-                    value={formData["Google Drive Link"]}
-                    onChange={(e) => handleChange("Google Drive Link", e.target.value)}
+                    id="sign_up_google_drive_link"
+                    value={formData["Sign Up Google Drive Link"]}
+                    onChange={(e) => handleChange("Sign Up Google Drive Link", e.target.value)}
                     placeholder="https://drive.google.com/..."
                   />
                 </div>
                 <div>
-                  <Label htmlFor="photo_id_url" className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="photo_of_individual" className="flex items-center gap-2 mb-2">
                     <Camera className="w-4 h-4" />
-                    Photo of Individual (Google Drive)
+                    Photo Of Individual (Google Drive)
                   </Label>
                   <div className="flex gap-2">
                     <Input
-                      id="photo_id_url"
+                      id="photo_of_individual"
                       value={photoUrlInput}
                       onChange={(e) => handlePhotoUrlChange(e.target.value)}
                       placeholder="https://drive.google.com/file/d/..."
                       className="flex-1"
                     />
-                    {formData["Photo ID URL"] && (
+                    {formData["Photo Of Individual (Google Drive)"] && (
                       <Button
                         type="button"
                         variant="outline"
@@ -1336,7 +1338,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                       ⚠️ Make sure the Google Drive file is set to "Anyone with the link can view"
                     </p>
                   )}
-                  {formData["Photo ID URL"] && !photoPreviewError && (
+                  {formData["Photo Of Individual (Google Drive)"] && !photoPreviewError && (
                     <div className="mt-2">
                       <img
                         src={getPreviewUrl()}
@@ -1346,7 +1348,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                       />
                     </div>
                   )}
-                  {photoPreviewError && formData["Photo ID URL"] && (
+                  {photoPreviewError && formData["Photo Of Individual (Google Drive)"] && (
                     <p className="text-xs text-red-600 mt-1">
                       Unable to load preview. The link may not be publicly accessible or may not be a direct image link.
                     </p>
@@ -1354,14 +1356,14 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                 </div>
 
                 <div>
-                  <Label htmlFor="resident_photographic_link" className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="resident_photographic_id_link" className="flex items-center gap-2 mb-2">
                     <Link2 className="w-4 h-4" />
-                    Resident Photographic Link (Google Drive)
+                    Resident Photographic ID Link (Google Drive)
                   </Label>
                   <Input
-                    id="resident_photographic_link"
-                    value={formData["Resident Photographic Link"] || ""}
-                    onChange={(e) => handleChange("Resident Photographic Link", e.target.value)}
+                    id="resident_photographic_id_link"
+                    value={formData["Resident Photographic ID Link (Google Drive)"] || ""}
+                    onChange={(e) => handleChange("Resident Photographic ID Link (Google Drive)", e.target.value)}
                     placeholder="https://drive.google.com/..."
                   />
                 </div>
@@ -1492,7 +1494,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         </CardContent>
       </Card>
 
-      {showPhotoModal && formData["Photo ID URL"] && (
+      {showPhotoModal && formData["Photo Of Individual (Google Drive)"] && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={() => setShowPhotoModal(false)}>
           <div className="relative max-w-2xl max-h-[90vh] p-4 bg-white rounded-lg shadow-2xl overflow-auto" onClick={(e) => e.stopPropagation()}>
             <button

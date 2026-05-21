@@ -48,7 +48,7 @@ export default function ResidentCard({ resident, onEdit, onViewDetails, onDelete
   const emergencyContactName = resident["Emergency Contact Name"] || resident.Emergency_Contact_Name || resident.emergency_contact_name;
   const emergencyContactPhone = resident["Emergency Contact Phone"] || resident.Emergency_Contact_Phone || resident.emergency_contact_phone;
   const medicalConditions = resident["Medical Conditions"] || resident.Medical_Conditions || resident.medical_conditions;
-  const photoIdUrl = resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
+  const photoIdUrl = resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
   const accommodationId = resident["Accommodation ID"] || resident.Accommodation_Id || resident.accommodation_id;
 
   const accommodation = accommodations?.find(a => (a["ID"] || a.Id || a.id) === accommodationId);

@@ -94,8 +94,9 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const benefits = resident["Benefits"] || resident.Benefits || resident.benefits || [];
   const roomTransfers = resident["Room Transfers"] || resident.Room_Transfers || resident.room_transfers || [];
   const accommodationTransfers = resident["Accommodation Transfers"] || resident.Accommodation_Transfers || resident.accommodation_transfers || [];
-  const googleDriveLink = resident["Google Drive Link"] || resident.Google_Drive_Link || resident.google_drive_link;
-  const photoIdUrl = resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
+  const googleDriveLink = resident["Sign Up Google Drive Link"] || resident["Google Drive Link"] || resident.Google_Drive_Link || resident.google_drive_link;
+  const residentPhotographicLink = resident["Resident Photographic ID Link (Google Drive)"] || resident["Resident Photographic Link"];
+  const photoIdUrl = resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
   const futureAddress = resident["Future Address"] || resident.Future_Address || resident.future_address;
   const futureHousingType = resident["Future Housing Type"] || resident.Future_Housing_Type || resident.future_housing_type;
   const moveOnOutcome = resident["Move-on Outcome"] || resident.Move_On_Outcome || resident.move_on_outcome;
@@ -427,7 +428,12 @@ export default function ResidentDetailModal({ resident, accommodations, properti
                   )}
                   {googleDriveLink && (
                       <a href={googleDriveLink} target="_blank" rel="noopener noreferrer" className="inline-block">
-                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Google Drive Link</Button>
+                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Sign Up Google Drive Link</Button>
+                      </a>
+                  )}
+                  {residentPhotographicLink && (
+                      <a href={residentPhotographicLink} target="_blank" rel="noopener noreferrer" className="inline-block">
+                          <Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Resident Photographic ID Link</Button>
                       </a>
                   )}
               </div>
