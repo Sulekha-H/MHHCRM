@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, MapPin, Users, Calendar, Phone, Settings, Wrench, Building2, Trash2, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+import ImagePreviewModal from "@/components/ui/ImagePreviewModal";
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
@@ -112,31 +113,38 @@ export default function PropertyCard({ property, accommodations, residents, onEd
   const googleDriveLink = property["Google Drive Link"] || property.google_drive_link;
   const previewUrl = convertToDirectImageUrl(googleDriveLink);
 
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   return (
+    <>
     <Card
-      className="hover:shadow-lg transition-all duration-300 cursor-pointer h-full border-l-4 border-l-teal-500"
+      className="hover:shadow-lg transition-all duration-300 cursor-pointer h-full border-l-4 border-l-teal-500 overflow-hidden flex flex-col"
       onClick={() => onViewDetails(property)}
     >
+      {previewUrl && !imageError && (
+        <div
+          className="w-full relative group"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowPhotoModal(true);
+          }}
+        >
+          <img
+            src={previewUrl}
+            alt={name}
+            className="w-full h-auto object-cover max-h-48 transition-transform duration-300 group-hover:scale-105"
+            onError={() => setImageError(true)}
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+            <ImageIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8" />
+          </div>
+        </div>
+      )}
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            {previewUrl ? (
-              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
-                <img
-                  src={previewUrl}
-                  alt={name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-500">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            ) : (
+            {(!previewUrl || imageError) && (
               <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
@@ -290,5 +298,13 @@ export default function PropertyCard({ property, accommodations, residents, onEd
         )}
       </CardContent>
     </Card>
+
+    <ImagePreviewModal
+      isOpen={showPhotoModal}
+      onClose={() => setShowPhotoModal(false)}
+      imageUrl={previewUrl}
+      title={name}
+    />
+    </>
   );
 }

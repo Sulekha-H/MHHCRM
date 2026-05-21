@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    Building2, MapPin, Users, PoundSterling, Wrench, Calendar, Phone, ShieldCheck, Edit, FileText, Fingerprint, Trash2, ExternalLink, Zap
+    Building2, MapPin, Users, PoundSterling, Wrench, Calendar, Phone, ShieldCheck, Edit, FileText, Fingerprint, Trash2, ExternalLink, Zap, ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
+import ImagePreviewModal from "@/components/ui/ImagePreviewModal";
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
@@ -58,6 +59,9 @@ const DetailItem = ({ icon, label, children, isId = false }) => (
 );
 
 export default function PropertyDetailModal({ property, accommodations, residents, utilities = [], getStatusColor, getMaintenanceColor, onEdit, onClose, onDelete, isAdmin }) {
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   if (!property) return null;
 
   // Use the pre-calculated current_occupancy from the property object
@@ -95,29 +99,28 @@ export default function PropertyDetailModal({ property, accommodations, resident
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader className="mb-6">
-              <div className="flex items-center gap-4">
-                {previewUrl ? (
-                  <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                {previewUrl && !imageError ? (
+                  <div
+                    className="w-full md:w-32 h-48 md:h-32 rounded-xl overflow-hidden shadow-md flex-shrink-0 border border-slate-200 bg-slate-50 cursor-pointer group relative"
+                    onClick={() => setShowPhotoModal(true)}
+                  >
                     <img
                       src={previewUrl}
                       alt={name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                      onError={() => setImageError(true)}
                     />
-                    <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-500">
-                      <Building2 className="w-8 h-8 text-white" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <ImageIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6" />
                     </div>
                   </div>
                 ) : (
-                  <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                    <Building2 className="w-8 h-8 text-white" />
+                  <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <Building2 className="w-10 h-10 text-white" />
                   </div>
                 )}
-                <div>
+                <div className="flex-1">
                   <DialogTitle className="text-3xl font-bold text-slate-900">{name}</DialogTitle>
                   <Badge className={`mt-2 ${getStatusColor ? getStatusColor(status) : 'bg-slate-100 text-slate-800'}`}>
                     {status?.replace('_', ' ')}
@@ -227,7 +230,7 @@ export default function PropertyDetailModal({ property, accommodations, resident
             )}
 
           </div>
-          <DialogFooter className="p-6 bg-slate-50 border-t sticky bottom-0">
+          <DialogFooter className="p-6 bg-slate-50 border-t sticky bottom-0 z-[60]">
             {onDelete && (
               <Button
                 variant="destructive"
@@ -246,6 +249,13 @@ export default function PropertyDetailModal({ property, accommodations, resident
           </DialogFooter>
         </ScrollArea>
       </DialogContent>
+
+      <ImagePreviewModal
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+        imageUrl={previewUrl}
+        title={name}
+      />
     </Dialog>
   );
 }
