@@ -191,6 +191,11 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     console.log("   Form Data Accommodation ID:", formData["Accommodation ID"]);
     
     let submissionData = { ...formData };
+
+    // Remove "UASC Info Added" from submission data as it's for frontend validation only
+    // and does not exist as a column in the database.
+    delete submissionData["UASC Info Added"];
+
     submissionData["Room Transfers"] = formData["Room Transfers"] || [];
     submissionData["Accommodation Transfers"] = formData["Accommodation Transfers"] || [];
 
