@@ -68,7 +68,7 @@ export default function AllocatedResidentDetailModal({ resident, properties, acc
   const benefits = resident["Benefits"] || [];
   const roomTransfers = resident["Room Transfers"] || [];
   const accommodationTransfers = resident["Accommodation Transfers"] || [];
-  const googleDriveLink = resident["Google Drive Link"];
+  const googleDriveLink = resident["Sign Up Pack Link"];
   const photoIdUrl = resident["Photo ID URL"];
   const futureAddress = resident["Future Address"];
   const futureHousingType = resident["Future Housing Type"];
@@ -257,7 +257,7 @@ export default function AllocatedResidentDetailModal({ resident, properties, acc
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Links</h3>
               <div className="flex gap-4 flex-wrap">
                   {photoIdUrl && (<a href={photoIdUrl} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Photo ID</Button></a>)}
-                  {googleDriveLink && (<a href={googleDriveLink} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Google Drive Link</Button></a>)}
+                  {googleDriveLink && (<a href={googleDriveLink} target="_blank" rel="noopener noreferrer"><Button variant="outline"><Link2 className="w-4 h-4 mr-2" />Sign Up Pack Link</Button></a>)}
               </div>
             </div>
             <DialogFooter className="p-6 bg-slate-50 border-t sticky bottom-0">

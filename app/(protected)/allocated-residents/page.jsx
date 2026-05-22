@@ -291,7 +291,7 @@ export default function AllocatedResidentsPage() {
   };
 
   const exportCSV = () => {
-    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW", "Google Drive Link"];
+    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW", "Sign Up Pack Link"];
     const rows = filteredAllocatedResidents.map(r => [
       r.ID || r.id,
       r["First Name"] || r.first_name,
@@ -301,7 +301,7 @@ export default function AllocatedResidentsPage() {
       r["Unit/Room Number"] || r.unit_room_number,
       r.Status || r.status,
       r["Support Worker"] || r.support_worker,
-      r["Google Drive Link"] || ""
+      r["Sign Up Pack Link"] || ""
     ]);
     const escape = (v) => { const s = String(v ?? ""); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? `"${s.replace(/"/g, '""')}"` : s; };
     const csv = [headers.map(escape).join(','), ...rows.map(row => row.map(escape).join(','))].join('\n');
