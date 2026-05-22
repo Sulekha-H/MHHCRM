@@ -38,6 +38,7 @@ export default function OfficeLogs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [activeStatusTab, setActiveStatusTab] = useState("all_status");
+  const [activeMonthTab, setActiveMonthTab] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
@@ -177,6 +178,15 @@ const filterLogs = useCallback(() => {
     });
   }
 
+  // Month filter
+  if (activeMonthTab !== "all") {
+    current = current.filter(log => {
+      const date = new Date(log["Date Time"] || log.date_time);
+      const monthKey = format(date, 'MMMM yyyy');
+      return monthKey === activeMonthTab;
+    });
+  }
+
   // Sort by date
   current.sort((a, b) => {
     const dateA = new Date(a["Date Time"] || a.date_time || 0);
@@ -185,7 +195,7 @@ const filterLogs = useCallback(() => {
   });
 
   setFilteredLogs(current);
-}, [logs, searchTerm, activeTab, activeStatusTab, sortOrder]);
+}, [logs, searchTerm, activeTab, activeStatusTab, activeMonthTab, sortOrder]);
 
 // Apply filtering whenever dependencies change
 useEffect(() => {
@@ -542,19 +552,14 @@ useEffect(() => {
     end: endOfYear(new Date(currentYear, 11, 31))
   }).sort((a, b) => b - a); // Newest months first
 
-  // Group logs by log_type and then by month
+  // Group logs by log_type
   const groupedLogs = filteredLogs.reduce((acc, log) => {
     const type = (log["Log Type"] || log.log_type || 'general').toString().trim().toLowerCase().replace(/ /g, '_');
-    const date = new Date(log["Date Time"] || log.date_time);
-    const monthKey = format(date, 'MMMM yyyy');
 
     if (!acc[type]) {
-      acc[type] = {};
+      acc[type] = [];
     }
-    if (!acc[type][monthKey]) {
-      acc[type][monthKey] = [];
-    }
-    acc[type][monthKey].push(log);
+    acc[type].push(log);
     return acc;
   }, {});
 
@@ -675,6 +680,7 @@ useEffect(() => {
         </CardContent>
       </Card>
 
+
       {/* Status Tabs */}
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold text-slate-900">Filter by Status</h2>
@@ -684,6 +690,24 @@ useEffect(() => {
             <TabsTrigger value="pending">Pending ({statusCounts.pending})</TabsTrigger>
             <TabsTrigger value="in_progress">In Progress ({statusCounts.in_progress})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({statusCounts.completed})</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      {/* Month Filter Tabs */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold text-slate-900">Filter by Month</h2>
+        <Tabs value={activeMonthTab} onValueChange={setActiveMonthTab}>
+          <TabsList className="flex h-auto flex-wrap justify-start gap-1 p-1">
+            <TabsTrigger value="all" className="px-4 py-2 text-sm font-medium">All Months</TabsTrigger>
+            {monthsInYear.map(monthDate => {
+              const monthKey = format(monthDate, 'MMMM yyyy');
+              return (
+                <TabsTrigger key={monthKey} value={monthKey} className="px-4 py-2 text-sm font-medium">
+                  {monthKey}
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
         </Tabs>
       </div>
@@ -724,7 +748,7 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Logs Section - Grouped by Type and Month */}
+      {/* Logs Section - Grouped by Type */}
       <div className="space-y-12">
         {activeTab === "all" ? (
           <>
@@ -734,46 +758,24 @@ useEffect(() => {
                   <div className="flex items-center justify-between border-b pb-2">
                     <h3 className="text-2xl font-bold text-slate-900">
                       {logTypeLabels[logType] || logType.replace(/_/g, ' ')}
+                      <span className="ml-3 text-lg font-normal text-slate-500">
+                        ({groupedLogs[logType].length})
+                      </span>
                     </h3>
                   </div>
 
-                  <div className="space-y-8">
-                    {monthsInYear.map(monthDate => {
-                      const monthKey = format(monthDate, 'MMMM yyyy');
-                      const monthLogs = groupedLogs[logType]?.[monthKey] || [];
-
-                      return (
-                        <div key={monthKey} className="space-y-3">
-                          <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {monthKey}
-                            <span className="ml-1 text-slate-400 font-normal">
-                              ({monthLogs.length})
-                            </span>
-                          </h4>
-
-                          {monthLogs.length > 0 ? (
-                            <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
-                              {monthLogs.map((log) => (
-                                <div key={log["ID"] || log.id} className="flex-none w-full md:w-[450px] snap-start">
-                                  <OfficeLogCard
-                                    log={log}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
-                                    getPriorityColor={getPriorityColor}
-                                    getStatusColor={getStatusColor}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 text-sm italic">
-                              No logs for this month
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
+                    {groupedLogs[logType].map((log) => (
+                      <div key={log["ID"] || log.id} className="flex-none w-full md:w-[450px] snap-start">
+                        <OfficeLogCard
+                          log={log}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          getPriorityColor={getPriorityColor}
+                          getStatusColor={getStatusColor}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))
@@ -784,10 +786,12 @@ useEffect(() => {
                   <div className="space-y-2">
                     <h3 className="text-2xl font-semibold text-slate-900">No logs found</h3>
                     <p className="text-lg text-slate-500 max-w-md mx-auto">
-                      {searchTerm ? "Try adjusting your search terms" : "No office activities have been logged yet"}
+                      {searchTerm || activeMonthTab !== "all" || activeStatusTab !== "all_status"
+                        ? "No logs match your current filters"
+                        : "No office activities have been logged yet"}
                     </p>
                   </div>
-                  {!searchTerm && (
+                  {activeMonthTab === "all" && activeTab === "all" && activeStatusTab === "all_status" && !searchTerm && (
                     <Button onClick={() => setShowForm(true)} className="bg-purple-600 hover:bg-purple-700 px-6 py-3 text-base font-medium">
                       <Plus className="w-5 h-5 mr-2" />
                       Add First Log Entry
@@ -802,47 +806,31 @@ useEffect(() => {
             <div className="flex items-center justify-between border-b pb-2">
               <h2 className="text-2xl font-bold text-slate-900">
                 {logTypeLabels[activeTab] || activeTab.replace(/_/g, ' ')}
+                <span className="ml-3 text-lg font-normal text-slate-500">
+                  ({filteredLogs.length})
+                </span>
               </h2>
             </div>
 
-            <div className="space-y-8">
-              {monthsInYear.map(monthDate => {
-                const monthKey = format(monthDate, 'MMMM yyyy');
-                const monthLogs = groupedLogs[activeTab]?.[monthKey] || [];
-
-                return (
-                  <div key={monthKey} className="space-y-3">
-                    <h4 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      {monthKey}
-                      <span className="ml-1 text-slate-400 font-normal">
-                        ({monthLogs.length})
-                      </span>
-                    </h4>
-
-                    {monthLogs.length > 0 ? (
-                      <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
-                        {monthLogs.map((log) => (
-                          <div key={log["ID"] || log.id} className="flex-none w-full md:w-[450px] snap-start">
-                            <OfficeLogCard
-                              log={log}
-                              onEdit={handleEdit}
-                              onDelete={handleDelete}
-                              getPriorityColor={getPriorityColor}
-                              getStatusColor={getStatusColor}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 text-sm italic">
-                        No logs for this month
-                      </div>
-                    )}
+            {filteredLogs.length > 0 ? (
+              <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
+                {filteredLogs.map((log) => (
+                  <div key={log["ID"] || log.id} className="flex-none w-full md:w-[450px] snap-start">
+                    <OfficeLogCard
+                      log={log}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      getPriorityColor={getPriorityColor}
+                      getStatusColor={getStatusColor}
+                    />
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center text-slate-500 italic">
+                No logs found for criteria
+              </div>
+            )}
           </div>
         )}
       </div>
