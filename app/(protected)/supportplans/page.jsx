@@ -709,8 +709,8 @@ useEffect(() => {
             </div>
 
             <div className="flex items-center gap-3 bg-white rounded-lg p-3 border border-slate-200">
-              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs text-slate-400 font-medium">N/A</span>
+              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 bg-gray-100 rounded">
+                <span className="text-xs text-slate-400 font-medium">N/A -</span>
               </div>
               <div>
                 <div className="font-medium text-sm text-slate-900">Not Applicable</div>
@@ -862,7 +862,8 @@ useEffect(() => {
                               }))
                             });
                             
-                            const residentMoveInDate = resident.move_in_date ? new Date(resident.move_in_date) : null;
+                            const rawMoveInDate = resident.move_in_date || resident['move-in_date'] || resident['Move-in Date'] || resident['Move In Date'];
+                            const residentMoveInDate = rawMoveInDate ? new Date(rawMoveInDate) : null;
                             if (residentMoveInDate) {
                               residentMoveInDate.setHours(0, 0, 0, 0);
                             }
@@ -872,10 +873,12 @@ useEffect(() => {
                                 <TableCell className="font-medium sticky left-0 bg-white">{resident.first_name} {resident.last_name}</TableCell>
                                 <TableCell>{resident.claim_reference_number || 'N/A'}</TableCell>
                                 {weekDates.map(weekStartDate => {
-                                  const weekEndDate = new Date(weekStartDate);
-                                  weekEndDate.setDate(weekStartDate.getDate() + 7);
+                                  const weekEndDate = new Date(weekStartDate.getTime());
+                                  weekEndDate.setDate(weekEndDate.getDate() + 7);
                                   weekEndDate.setHours(0, 0, 0, 0);
                                   
+                                  // Tickboxes should start when they move in during the week.
+                                  // N/A if the whole week is before the move-in date.
                                   const isBeforeMoveIn = residentMoveInDate && weekEndDate <= residentMoveInDate;
                                   
                                   const planForWeek = residentPlans.find(p => {
@@ -904,9 +907,9 @@ useEffect(() => {
 
                                   if (isBeforeMoveIn) {
                                     return (
-                                      <TableCell key={weekStartDate.toISOString()} className="text-center">
+                                      <TableCell key={weekStartDate.toISOString()} className="text-center bg-gray-100">
                                         <div className="w-full flex items-center justify-center">
-                                          <span className="text-xs text-slate-400 font-medium">N/A</span>
+                                          <span className="text-xs text-slate-400 font-medium">N/A -</span>
                                         </div>
                                       </TableCell>
                                     );
