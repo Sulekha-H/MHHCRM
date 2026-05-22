@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2
+    CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2, Play, CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -27,7 +27,7 @@ const DetailItem = ({ icon, label, children }) => (
   </div>
 );
 
-export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, onDelete }) {
+export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, onDelete, onStartTask, onCompleteTask }) {
     if (!task) return null;
 
     // Handle both Supabase and base44 field formats
@@ -41,6 +41,10 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
     const relatedEntityId = task["Related Entity ID"] || task.related_entity_id;
     const loggedBy = task["Logged By"] || task.logged_by;
     const createdDate = task["Created Date"] || task.created_date;
+    const targetDuration = task["Target Duration"] || task.target_duration;
+    const actualStartTime = task["Actual Start Time"] || task.actual_start_time;
+    const actualEndTime = task["Actual End Time"] || task.actual_end_time;
+    const durationTaken = task["Duration Taken"] || task.duration_taken;
 
     const getPriorityColor = (priority) => {
         const colors = { 
@@ -123,7 +127,48 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                             )}
                         </div>
 
-                        <DialogFooter className="mt-8 flex gap-2">
+                        <Separator className="my-6" />
+                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Timing & Duration</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <DetailItem icon={<Clock />} label="Target Duration">
+                                {targetDuration ? `${targetDuration} minutes` : 'Not set'}
+                            </DetailItem>
+                            <DetailItem icon={<Clock />} label="Actual Duration">
+                                {durationTaken ? `${durationTaken} minutes` : (status === 'Completed' ? 'N/A' : 'Pending')}
+                            </DetailItem>
+                            <DetailItem icon={<Play />} label="Start Time">
+                                {actualStartTime ? format(new Date(actualStartTime), 'dd MMM, HH:mm') : 'Not started'}
+                            </DetailItem>
+                            <DetailItem icon={<CheckCircle2 />} label="End Time">
+                                {actualEndTime ? format(new Date(actualEndTime), 'dd MMM, HH:mm') : 'Not ended'}
+                            </DetailItem>
+                        </div>
+
+                        <DialogFooter className="mt-8 flex flex-wrap gap-2">
+                            {status === "To Do" && (
+                                <Button
+                                    onClick={() => {
+                                        onStartTask(task);
+                                        onClose();
+                                    }}
+                                    className="bg-indigo-600 hover:bg-indigo-700"
+                                >
+                                    <Play className="w-4 h-4 mr-2" />
+                                    Start Task
+                                </Button>
+                            )}
+                            {status === "In Progress" && (
+                                <Button
+                                    onClick={() => {
+                                        onCompleteTask(task);
+                                        onClose();
+                                    }}
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                                    Complete Task
+                                </Button>
+                            )}
                             {onDelete && (
                                 <Button 
                                     variant="outline" 

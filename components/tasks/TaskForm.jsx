@@ -18,7 +18,8 @@ export default function TaskForm({ task, users, residents, properties, onSubmit,
     Priority: "Medium",
     "Assigned To User ID": "",
     "Related Entity": "None",
-    "Related Entity ID": ""
+    "Related Entity ID": "",
+    "Target Duration": ""
   });
 
   const handleSubmit = (e) => {
@@ -189,6 +190,16 @@ export default function TaskForm({ task, users, residents, properties, onSubmit,
                     <SelectItem value="Overdue">Overdue</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="target_duration">Target Duration (Minutes)</Label>
+                <Input
+                  id="target_duration"
+                  type="number"
+                  value={formData["Target Duration"]}
+                  onChange={(e) => handleChange("Target Duration", e.target.value)}
+                  placeholder="e.g. 30"
+                />
               </div>
             </div>
           </div>
