@@ -30,7 +30,8 @@ import {
   Lock,
   FileStack,
   Trash2,
-  Zap
+  Zap,
+  ClipboardCheck
 } from "lucide-react";
 
 export default function SidebarNavigation() {
@@ -84,7 +85,8 @@ export default function SidebarNavigation() {
 
   const complianceNav = [
     { name: "Service Charges", href: "/servicecharges", icon: PoundSterling, current: pathname === "/servicecharges" },
-    { name: "Compliance", href: "/compliance", icon: Shield, current: pathname === "/compliance" },
+    { name: "Property Certs", href: "/compliance", icon: Shield, current: pathname === "/compliance" },
+    { name: "Compliance Checks", href: "/compliance-checks", icon: ClipboardCheck, current: pathname === "/compliance-checks" },
     { name: "Utilities", href: "/utilities", icon: Zap, current: pathname === "/utilities" },
     { name: "Documents", href: "/documents", icon: Folder, current: pathname === "/documents" },
   ];
