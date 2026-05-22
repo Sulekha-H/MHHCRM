@@ -28,7 +28,7 @@ export default function OfficeLogCard({ log, onEdit, onDelete, getPriorityColor,
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow duration-200">
+      <Card className="hover:shadow-md transition-shadow duration-200 h-full flex flex-col">
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -82,7 +82,7 @@ export default function OfficeLogCard({ log, onEdit, onDelete, getPriorityColor,
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 flex-1">
           {/* Date and Staff - Made More Prominent */}
           <div className="space-y-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
             <div className="flex items-center gap-2 text-sm">
