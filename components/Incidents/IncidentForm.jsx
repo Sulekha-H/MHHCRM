@@ -13,9 +13,9 @@ import { X, Save, Shield } from "lucide-react";
 
 export default function IncidentForm({ incident, residents, users, currentUser, onSubmit, onCancel }) {
   const getInitialDateTime = () => {
-    if (incident?.Incident_Date || incident?.incident_date) {
-      const date = incident.Incident_Date || incident.incident_date;
-      return date.slice(0, 16);
+    const incidentDate = incident?.["Incident Date"] || incident?.Incident_Date || incident?.incident_date;
+    if (incidentDate) {
+      return incidentDate.slice(0, 16);
     }
     const now = new Date();
     const year = now.getFullYear();
@@ -28,24 +28,24 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
 
   const [formData, setFormData] = useState(incident ? 
     {
-      resident_id: incident.Resident_Id || incident.resident_id || "",
-      incident_type: incident.Incident_Type || incident.incident_type || "Other",
-      severity: incident.Severity || incident.severity || "Medium",
+      resident_id: incident["Resident ID"] || incident.Resident_Id || incident.resident_id || "",
+      incident_type: incident["Incident Type"] || incident.Incident_Type || incident.incident_type || "Other",
+      severity: incident["Severity"] || incident.Severity || incident.severity || "Medium",
       incident_date: getInitialDateTime(),
-      location: incident.Location || incident.location || "",
-      description: incident.Description || incident.description || "",
-      action_taken: incident.Action_Taken || incident.action_taken || "",
-      follow_up_required: incident.Follow_Up_Required || incident.follow_up_required || false,
-      follow_up_date: incident.Follow_Up_Date || incident.follow_up_date || "",
-      follow_up_by_user_id: incident.Follow_Up_By_User_Id || incident.follow_up_by_user_id || "",
-      follow_up_completed: incident.Follow_Up_Completed || incident.follow_up_completed || false,
-      follow_up_comments: incident.Follow_Up_Comments || incident.follow_up_comments || "",
-      witnesses: incident.Witnesses || incident.witnesses || "",
-      staff_involved: incident.Staff_Involved || incident.staff_involved || false,
-      staff_members_involved: incident.Staff_Members_Involved || incident.staff_members_involved || [],
-      authorities_notified: incident.Authorities_Notified || incident.authorities_notified || false,
-      status: incident.Status || incident.status || "Open",
-      logged_by: incident.Logged_By || incident.logged_by || currentUser?.full_name || "",
+      location: incident["Location"] || incident.Location || incident.location || "",
+      description: incident["Description"] || incident.Description || incident.description || "",
+      action_taken: incident["Action Taken"] || incident.Action_Taken || incident.action_taken || "",
+      follow_up_required: incident["Follow-up Required"] || incident.Follow_Up_Required || incident.follow_up_required || false,
+      follow_up_date: incident["Follow-up Date"] || incident.Follow_Up_Date || incident.follow_up_date || "",
+      follow_up_by_user_id: incident["Follow-up By User ID"] || incident.Follow_Up_By_User_Id || incident.follow_up_by_user_id || "",
+      follow_up_completed: incident["Follow-up Completed"] || incident.Follow_Up_Completed || incident.follow_up_completed || false,
+      follow_up_comments: incident["Follow-up Comments"] || incident.Follow_Up_Comments || incident.follow_up_comments || "",
+      witnesses: incident["Witnesses"] || incident.Witnesses || incident.witnesses || "",
+      staff_involved: incident["Staff Involved"] || incident.Staff_Involved || incident.staff_involved || false,
+      staff_members_involved: incident["Staff Members Involved"] || incident.Staff_Members_Involved || incident.staff_members_involved || [],
+      authorities_notified: incident["Authorities Notified"] || incident.Authorities_Notified || incident.authorities_notified || false,
+      status: incident["Status"] || incident.Status || incident.status || "Open",
+      logged_by: incident["Logged By"] || incident.Logged_By || incident.logged_by || currentUser?.["Full Name"] || currentUser?.full_name || "",
     } 
     : {
       resident_id: "",
@@ -65,7 +65,7 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
       staff_members_involved: [],
       authorities_notified: false,
       status: "Open",
-      logged_by: currentUser?.full_name || ""
+      logged_by: currentUser?.["Full Name"] || currentUser?.full_name || ""
     });
 
   const staffMembers = [
@@ -144,7 +144,7 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
       "Staff Members Involved": formData.staff_members_involved || [],
       "Authorities Notified": formData.authorities_notified,
       "Status": transformStatus(formData.status),
-      "Logged By": formData.logged_by || currentUser?.full_name || null,
+      "Logged By": formData.logged_by || currentUser?.["Full Name"] || currentUser?.full_name || null,
       "Updated Date": new Date().toISOString()
     };
 
@@ -234,6 +234,27 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
                   onChange={(e) => handleChange("location", e.target.value)}
                   placeholder="Where did this occur?"
                 />
+              </div>
+              <div>
+                <Label htmlFor="logged_by">Logged By *</Label>
+                <Select
+                  value={formData.logged_by}
+                  onValueChange={(value) => handleChange("logged_by", value)}
+                >
+                  <SelectTrigger id="logged_by">
+                    <SelectValue placeholder="Who is logging this?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users?.map((u) => {
+                      const name = u?.["Full Name"] || u?.full_name || u?.Name || u?.name;
+                      return (
+                        <SelectItem key={u.ID || u.id} value={name}>
+                          {name}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
