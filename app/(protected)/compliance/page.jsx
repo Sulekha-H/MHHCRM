@@ -471,7 +471,7 @@ const handleSubmit = async (logData) => {
     <div className="space-y-6 w-full">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Property Compliance</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Property Certs</h1>
           <p className="text-slate-600">Track property certificates, safety checks, and compliance requirements</p>
         </div>
         <div className="flex gap-2">
