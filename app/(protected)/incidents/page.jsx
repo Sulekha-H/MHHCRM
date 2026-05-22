@@ -128,9 +128,9 @@ const fetchAllData = useCallback(async () => {
 
   const handleSubmit = async (incidentData) => {
     try {
-      // Add logged_by field with current user's name if not already present
-      if (!incidentData.Logged_By && currentUser?.Full_Name) {
-        incidentData.Logged_By = currentUser.Full_Name;
+      // Ensure "Logged By" field is present if not already set in the form
+      if (!incidentData["Logged By"] && !incidentData.Logged_By && (currentUser?.["Full Name"] || currentUser?.Full_Name)) {
+        incidentData["Logged By"] = currentUser?.["Full Name"] || currentUser?.Full_Name;
       }
 
       if (editingIncident) {
