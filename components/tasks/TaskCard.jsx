@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Calendar, User, Clock, AlertTriangle, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Edit, Calendar, User, Clock, AlertTriangle, Trash2, Play, CheckCircle2 } from "lucide-react";
+import { format, differenceInSeconds } from "date-fns";
 
-export default function TaskCard({ task, onEdit, onViewDetails, onDelete, assignedUser, assignedUserName }) {
+export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStartTask, onCompleteTask, assignedUser, assignedUserName }) {
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [isOverDuration, setIsOverDuration] = useState(false);
+
+  // Handle both Supabase and base44 field formats
 
   // Handle both Supabase and base44 field formats
   const title = task.Title || task.title;
@@ -15,6 +19,52 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, assign
   const priority = task.Priority || task.priority;
   const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id;
   const loggedBy = task["Logged By"] || task.logged_by;
+  const targetDuration = task["Target Duration"] || task.target_duration;
+  const actualStartTime = task["Actual Start Time"] || task.actual_start_time;
+
+  useEffect(() => {
+    let interval;
+    if (status === "In Progress" && actualStartTime && targetDuration) {
+      const updateTimer = () => {
+        const start = new Date(actualStartTime);
+        const now = new Date();
+        const secondsElapsed = differenceInSeconds(now, start);
+        const targetSeconds = parseInt(targetDuration) * 60;
+        const remaining = targetSeconds - secondsElapsed;
+
+        setTimeLeft(remaining);
+
+        if (remaining <= 0 && !isOverDuration) {
+          setIsOverDuration(true);
+          // Browser Notification
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("Task Duration Exceeded", {
+              body: `Task "${title}" has exceeded its target duration!`,
+            });
+          }
+        } else if (remaining > 0) {
+          setIsOverDuration(false);
+        }
+      };
+
+      updateTimer();
+      interval = setInterval(updateTimer, 1000);
+    } else {
+      setTimeLeft(null);
+      setIsOverDuration(false);
+    }
+
+    return () => clearInterval(interval);
+  }, [status, actualStartTime, targetDuration, title, isOverDuration]);
+
+  const formatTimeLeft = (seconds) => {
+    const absSeconds = Math.abs(seconds);
+    const h = Math.floor(absSeconds / 3600);
+    const m = Math.floor((absSeconds % 3600) / 60);
+    const s = absSeconds % 60;
+    const timeStr = `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return seconds < 0 ? `-${timeStr}` : timeStr;
+  };
 
   const getPriorityColor = (priority) => {
     const colors = {
@@ -45,24 +95,26 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, assign
   };
   
   const isOverdue = new Date(dueDate) < new Date() && status !== 'completed' && status !== 'Completed';
+  const isCompleted = status === 'completed' || status === 'Completed';
   const finalAssignedUserName = assignedUserName || assignedToUserId || "Unassigned";
   const userColor = assignedUser?.display_color || assignedUser?.["Display Color"];
 
   const cardBorderStyle = {
     borderLeftWidth: '4px',
-    borderLeftColor: isOverdue ? '#ef4444' : (userColor || '#06b6d4')
+    borderLeftColor: isOverdue ? '#ef4444' : (userColor || '#06b6d4'),
+    opacity: isCompleted ? 0.7 : 1
   };
 
   return (
     <Card 
-      className={`hover:shadow-md transition-shadow duration-200 cursor-pointer`}
+      className={`hover:shadow-md transition-shadow duration-200 cursor-pointer ${isOverDuration ? 'animate-pulse border-red-500' : ''}`}
       style={cardBorderStyle}
       onClick={() => onViewDetails(task)}
     >
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex-1 mr-2">
-            <h3 className="font-semibold text-slate-900 text-lg line-clamp-2">
+            <h3 className={`font-semibold text-slate-900 text-lg line-clamp-2 ${isCompleted ? 'line-through text-slate-400' : ''}`}>
               {title}
             </h3>
           </div>
@@ -140,6 +192,45 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, assign
               <span className="font-medium text-slate-900">
                 Logged by: <span className="text-cyan-700">{loggedBy}</span>
               </span>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-2 flex gap-2">
+          {status === "To Do" && (
+            <Button
+              size="sm"
+              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartTask(task);
+              }}
+            >
+              <Play className="w-3 h-3 mr-2" />
+              Start Task
+            </Button>
+          )}
+          {status === "In Progress" && (
+            <div className="w-full space-y-2">
+              <div className={`flex items-center justify-between p-2 rounded ${isOverDuration ? 'bg-red-100 text-red-700 font-bold' : 'bg-indigo-50 text-indigo-700 font-mono'}`}>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs uppercase font-sans">Time Left:</span>
+                </div>
+                <span>{timeLeft !== null ? formatTimeLeft(timeLeft) : '--:--'}</span>
+              </div>
+              <Button
+                size="sm"
+                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCompleteTask(task);
+                }}
+              >
+                <CheckCircle2 className="w-3 h-3 mr-2" />
+                Complete Task
+              </Button>
             </div>
           )}
         </div>

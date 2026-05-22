@@ -36,6 +36,11 @@ export default function TasksPage() {
 useEffect(() => {
   if (!supabase || !user) return;
   loadTasks();
+
+  // Request notification permission
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
 }, [supabase, user]);
 
 
@@ -86,6 +91,13 @@ useEffect(() => {
   }
 
   filtered.sort((a, b) => {
+    // Status-based priority: Completed always at the bottom
+    const statusA = (a.Status || a.status || "").toLowerCase();
+    const statusB = (b.Status || b.status || "").toLowerCase();
+
+    if (statusA === "completed" && statusB !== "completed") return 1;
+    if (statusA !== "completed" && statusB === "completed") return -1;
+
     if (sortOrder === "newest") {
       const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
       const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
@@ -339,6 +351,54 @@ useEffect(() => {
     setShowForm(true);
   };
 
+  const handleStartTask = async (task) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          Status: "In Progress",
+          "Actual Start Time": new Date().toISOString(),
+          "Updated Date": new Date().toISOString()
+        })
+        .eq('ID', task.ID);
+
+      if (error) throw error;
+      loadTasks();
+    } catch (error) {
+      console.error("Error starting task:", error);
+      alert("Error starting task: " + error.message);
+    }
+  };
+
+  const handleCompleteTask = async (task) => {
+    try {
+      const startTime = task["Actual Start Time"];
+      const endTime = new Date();
+      let durationTaken = null;
+
+      if (startTime) {
+        const start = new Date(startTime);
+        durationTaken = Math.round((endTime - start) / (1000 * 60)); // in minutes
+      }
+
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          Status: "Completed",
+          "Actual End Time": endTime.toISOString(),
+          "Duration Taken": durationTaken,
+          "Updated Date": new Date().toISOString()
+        })
+        .eq('ID', task.ID);
+
+      if (error) throw error;
+      loadTasks();
+    } catch (error) {
+      console.error("Error completing task:", error);
+      alert("Error completing task: " + error.message);
+    }
+  };
+
   const handleViewDetails = (task) => {
     setViewingTask(task);
   };
@@ -564,6 +624,12 @@ useEffect(() => {
 
   Object.keys(groupedTasks).forEach(assignee => {
     groupedTasks[assignee].sort((a, b) => {
+      const statusA = (a.Status || a.status || "").toLowerCase();
+      const statusB = (b.Status || b.status || "").toLowerCase();
+
+      if (statusA === "completed" && statusB !== "completed") return 1;
+      if (statusA !== "completed" && statusB === "completed") return -1;
+
       if (sortOrder === "newest") {
         const dateA = a["Created Date"] ? new Date(a["Created Date"]) : new Date(0);
         const dateB = b["Created Date"] ? new Date(b["Created Date"]) : new Date(0);
@@ -776,6 +842,9 @@ useEffect(() => {
             setViewingTask(null);
             handleEdit(task);
           }}
+          onStartTask={handleStartTask}
+          onCompleteTask={handleCompleteTask}
+          onDelete={handleDelete}
         />
       )}
 
@@ -831,6 +900,8 @@ useEffect(() => {
                       onEdit={handleEdit}
                       onViewDetails={handleViewDetails}
                       onDelete={handleDelete}
+                      onStartTask={handleStartTask}
+                      onCompleteTask={handleCompleteTask}
                       assignedUser={assignedUser}
                       assignedUserName={task["Assigned To User ID"]}
                     />
