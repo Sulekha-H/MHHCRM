@@ -125,21 +125,27 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
       return;
     }
 
-    // Validate mandatory issue details and reported status
-    const missingDetails = formData.checks.some(c => !c.no_issues && (!c.issue_details.trim() || !c.reported_on_repairs));
+    // Validate mandatory issue details
+    const missingDetails = formData.checks.some(c => !c.no_issues && !c.issue_details.trim());
     if (missingDetails) {
-      alert("Please provide details for all identified issues and confirm they have been reported on the repairs page.");
+      alert("Please provide details for all identified issues.");
       return;
     }
 
     const selectedProperty = properties.find(p => (p.ID || p.id) === formData.property_id);
+
+    // Ensure all identified issues are marked for auto-logging
+    const processedChecks = formData.checks.map(check => ({
+      ...check,
+      reported_on_repairs: !check.no_issues ? true : check.reported_on_repairs
+    }));
 
     const supabaseData = {
       "Property ID": formData.property_id,
       "Property Name": selectedProperty?.Name || "",
       "Week Ending Date": formData.week_ending_date,
       "Logged By": formData.logged_by,
-      "Checks": formData.checks,
+      "Checks": processedChecks,
       "Materials Required": formData.materials_required,
       "Weekly Check Not Completed": formData.weekly_check_not_completed,
       "Updated Date": new Date().toISOString()
@@ -221,7 +227,6 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                       <th className="px-4 py-3 text-center w-[100px]">No Issues</th>
                       <th className="px-4 py-3 min-w-[250px]">Repair Details</th>
                       <th className="px-4 py-3 w-[140px]">Priority</th>
-                      <th className="px-4 py-3 text-center w-[120px]">Auto-Log?</th>
                       <th className="px-4 py-3 w-[150px]">Date Fixed</th>
                     </tr>
                   </thead>
@@ -271,18 +276,6 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                                 <SelectItem value="Emergency">Emergency</SelectItem>
                               </SelectContent>
                             </Select>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {!check.no_issues && (
-                            <div className="flex flex-col items-center gap-1">
-                              <Checkbox
-                                checked={check.reported_on_repairs}
-                                onCheckedChange={(checked) => handleCheckChange(index, "reported_on_repairs", checked)}
-                                className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
-                              />
-                              <span className="text-[9px] font-bold text-indigo-600 uppercase">Auto-Log</span>
-                            </div>
                           )}
                         </td>
                         <td className="px-4 py-4">
