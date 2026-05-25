@@ -26,7 +26,7 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
     ...log,
     property_id: log["Property ID"] || log.property_id || "",
     week_ending_date: log["Week Ending Date"] || log.week_ending_date || format(new Date(), 'yyyy-MM-dd'),
-    logged_by: log["Logged By"] || log.logged_by || currentUser?.full_name || "",
+    logged_by: currentUser?.full_name || log["Logged By"] || log.logged_by || "",
     materials_required: log["Materials Required"] || log.materials_required || "",
     weekly_check_not_completed: log["Weekly Check Not Completed"] || log.weekly_check_not_completed || false,
     checks: log["Checks"] || log.checks || []
@@ -40,6 +40,12 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
   });
 
   const [propertyRooms, setPropertyRooms] = useState([]);
+
+  useEffect(() => {
+    if (currentUser?.full_name && formData.logged_by !== currentUser.full_name) {
+      setFormData(prev => ({ ...prev, logged_by: currentUser.full_name }));
+    }
+  }, [currentUser?.full_name]);
 
   useEffect(() => {
     if (formData.property_id && accommodations) {
@@ -209,7 +215,8 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
               <Input
                 id="logged_by"
                 value={formData.logged_by}
-                onChange={(e) => handleChange("logged_by", e.target.value)}
+                readOnly
+                className="bg-slate-50 cursor-not-allowed"
                 placeholder="Staff name"
                 required
               />
