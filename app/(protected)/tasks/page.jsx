@@ -36,11 +36,6 @@ export default function TasksPage() {
 useEffect(() => {
   if (!supabase || !user) return;
   loadTasks();
-
-  // Request notification permission
-  if ("Notification" in window && Notification.permission === "default") {
-    Notification.requestPermission();
-  }
 }, [supabase, user]);
 
 
@@ -845,6 +840,7 @@ useEffect(() => {
           onStartTask={handleStartTask}
           onCompleteTask={handleCompleteTask}
           onDelete={handleDelete}
+          currentUser={currentUser}
         />
       )}
 
@@ -904,6 +900,7 @@ useEffect(() => {
                       onCompleteTask={handleCompleteTask}
                       assignedUser={assignedUser}
                       assignedUserName={task["Assigned To User ID"]}
+                      currentUser={currentUser}
                     />
                   );
                 })}
