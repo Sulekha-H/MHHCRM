@@ -27,7 +27,7 @@ const DetailItem = ({ icon, label, children }) => (
   </div>
 );
 
-export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, onDelete, onStartTask, onCompleteTask }) {
+export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, onDelete, onStartTask, onCompleteTask, currentUser }) {
     if (!task) return null;
 
     // Handle both Supabase and base44 field formats
@@ -145,29 +145,33 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                         </div>
 
                         <DialogFooter className="mt-8 flex flex-wrap gap-2">
-                            {status === "To Do" && (
-                                <Button
-                                    onClick={() => {
-                                        onStartTask(task);
-                                        onClose();
-                                    }}
-                                    className="bg-indigo-600 hover:bg-indigo-700"
-                                >
-                                    <Play className="w-4 h-4 mr-2" />
-                                    Start Task
-                                </Button>
-                            )}
-                            {status === "In Progress" && (
-                                <Button
-                                    onClick={() => {
-                                        onCompleteTask(task);
-                                        onClose();
-                                    }}
-                                    className="bg-green-600 hover:bg-green-700"
-                                >
-                                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                                    Complete Task
-                                </Button>
+                            {(assignedToUserId === currentUser?.["Full Name"]) && (
+                                <>
+                                    {status === "To Do" && (
+                                        <Button
+                                            onClick={() => {
+                                                onStartTask(task);
+                                                onClose();
+                                            }}
+                                            className="bg-indigo-600 hover:bg-indigo-700"
+                                        >
+                                            <Play className="w-4 h-4 mr-2" />
+                                            Start Task
+                                        </Button>
+                                    )}
+                                    {status === "In Progress" && (
+                                        <Button
+                                            onClick={() => {
+                                                onCompleteTask(task);
+                                                onClose();
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                            Complete Task
+                                        </Button>
+                                    )}
+                                </>
                             )}
                             {onDelete && (
                                 <Button 

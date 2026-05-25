@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Calendar, User, Clock, AlertTriangle, Trash2, Play, CheckCircle2 } from "lucide-react";
 import { format, differenceInSeconds } from "date-fns";
 
-export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStartTask, onCompleteTask, assignedUser, assignedUserName }) {
+export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStartTask, onCompleteTask, assignedUser, assignedUserName, currentUser }) {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOverDuration, setIsOverDuration] = useState(false);
 
@@ -36,12 +36,6 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
 
         if (remaining <= 0 && !isOverDuration) {
           setIsOverDuration(true);
-          // Browser Notification
-          if ("Notification" in window && Notification.permission === "granted") {
-            new Notification("Task Duration Exceeded", {
-              body: `Task "${title}" has exceeded its target duration!`,
-            });
-          }
         } else if (remaining > 0) {
           setIsOverDuration(false);
         }
@@ -197,43 +191,45 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-2 flex gap-2">
-          {status === "To Do" && (
-            <Button
-              size="sm"
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartTask(task);
-              }}
-            >
-              <Play className="w-3 h-3 mr-2" />
-              Start Task
-            </Button>
-          )}
-          {status === "In Progress" && (
-            <div className="w-full space-y-2">
-              <div className={`flex items-center justify-between p-2 rounded ${isOverDuration ? 'bg-red-100 text-red-700 font-bold' : 'bg-indigo-50 text-indigo-700 font-mono'}`}>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-xs uppercase font-sans">Time Left:</span>
-                </div>
-                <span>{timeLeft !== null ? formatTimeLeft(timeLeft) : '--:--'}</span>
-              </div>
+        {(assignedToUserId === currentUser?.["Full Name"]) && (
+          <div className="pt-2 flex gap-2">
+            {status === "To Do" && (
               <Button
                 size="sm"
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onCompleteTask(task);
+                  onStartTask(task);
                 }}
               >
-                <CheckCircle2 className="w-3 h-3 mr-2" />
-                Complete Task
+                <Play className="w-3 h-3 mr-2" />
+                Start Task
               </Button>
-            </div>
-          )}
-        </div>
+            )}
+            {status === "In Progress" && (
+              <div className="w-full space-y-2">
+                <div className={`flex items-center justify-between p-2 rounded ${isOverDuration ? 'bg-red-100 text-red-700 font-bold' : 'bg-indigo-50 text-indigo-700 font-mono'}`}>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-xs uppercase font-sans">Time Left:</span>
+                  </div>
+                  <span>{timeLeft !== null ? formatTimeLeft(timeLeft) : '--:--'}</span>
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCompleteTask(task);
+                  }}
+                >
+                  <CheckCircle2 className="w-3 h-3 mr-2" />
+                  Complete Task
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

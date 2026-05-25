@@ -39,6 +39,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import SidebarNavigation from "@/components/SidebarNavigation";
 import PageTitle from "@/components/PageTitle";
 import LogoutButton from "./LogoutButton";
+import NotificationCenter from "@/components/NotificationCenter";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -92,9 +93,12 @@ export default function RootLayout({ children }) {
               </aside>
 
               <SidebarInset className="min-w-0 flex-1 flex flex-col bg-slate-50">
-                <header className="flex shrink-0 items-center gap-4 border-b border-slate-200 bg-white px-6 py-4">
-                  <SidebarTrigger className="md:hidden" />
-                  <PageTitle />
+                <header className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
+                  <div className="flex items-center gap-4">
+                    <SidebarTrigger className="md:hidden" />
+                    <PageTitle />
+                  </div>
+                  <NotificationCenter />
                 </header>
 
                 <main className="min-h-0 flex-1 overflow-auto p-6">
