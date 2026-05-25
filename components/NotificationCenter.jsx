@@ -132,13 +132,13 @@ export default function NotificationCenter() {
                 const overdueMinutes = startTime ? Math.floor(differenceInSeconds(new Date(), new Date(startTime)) / 60) - (targetDuration || 0) : 0;
 
                 return (
-                  <div key={task.ID} className="p-4 hover:bg-slate-50 transition-colors group relative">
+                  <div key={task.ID || task.id} className="p-4 hover:bg-slate-50 transition-colors group relative">
                     <div className="flex justify-between items-start mb-1 pr-6">
                       <h5 className="font-medium text-sm text-slate-900 line-clamp-1">
                         {title}
                       </h5>
                       <button
-                        onClick={() => handleDismiss(task.ID)}
+                        onClick={() => handleDismiss(task.ID || task.id)}
                         className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
                       >
                         <X className="w-4 h-4" />
@@ -149,15 +149,16 @@ export default function NotificationCenter() {
                       Duration exceeded by {overdueMinutes}m
                     </p>
                     <div className="flex items-center gap-2">
-                    <Link href="/tasks" className="w-full">
-                      <Button size="sm" variant="outline" className="w-full text-xs h-8 flex items-center justify-center gap-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300">
-                        <ExternalLink className="w-3 h-3" />
-                        View Task
-                      </Button>
-                    </Link>
+                      <Link href="/tasks" className="w-full">
+                        <Button size="sm" variant="outline" className="w-full text-xs h-8 flex items-center justify-center gap-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300">
+                          <ExternalLink className="w-3 h-3" />
+                          View Task
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>
