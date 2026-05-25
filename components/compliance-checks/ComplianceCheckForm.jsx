@@ -52,7 +52,14 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
       // Initialize checks if new log or property changed
       if (!log || log["Property ID"] !== formData.property_id) {
         const initialChecks = [
-          ...STANDARD_LOCATIONS.map(loc => ({ location: loc, no_issues: true, issue_details: "", reported_on_repairs: false, date_fixed: "" })),
+          ...STANDARD_LOCATIONS.map(loc => ({
+            location: loc,
+            no_issues: true,
+            issue_details: "",
+            reported_on_repairs: false,
+            date_fixed: "",
+            priority: "Medium"
+          })),
           ...rooms.flatMap(room => {
             const roomChecks = [{
               location: `Room ${room["Room Number"] || room.room_number}`,
@@ -61,7 +68,8 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
               reported_on_repairs: false,
               date_fixed: "",
               is_room: true,
-              room_id: room.ID || room.id
+              room_id: room.ID || room.id,
+              priority: "Medium"
             }];
 
             const amenities = room.Amenities || room.amenities || [];
@@ -77,7 +85,8 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                 reported_on_repairs: false,
                 date_fixed: "",
                 is_ensuite: true,
-                room_id: room.ID || room.id
+                room_id: room.ID || room.id,
+                priority: "Medium"
               });
             }
             return roomChecks;
@@ -102,6 +111,7 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
     if (field === "no_issues" && value === true) {
       newChecks[index].issue_details = "";
       newChecks[index].reported_on_repairs = false;
+      newChecks[index].priority = "Medium";
     }
 
     setFormData(prev => ({ ...prev, checks: newChecks }));
@@ -208,9 +218,10 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                   <thead className="bg-slate-50 text-slate-700 uppercase text-xs font-bold">
                     <tr>
                       <th className="px-4 py-3 min-w-[200px]">Location</th>
-                      <th className="px-4 py-3 text-center w-[120px]">No Issues</th>
-                      <th className="px-4 py-3 min-w-[250px]">Repair Identified / Details</th>
-                      <th className="px-4 py-3 text-center w-[150px]">Repairs Page?</th>
+                      <th className="px-4 py-3 text-center w-[100px]">No Issues</th>
+                      <th className="px-4 py-3 min-w-[250px]">Repair Details</th>
+                      <th className="px-4 py-3 w-[140px]">Priority</th>
+                      <th className="px-4 py-3 text-center w-[120px]">Auto-Log?</th>
                       <th className="px-4 py-3 w-[150px]">Date Fixed</th>
                     </tr>
                   </thead>
@@ -233,14 +244,33 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                               <Textarea
                                 value={check.issue_details}
                                 onChange={(e) => handleCheckChange(index, "issue_details", e.target.value)}
-                                placeholder="Mandatory: Describe the repair or issue identified..."
-                                className="min-h-[80px] border-red-200 focus-visible:ring-red-500"
+                                placeholder="Mandatory: Describe the repair..."
+                                className="min-h-[80px] border-red-200 focus-visible:ring-red-500 text-xs"
                                 required
                               />
-                              <p className="text-[10px] text-red-500 font-medium italic">* Mandatory</p>
+                              <p className="text-[9px] text-red-500 font-medium italic">* Mandatory</p>
                             </div>
                           ) : (
                             <span className="text-slate-400 italic text-xs">No issues reported</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          {!check.no_issues && (
+                            <Select
+                              value={check.priority || "Medium"}
+                              onValueChange={(v) => handleCheckChange(index, "priority", v)}
+                            >
+                              <SelectTrigger className="h-8 text-xs border-red-100">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Low">Low</SelectItem>
+                                <SelectItem value="Medium">Medium</SelectItem>
+                                <SelectItem value="High">High</SelectItem>
+                                <SelectItem value="Urgent">Urgent</SelectItem>
+                                <SelectItem value="Emergency">Emergency</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </td>
                         <td className="px-4 py-4 text-center">
@@ -249,9 +279,9 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                               <Checkbox
                                 checked={check.reported_on_repairs}
                                 onCheckedChange={(checked) => handleCheckChange(index, "reported_on_repairs", checked)}
-                                className="data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
+                                className="data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
                               />
-                              <span className="text-[9px] font-bold text-red-600 uppercase">Reported?</span>
+                              <span className="text-[9px] font-bold text-indigo-600 uppercase">Auto-Log</span>
                             </div>
                           )}
                         </td>
