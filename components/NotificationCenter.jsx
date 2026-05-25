@@ -125,24 +125,30 @@ export default function NotificationCenter() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {visibleAlerts.map((task) => (
-                <div key={task.ID} className="p-4 hover:bg-slate-50 transition-colors group relative">
-                  <div className="flex justify-between items-start mb-1 pr-6">
-                    <h5 className="font-medium text-sm text-slate-900 line-clamp-1">
-                      {task.Title || task.title}
-                    </h5>
-                    <button
-                      onClick={() => handleDismiss(task.ID)}
-                      className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Duration exceeded by {Math.floor(differenceInSeconds(new Date(), new Date(task["Actual Start Time"])) / 60) - (task["Target Duration"] || 0)}m
-                  </p>
-                  <div className="flex items-center gap-2">
+              {visibleAlerts.map((task) => {
+                const title = task.Title || task.title;
+                const startTime = task["Actual Start Time"] || task.actual_start_time;
+                const targetDuration = task["Target Duration"] || task.target_duration;
+                const overdueMinutes = startTime ? Math.floor(differenceInSeconds(new Date(), new Date(startTime)) / 60) - (targetDuration || 0) : 0;
+
+                return (
+                  <div key={task.ID} className="p-4 hover:bg-slate-50 transition-colors group relative">
+                    <div className="flex justify-between items-start mb-1 pr-6">
+                      <h5 className="font-medium text-sm text-slate-900 line-clamp-1">
+                        {title}
+                      </h5>
+                      <button
+                        onClick={() => handleDismiss(task.ID)}
+                        className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Duration exceeded by {overdueMinutes}m
+                    </p>
+                    <div className="flex items-center gap-2">
                     <Link href="/tasks" className="w-full">
                       <Button size="sm" variant="outline" className="w-full text-xs h-8 flex items-center justify-center gap-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:border-amber-300">
                         <ExternalLink className="w-3 h-3" />

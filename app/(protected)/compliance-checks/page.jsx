@@ -67,11 +67,88 @@ export default function ComplianceChecksPage() {
 
   const handleSubmit = async (supabaseData) => {
     try {
+      const checks = supabaseData["Checks"] || supabaseData.checks || [];
+      const updatedChecks = [...checks];
+
+      // Process auto-logging repairs
+      for (let i = 0; i < updatedChecks.length; i++) {
+        const check = updatedChecks[i];
+
+        // Only proceed if it's an issue and "Auto-Log" is checked
+        if (!check.no_issues && check.reported_on_repairs) {
+          // Map compliance location to Repair Common Area format
+          const locationMapping = {
+            "Front Door": "Front Door",
+            "Front of property (outside)": "Front Garden",
+            "Downstairs hallway": "Hall Way",
+            "Living room": "General Property",
+            "Kitchen": "Communal Kitchen",
+            "Communal bathroom": "Communal Bathroom",
+            "Garden": "Back Garden"
+          };
+
+          const commonArea = (!check.is_room && !check.is_ensuite)
+            ? (locationMapping[check.location] || "General Property")
+            : null;
+
+          const repairData = {
+            Title: `Repair from Compliance Check: ${check.location}`,
+            "Property ID": supabaseData["Property ID"],
+            "Accommodation ID": check.room_id || null,
+            "Common Area": commonArea,
+            "Repair Type": "Other",
+            Priority: check.priority || "Medium",
+            Status: check.date_fixed ? "Completed" : "Reported",
+            Description: check.issue_details,
+            "Reported By": supabaseData["Logged By"],
+            "Reported By Type": "Staff",
+            "Logged By": supabaseData["Logged By"],
+            "Reported on Fiixit": "No",
+            "Fiixit Updated": "No",
+            "Reported Date": new Date().toISOString(),
+            "Date Fixed": check.date_fixed ? new Date(check.date_fixed).toISOString() : null,
+            "Updated Date": new Date().toISOString()
+          };
+
+          if (check.repair_id) {
+            // Update existing repair
+            const { error: updateError } = await supabase
+              .from('repairs')
+              .update(repairData)
+              .eq('"ID"', check.repair_id);
+            if (updateError) console.error("Error updating auto-logged repair:", updateError);
+          } else {
+            // Create new repair
+            const newRepairId = crypto.randomUUID();
+            repairData["ID"] = newRepairId;
+            repairData["Created Date"] = new Date().toISOString();
+            repairData["Created By"] = user?.primaryEmailAddress?.emailAddress || "System";
+
+            const { error: insertError } = await supabase
+              .from('repairs')
+              .insert([repairData]);
+
+            if (insertError) {
+              console.error("Error creating auto-logged repair:", insertError);
+            } else {
+              updatedChecks[i].repair_id = newRepairId;
+            }
+          }
+        } else if (check.no_issues && check.repair_id) {
+          // If issue was cleared, we might want to cancel the repair?
+          // For now, let's just leave it or mark as cancelled if that's desired.
+          // User didn't specify, so we'll leave existing repairs alone to avoid accidental data loss.
+        }
+      }
+
+      // Finalize data with updated repair IDs
+      const finalData = { ...supabaseData, "Checks": updatedChecks };
+
       if (editingLog) {
-        const { error } = await supabase.from('compliance_checks').update(supabaseData).eq('"ID"', editingLog.ID);
+        const { error } = await supabase.from('compliance_checks').update(finalData).eq('"ID"', editingLog.ID);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('compliance_checks').insert([supabaseData]);
+        const { error } = await supabase.from('compliance_checks').insert([finalData]);
         if (error) throw error;
       }
       setShowForm(false);
