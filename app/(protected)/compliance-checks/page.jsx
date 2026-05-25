@@ -75,6 +75,8 @@ export default function ComplianceChecksPage() {
         const check = updatedChecks[i];
 
         // Only proceed if it's an issue and "Auto-Log" is checked
+        // Note: we still check reported_on_repairs to maintain idempotency,
+        // but the form now sets this to true by default for all issues.
         if (!check.no_issues && check.reported_on_repairs) {
           // Map compliance location to Repair Common Area format
           const locationMapping = {
