@@ -9,15 +9,15 @@ export default function CalendarPage() {
     <div className="flex flex-col h-[calc(100vh-8rem)] space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Teamup Calendar</h1>
-          <p className="text-slate-600">View and manage your schedule with Teamup</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Staff Calendar</h1>
+          <p className="text-slate-600">Manage property visits, maintenance, and staff schedules</p>
         </div>
       </div>
 
       <Card className="flex-1 overflow-hidden border-slate-200 shadow-sm">
         <CardContent className="p-0 h-full w-full">
           <iframe
-            src="https://teamup.com/c/24quxn/my-hope-housing"
+            src="https://teamup.com/kstu7sv35byz4pmuqn"
             width="100%"
             height="100%"
             frameBorder="0"
