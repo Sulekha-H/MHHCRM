@@ -609,9 +609,13 @@ useEffect(() => {
                                                                 }}
                                                             >
                                                                 {logForWeek ? (
-                                                                    logForWeek.status === 'issue_raised' ?
-                                                                    <AlertTriangle className="w-5 h-5 text-orange-500" /> :
-                                                                    <CheckCircle className="w-5 h-5 text-green-500" />
+                                                                    logForWeek.status === 'completed' ? (
+                                                                        <CheckCircle className="w-5 h-5 text-green-500" />
+                                                                    ) : logForWeek.status === 'issue_raised' ? (
+                                                                        <AlertTriangle className="w-5 h-5 text-orange-500" />
+                                                                    ) : (
+                                                                        <XCircle className="w-5 h-5 text-red-500" />
+                                                                    )
                                                                 ) : (
                                                                     <PlusCircle className="w-5 h-5 text-slate-400 hover:text-slate-600" />
                                                                 )}
