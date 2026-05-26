@@ -271,13 +271,6 @@ export default function UtilitiesPage() {
                       </Badge>
                     </div>
                   </div>
-                  {property && (
-                    <div className="hidden md:block">
-                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wider bg-slate-50 px-2 py-1 rounded">
-                        ID: {property.ID || property.id}
-                      </span>
-                    </div>
-                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {propertyUtilities.map((utility) => (
