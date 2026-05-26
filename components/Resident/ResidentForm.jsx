@@ -922,6 +922,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     <SelectContent>
                       <SelectItem value="none">No support worker assigned</SelectItem>
                       <SelectItem value="Hasib">Hasib</SelectItem>
+                      <SelectItem value="Jessica">Jessica</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
