@@ -59,7 +59,6 @@ const DetailItem = ({ icon, label, children, isId = false }) => (
 );
 
 export default function PropertyDetailModal({ property, accommodations, residents, utilities = [], getStatusColor, getMaintenanceColor, onEdit, onClose, onDelete, isAdmin }) {
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   if (!property) return null;
@@ -90,8 +89,17 @@ export default function PropertyDetailModal({ property, accommodations, resident
   const contactPhone = property["Contact Phone"] || property.contact_phone;
   const emergencyContact = property["Emergency Contact"] || property.emergency_contact;
   const googleDriveLink = property["Google Drive Link"] || property.google_drive_link;
+  const bathroomImageLink = property["Bathroom Image Link"] || property.bathroom_image_link;
+  const communalAreaImageLink = property["Communal Area Image Link"] || property.communal_area_image_link;
+  const kitchenImageLink = property["Kitchen Image Link"] || property.kitchen_image_link;
+  const gardenImageLink = property["Garden Image Link"] || property.garden_image_link;
+  const livingRoomImageLink = property["Living Room Image Link"] || property.living_room_image_link;
+  const exteriorImageLink = property["Exterior Image Link"] || property.exterior_image_link;
   const notes = property["Notes"] || property.notes;
   const previewUrl = convertToDirectImageUrl(googleDriveLink);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -99,33 +107,140 @@ export default function PropertyDetailModal({ property, accommodations, resident
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader className="mb-6">
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                {previewUrl && !imageError ? (
-                  <div
-                    className="w-full md:w-32 h-48 md:h-32 rounded-xl overflow-hidden shadow-md flex-shrink-0 border border-slate-200 bg-slate-50 cursor-pointer group relative"
-                    onClick={() => setShowPhotoModal(true)}
-                  >
-                    <img
-                      src={previewUrl}
-                      alt={name}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                      onError={() => setImageError(true)}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <ImageIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6" />
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                  {previewUrl && !imageError ? (
+                    <div
+                      className="w-full md:w-32 h-48 md:h-32 rounded-xl overflow-hidden shadow-md flex-shrink-0 border border-slate-200 bg-slate-50 cursor-pointer group relative"
+                      onClick={() => {
+                        setSelectedImage(previewUrl);
+                        setShowPreview(true);
+                      }}
+                    >
+                      <img
+                        src={previewUrl}
+                        alt={name}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                        onError={() => setImageError(true)}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <ImageIcon className="text-white opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6" />
+                      </div>
                     </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                      <Building2 className="w-10 h-10 text-white" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <DialogTitle className="text-3xl font-bold text-slate-900">{name}</DialogTitle>
+                    <Badge className={`mt-2 ${getStatusColor ? getStatusColor(status) : 'bg-slate-100 text-slate-800'}`}>
+                      {status?.replace('_', ' ')}
+                    </Badge>
                   </div>
-                ) : (
-                  <div className="w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                    <Building2 className="w-10 h-10 text-white" />
+                </div>
+
+                {/* Property Gallery */}
+                {(bathroomImageLink || communalAreaImageLink || kitchenImageLink || gardenImageLink || livingRoomImageLink || exteriorImageLink) && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mt-2">
+                    {bathroomImageLink && (
+                      <div
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(bathroomImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(bathroomImageLink)} alt="Bathroom" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Bathroom
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {communalAreaImageLink && (
+                      <div
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(communalAreaImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(communalAreaImageLink)} alt="Communal Area" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Communal
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {kitchenImageLink && (
+                      <div
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(kitchenImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(kitchenImageLink)} alt="Kitchen" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Kitchen
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {gardenImageLink && (
+                      <div
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(gardenImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(gardenImageLink)} alt="Garden" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Garden
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {livingRoomImageLink && (
+                      <div
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(livingRoomImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(livingRoomImageLink)} alt="Living Room" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Living Room
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {exteriorImageLink && (
+                      <div
+                        className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(exteriorImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(exteriorImageLink)} alt="Exterior" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                            Exterior
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
-                <div className="flex-1">
-                  <DialogTitle className="text-3xl font-bold text-slate-900">{name}</DialogTitle>
-                  <Badge className={`mt-2 ${getStatusColor ? getStatusColor(status) : 'bg-slate-100 text-slate-800'}`}>
-                    {status?.replace('_', ' ')}
-                  </Badge>
-                </div>
               </div>
             </DialogHeader>
 
@@ -178,14 +293,92 @@ export default function PropertyDetailModal({ property, accommodations, resident
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Additional Information</h3>
                     <div className="space-y-4">
                         {googleDriveLink && (
-                          <DetailItem icon={<ExternalLink />} label="Google Drive Link">
+                          <DetailItem icon={<ExternalLink />} label="Main Property Image">
                             <a
                               href={googleDriveLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-indigo-600 hover:underline flex items-center gap-1"
                             >
-                              View Folder/Images
+                              View Image
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
+                        {bathroomImageLink && (
+                          <DetailItem icon={<ExternalLink />} label="Bathroom Image">
+                            <a
+                              href={bathroomImageLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Bathroom
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
+                        {communalAreaImageLink && (
+                          <DetailItem icon={<ExternalLink />} label="Communal Area Image">
+                            <a
+                              href={communalAreaImageLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Communal Area
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
+                        {kitchenImageLink && (
+                          <DetailItem icon={<ExternalLink />} label="Kitchen Image">
+                            <a
+                              href={kitchenImageLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Kitchen
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
+                        {gardenImageLink && (
+                          <DetailItem icon={<ExternalLink />} label="Garden Image">
+                            <a
+                              href={gardenImageLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Garden
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
+                        {livingRoomImageLink && (
+                          <DetailItem icon={<ExternalLink />} label="Living Room Image">
+                            <a
+                              href={livingRoomImageLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Living Room
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </DetailItem>
+                        )}
+                        {exteriorImageLink && (
+                          <DetailItem icon={<ExternalLink />} label="Exterior Image">
+                            <a
+                              href={exteriorImageLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline flex items-center gap-1"
+                            >
+                              View Exterior
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           </DetailItem>
@@ -251,9 +444,9 @@ export default function PropertyDetailModal({ property, accommodations, resident
       </DialogContent>
 
       <ImagePreviewModal
-        isOpen={showPhotoModal}
-        onClose={() => setShowPhotoModal(false)}
-        imageUrl={previewUrl}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        imageUrl={selectedImage}
         title={name}
       />
     </Dialog>

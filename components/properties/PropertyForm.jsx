@@ -35,6 +35,12 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
     contact_phone: "",
     emergency_contact: "",
     google_drive_link: "",
+    bathroom_image_link: "",
+    communal_area_image_link: "",
+    kitchen_image_link: "",
+    garden_image_link: "",
+    living_room_image_link: "",
+    exterior_image_link: "",
     notes: "",
     status: "active"
   });
@@ -110,6 +116,12 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
         contact_phone: property["Contact Phone"] || property.contact_phone || "",
         emergency_contact: property["Emergency Contact"] || property.emergency_contact || "",
         google_drive_link: property["Google Drive Link"] || property.google_drive_link || "",
+        bathroom_image_link: property["Bathroom Image Link"] || property.bathroom_image_link || "",
+        communal_area_image_link: property["Communal Area Image Link"] || property.communal_area_image_link || "",
+        kitchen_image_link: property["Kitchen Image Link"] || property.kitchen_image_link || "",
+        garden_image_link: property["Garden Image Link"] || property.garden_image_link || "",
+        living_room_image_link: property["Living Room Image Link"] || property.living_room_image_link || "",
+        exterior_image_link: property["Exterior Image Link"] || property.exterior_image_link || "",
         notes: property.Notes || property.notes || "",
         status: statusReverseMap[property.Status] || property.status || "active"
       });
@@ -161,6 +173,12 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
       "Contact Phone": formData.contact_phone || null,
       "Emergency Contact": formData.emergency_contact || null,
       "Google Drive Link": formData.google_drive_link || null,
+      "Bathroom Image Link": formData.bathroom_image_link || null,
+      "Communal Area Image Link": formData.communal_area_image_link || null,
+      "Kitchen Image Link": formData.kitchen_image_link || null,
+      "Garden Image Link": formData.garden_image_link || null,
+      "Living Room Image Link": formData.living_room_image_link || null,
+      "Exterior Image Link": formData.exterior_image_link || null,
       Status: statusMap[formData.status] || 'Active',
       Notes: formData.notes || null,
       "Updated Date": new Date().toISOString()
@@ -539,12 +557,66 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
                 />
               </div>
               <div className="md:col-span-2">
-                <Label htmlFor="google_drive_link" className="mb-2 block">Google Drive Link (Images/Folder)</Label>
+                <Label htmlFor="google_drive_link" className="mb-2 block">Main Property Image (Google Drive Link)</Label>
                 <Input
                   id="google_drive_link"
                   value={formData.google_drive_link}
                   onChange={(e) => handleChange("google_drive_link", e.target.value)}
                   placeholder="https://drive.google.com/..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="bathroom_image_link" className="mb-2 block">Bathroom Image Link</Label>
+                <Input
+                  id="bathroom_image_link"
+                  value={formData.bathroom_image_link}
+                  onChange={(e) => handleChange("bathroom_image_link", e.target.value)}
+                  placeholder="Direct image link"
+                />
+              </div>
+              <div>
+                <Label htmlFor="communal_area_image_link" className="mb-2 block">Communal Area Image Link</Label>
+                <Input
+                  id="communal_area_image_link"
+                  value={formData.communal_area_image_link}
+                  onChange={(e) => handleChange("communal_area_image_link", e.target.value)}
+                  placeholder="Direct image link"
+                />
+              </div>
+              <div>
+                <Label htmlFor="kitchen_image_link" className="mb-2 block">Kitchen Image Link</Label>
+                <Input
+                  id="kitchen_image_link"
+                  value={formData.kitchen_image_link}
+                  onChange={(e) => handleChange("kitchen_image_link", e.target.value)}
+                  placeholder="Direct image link"
+                />
+              </div>
+              <div>
+                <Label htmlFor="garden_image_link" className="mb-2 block">Garden Image Link</Label>
+                <Input
+                  id="garden_image_link"
+                  value={formData.garden_image_link}
+                  onChange={(e) => handleChange("garden_image_link", e.target.value)}
+                  placeholder="Direct image link"
+                />
+              </div>
+              <div>
+                <Label htmlFor="living_room_image_link" className="mb-2 block">Living Room Image Link</Label>
+                <Input
+                  id="living_room_image_link"
+                  value={formData.living_room_image_link}
+                  onChange={(e) => handleChange("living_room_image_link", e.target.value)}
+                  placeholder="Direct image link"
+                />
+              </div>
+              <div>
+                <Label htmlFor="exterior_image_link" className="mb-2 block">Exterior Image Link</Label>
+                <Input
+                  id="exterior_image_link"
+                  value={formData.exterior_image_link}
+                  onChange={(e) => handleChange("exterior_image_link", e.target.value)}
+                  placeholder="Direct image link"
                 />
               </div>
             </div>
