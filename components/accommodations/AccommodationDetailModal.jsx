@@ -11,9 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    Home, MapPin, Users, PoundSterling, Calendar, Wrench, User, Edit, CheckCircle, Building2, Trash2, ExternalLink
+    Home, MapPin, Users, PoundSterling, Calendar, Wrench, User, Edit, CheckCircle, Building2, Trash2, ExternalLink, ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
+import ImagePreviewModal from "@/components/ui/ImagePreviewModal";
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
@@ -70,6 +71,9 @@ export default function AccommodationDetailModal({
   onDelete,
   isAdmin
 }) {
+  const [selectedImage, setSelectedImage] = React.useState(null);
+  const [showPreview, setShowPreview] = React.useState(false);
+
   if (!accommodation) return null;
 
   // Use getAvailabilityColor if provided, otherwise fallback to getStatusColor
@@ -96,6 +100,8 @@ export default function AccommodationDetailModal({
   const amenities = accommodation["Amenities"] || accommodation.amenities;
   const accessibilityFeatures = accommodation["Accessibility Features"] || accommodation.accessibility_features;
   const googleDriveLink = accommodation["Google Drive Link"] || accommodation.google_drive_link;
+  const ensuiteImageLink = accommodation["En-suite Image Link"] || accommodation.ensuite_image_link;
+  const altAngleImageLink = accommodation["Alternative Angle Link"] || accommodation.alt_angle_image_link;
   const notes = accommodation["Notes"] || accommodation.notes;
   const accommodationId = accommodation.ID || accommodation.id;
   const previewUrl = convertToDirectImageUrl(googleDriveLink);
@@ -139,42 +145,81 @@ export default function AccommodationDetailModal({
         <ScrollArea className="max-h-[90vh]">
           <div className="p-6">
             <DialogHeader className="mb-6">
-              <div className="flex items-center gap-4">
-                {previewUrl ? (
-                  <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
-                    <img
-                      src={previewUrl}
-                      alt={roomNumber}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div style={{display: 'none'}} className="w-full h-full items-center justify-center bg-gradient-to-r from-blue-500 to-indigo-600">
-                      <span className="text-white font-bold text-2xl">
-                        {roomNumber?.charAt(0) || 'R'}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-                    <span className="text-white font-bold text-2xl">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
+                    <span className="text-white font-bold text-xl">
                       {roomNumber?.charAt(0) || 'R'}
                     </span>
                   </div>
-                )}
-                <div>
-                  <DialogTitle className="text-3xl font-bold text-slate-900">{roomNumber}</DialogTitle>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <Badge className={statusColorFunc(availabilityStatus)}>{availabilityStatus?.replace(/_/g, ' ')}</Badge>
-                    <Badge className={getConditionColor(condition)}>{condition?.replace(/_/g, ' ')}</Badge>
-                    {furnished && (
-                      <Badge variant="outline" className="border-blue-500 text-blue-700">Furnished</Badge>
-                    )}
+                  <div>
+                    <DialogTitle className="text-3xl font-bold text-slate-900">{roomNumber}</DialogTitle>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <Badge className={statusColorFunc(availabilityStatus)}>{availabilityStatus?.replace(/_/g, ' ')}</Badge>
+                      <Badge className={getConditionColor(condition)}>{condition?.replace(/_/g, ' ')}</Badge>
+                      {furnished && (
+                        <Badge variant="outline" className="border-blue-500 text-blue-700">Furnished</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {/* Collage/Gallery Feature */}
+                {(previewUrl || ensuiteImageLink || altAngleImageLink) && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    {/* Main Image */}
+                    {previewUrl && (
+                      <div
+                        className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(previewUrl);
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={previewUrl} alt="Main room" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-xs font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                            Main Room
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {ensuiteImageLink && (
+                      <div
+                        className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(ensuiteImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(ensuiteImageLink)} alt="En-suite" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-xs font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                            En-suite
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {altAngleImageLink && (
+                      <div
+                        className="relative aspect-video rounded-xl overflow-hidden cursor-pointer group border border-slate-200 bg-slate-50"
+                        onClick={() => {
+                          setSelectedImage(convertToDirectImageUrl(altAngleImageLink));
+                          setShowPreview(true);
+                        }}
+                      >
+                        <img src={convertToDirectImageUrl(altAngleImageLink)} alt="Alt angle" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 text-xs font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                            Alt Angle
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </DialogHeader>
 
@@ -260,21 +305,51 @@ export default function AccommodationDetailModal({
               </>
             )}
 
-            {googleDriveLink && (
+            {(googleDriveLink || ensuiteImageLink || altAngleImageLink) && (
               <>
                 <Separator className="my-6" />
-                <h3 className="text-xl font-semibold text-slate-800 mb-4">Google Drive Link</h3>
-                <DetailItem icon={<ExternalLink />} label="Images/Folder">
-                  <a
-                    href={googleDriveLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-indigo-600 hover:underline flex items-center gap-1"
-                  >
-                    View Folder/Images
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </DetailItem>
+                <h3 className="text-xl font-semibold text-slate-800 mb-4">Document & Image Links</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {googleDriveLink && (
+                    <DetailItem icon={<ExternalLink />} label="Main Room Images">
+                      <a
+                        href={googleDriveLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:underline flex items-center gap-1"
+                      >
+                        View Folder/Images
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </DetailItem>
+                  )}
+                  {ensuiteImageLink && (
+                    <DetailItem icon={<ExternalLink />} label="En-suite Images">
+                      <a
+                        href={ensuiteImageLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:underline flex items-center gap-1"
+                      >
+                        View En-suite
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </DetailItem>
+                  )}
+                  {altAngleImageLink && (
+                    <DetailItem icon={<ExternalLink />} label="Alt Angle Images">
+                      <a
+                        href={altAngleImageLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:underline flex items-center gap-1"
+                      >
+                        View Alt Angle
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </DetailItem>
+                  )}
+                </div>
               </>
             )}
 
@@ -316,6 +391,13 @@ export default function AccommodationDetailModal({
           </div>
         </ScrollArea>
       </DialogContent>
+
+      <ImagePreviewModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        imageUrl={selectedImage}
+        title={roomNumber}
+      />
     </Dialog>
   );
 }
