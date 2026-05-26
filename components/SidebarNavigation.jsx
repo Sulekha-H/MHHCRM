@@ -58,7 +58,7 @@ export default function SidebarNavigation() {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home, current: pathname === "/" },
-    { name: "Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
+    { name: "Staff Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
     { name: "Standard Residents", href: "/residents", icon: Users, current: pathname === "/residents" },
     { name: "Properties", href: "/properties", icon: Building, current: pathname === "/properties" },
     { name: "Accommodations", href: "/accommodations", icon: Bed, current: pathname === "/accommodations" },
