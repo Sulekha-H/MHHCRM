@@ -30,6 +30,8 @@ export default function AccommodationForm({ accommodation, properties, residents
     availability_status: (accommodation["Availability Status"] || accommodation.Availability_Status || accommodation.availability_status || "available").toLowerCase().replace(/ /g, '_'),
     available_from: accommodation["Available From"] || accommodation.Available_From || accommodation.available_from || "",
     google_drive_link: accommodation["Google Drive Link"] || accommodation.google_drive_link || "",
+    ensuite_image_link: accommodation["En-suite Image Link"] || accommodation.ensuite_image_link || "",
+    alt_angle_image_link: accommodation["Alternative Angle Link"] || accommodation.alt_angle_image_link || "",
     notes: accommodation["Notes"] || accommodation.Notes || accommodation.notes || "",
     images: accommodation["Images"] || accommodation.Images || accommodation.images || []
   } : {
@@ -51,6 +53,8 @@ export default function AccommodationForm({ accommodation, properties, residents
     availability_status: "available",
     available_from: "",
     google_drive_link: "",
+    ensuite_image_link: "",
+    alt_angle_image_link: "",
     notes: "",
     images: []
   });
@@ -121,6 +125,8 @@ export default function AccommodationForm({ accommodation, properties, residents
       "Availability Status": statusMap[formData.availability_status] || 'Available',
       "Available From": formData.available_from || null,
       "Google Drive Link": formData.google_drive_link || null,
+      "En-suite Image Link": formData.ensuite_image_link || null,
+      "Alternative Angle Link": formData.alt_angle_image_link || null,
       "Notes": formData.notes || null,
       "Images": formData.images,
       "Updated Date": new Date().toISOString()
@@ -321,12 +327,30 @@ export default function AccommodationForm({ accommodation, properties, residents
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="google_drive_link">Google Drive Link (Images/Folder)</Label>
+                <Label htmlFor="google_drive_link">Main Room Image (Google Drive Link)</Label>
                 <Input
                   id="google_drive_link"
                   value={formData.google_drive_link}
                   onChange={(e) => handleChange("google_drive_link", e.target.value)}
                   placeholder="https://drive.google.com/..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ensuite_image_link">En-suite Image Link</Label>
+                <Input
+                  id="ensuite_image_link"
+                  value={formData.ensuite_image_link}
+                  onChange={(e) => handleChange("ensuite_image_link", e.target.value)}
+                  placeholder="Google Drive link for en-suite"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="alt_angle_image_link">Alternative Angle Link</Label>
+                <Input
+                  id="alt_angle_image_link"
+                  value={formData.alt_angle_image_link}
+                  onChange={(e) => handleChange("alt_angle_image_link", e.target.value)}
+                  placeholder="Google Drive link for alternative angle"
                 />
               </div>
             </div>

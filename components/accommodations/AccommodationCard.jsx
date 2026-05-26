@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, User, Home, Calendar, AlertTriangle, Trash2, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+import ImagePreviewModal from "@/components/ui/ImagePreviewModal";
 
 const convertToDirectImageUrl = (url) => {
   if (!url) return url;
@@ -49,6 +50,8 @@ export default function AccommodationCard({
   properties,
   residents 
 }) {
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
   // Use getAvailabilityColor if provided, otherwise fallback to getStatusColor
   const statusColorFunc = getAvailabilityColor || getStatusColor;
   
@@ -100,6 +103,7 @@ export default function AccommodationCard({
   }
 
   return (
+    <>
     <Card 
       className="hover:shadow-lg transition-shadow duration-300 cursor-pointer flex flex-col"
       onClick={() => onViewDetails(accommodation)}
@@ -107,7 +111,13 @@ export default function AccommodationCard({
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           {previewUrl ? (
-            <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50">
+            <div
+              className="w-12 h-12 rounded-xl overflow-hidden shadow-sm flex-shrink-0 border border-slate-200 bg-slate-50 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowPhotoModal(true);
+              }}
+            >
               <img
                 src={previewUrl}
                 alt={roomNumber}
@@ -240,5 +250,13 @@ export default function AccommodationCard({
         </div>
       </CardContent>
     </Card>
+
+    <ImagePreviewModal
+      isOpen={showPhotoModal}
+      onClose={() => setShowPhotoModal(false)}
+      imageUrl={previewUrl}
+      title={roomNumber}
+    />
+    </>
   );
 }
