@@ -107,23 +107,26 @@ export default function DeletedEntries() {
         }
       }
 
-      // Load deleted HB and UC logs
+      // Load deleted HB and UC logs (both Standard and Allocated)
       try {
-        const [hbResponse, ucResponse] = await Promise.all([
+        const [hbResponse, ucResponse, allocatedHbResponse, allocatedUcResponse] = await Promise.all([
           supabase.from('housing_benefit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false }),
-          supabase.from('universal_credit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false })
+          supabase.from('universal_credit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false }),
+          supabase.from('allocated_housing_benefit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false }),
+          supabase.from('allocated_universal_credit_logs').select('*').eq('"Deleted"', true).order('"Deleted Date"', { ascending: false })
         ]);
 
-        if (hbResponse.error) throw hbResponse.error;
-        if (ucResponse.error) throw ucResponse.error;
-
-        const hbLogs = hbResponse.data || [];
-        const ucLogs = ucResponse.data || [];
+        const hbLogs = (hbResponse.data || []).map(log => ({ ...normalizeData(log), benefit_type: 'housing_benefit', is_allocated: false }));
+        const ucLogs = (ucResponse.data || []).map(log => ({ ...normalizeData(log), benefit_type: 'universal_credit', is_allocated: false }));
+        const allocatedHbLogs = (allocatedHbResponse.data || []).map(log => ({ ...normalizeData(log), benefit_type: 'housing_benefit', is_allocated: true }));
+        const allocatedUcLogs = (allocatedUcResponse.data || []).map(log => ({ ...normalizeData(log), benefit_type: 'universal_credit', is_allocated: true }));
         
         // Combine and filter out landlord portal logs
         const allBenefitLogs = [
-          ...hbLogs.map(log => ({ ...normalizeData(log), benefit_type: 'housing_benefit' })),
-          ...ucLogs.map(log => ({ ...normalizeData(log), benefit_type: 'universal_credit' }))
+          ...hbLogs,
+          ...ucLogs,
+          ...allocatedHbLogs,
+          ...allocatedUcLogs
         ].filter(log => log.benefit_type !== 'landlord_portal');
 
         setDeletedBenefits(allBenefitLogs);
@@ -174,7 +177,13 @@ export default function DeletedEntries() {
         let actualTable = restoreItem.tableName;
         if (restoreItem.tableName === 'benefit_logs') {
           const normalizedBenefitType = restoreItem.item.benefit_type?.toLowerCase().replace(/\s+/g, '_');
-          actualTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+          const isAllocated = restoreItem.item.is_allocated;
+
+          if (normalizedBenefitType === 'universal_credit') {
+            actualTable = isAllocated ? 'allocated_universal_credit_logs' : 'universal_credit_logs';
+          } else {
+            actualTable = isAllocated ? 'allocated_housing_benefit_logs' : 'housing_benefit_logs';
+          }
         } else if (restoreItem.tableName === 'referrals') {
           // Determine correct referrals table
           actualTable = restoreItem.item.referral_type === 'organisation' ? 'organisation_referrals' : 'self_referrals';
@@ -217,7 +226,13 @@ export default function DeletedEntries() {
         let actualTable = permanentDeleteItem.tableName;
         if (permanentDeleteItem.tableName === 'benefit_logs') {
           const normalizedBenefitType = permanentDeleteItem.item.benefit_type?.toLowerCase().replace(/\s+/g, '_');
-          actualTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+          const isAllocated = permanentDeleteItem.item.is_allocated;
+
+          if (normalizedBenefitType === 'universal_credit') {
+            actualTable = isAllocated ? 'allocated_universal_credit_logs' : 'universal_credit_logs';
+          } else {
+            actualTable = isAllocated ? 'allocated_housing_benefit_logs' : 'housing_benefit_logs';
+          }
         } else if (permanentDeleteItem.tableName === 'referrals') {
           // Determine correct referrals table
           actualTable = permanentDeleteItem.item.referral_type === 'organisation' ? 'organisation_referrals' : 'self_referrals';

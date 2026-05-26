@@ -83,8 +83,8 @@ const loadData = async () => {
 
     // --- Load Housing Benefit & Universal Credit logs in parallel ---
     const [hbRes, ucRes] = await Promise.all([
-      supabase.from('housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
-      supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
+      supabase.from('allocated_housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
+      supabase.from('allocated_universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
     ]);
 
     if (hbRes.error) console.error("❌ HB logs error:", hbRes.error);
@@ -148,7 +148,7 @@ useEffect(() => {
       const benefitType = logData["Benefit Type"] || logData.benefit_type;
       // Normalize benefit type for comparison
       const normalizedBenefitType = benefitType?.toLowerCase().replace(/\s+/g, '_');
-      const tableName = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+      const tableName = normalizedBenefitType === 'universal_credit' ? 'allocated_universal_credit_logs' : 'allocated_housing_benefit_logs';
 
       console.log(`📤 Inserting/updating to table: ${tableName}`);
       console.log(`📤 Data being sent:`, logData);
@@ -176,24 +176,29 @@ useEffect(() => {
         console.log(`✅ Log inserted into ${tableName}`, data);
 
         // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is created
-        if (logData.benefit_type === 'housing_benefit' && logData.log_type === 'application_log') {
-          const resident = residents.find(r => r.id === logData.resident_id);
+        const currentBenefitType = logData["Benefit Type"] || logData.benefit_type;
+        const currentLogType = logData["Log Type"] || logData.log_type;
+
+        if (currentBenefitType === 'Housing Benefit' && currentLogType === 'Application Log') {
+          const resId = logData["Resident ID"] || logData.resident_id;
+          const resident = residents.find(r => r.id === resId);
           const residentFullName = resident ? `${resident.first_name} ${resident.last_name}` : 'Resident';
 
           const awaitingActivationLog = {
-            resident_id: logData.resident_id,
-            benefit_type: 'housing_benefit', // This log is specifically for HB
-            log_type: 'awaiting_activation',
-            title: `Awaiting Activation - ${residentFullName}`,
-            description: `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData.completed_application_submitted_date ? format(new Date(logData.completed_application_submitted_date), 'dd/MM/yyyy') : 'pending'}`,
-            log_date: new Date().toISOString().slice(0, 16),
-            status: 'awaiting_activation',
-            logged_by: logData.logged_by || '',
-            notes: `Linked to application: ${logData.title || 'HB Application'}`
+            "Resident ID": resId,
+            "Benefit Type": 'Housing Benefit',
+            "Log Type": 'Awaiting Activation',
+            "Title": `Awaiting Activation - ${residentFullName}`,
+            "Description": `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData["Completed Application Submitted Date"] ? format(new Date(logData["Completed Application Submitted Date"]), 'dd/MM/yyyy') : 'pending'}`,
+            "Log Date": new Date().toISOString(),
+            "Status": 'Awaiting Activation',
+            "Logged By": logData["Logged By"] || '',
+            "Notes": `Linked to application: ${logData.Title || 'HB Application'}`,
+            "Created Date": new Date().toISOString()
           };
 
-          await supabase.from('housing_benefit_logs').insert([awaitingActivationLog]); // This always goes to HB table
-          console.log('✅ Auto-created Awaiting Activation log for resident:', logData.resident_id);
+          await supabase.from('allocated_housing_benefit_logs').insert([awaitingActivationLog]); // This always goes to HB table
+          console.log('✅ Auto-created Awaiting Activation log for resident:', resId);
         }
       }
 
@@ -227,7 +232,7 @@ useEffect(() => {
     if (logToDelete) {
       // Normalize benefit_type for table determination (handle both "Universal Credit" and "universal_credit")
       const normalizedBenefitType = logToDelete.benefit_type?.toLowerCase().replace(/\s+/g, '_');
-      const targetTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+      const targetTable = normalizedBenefitType === 'universal_credit' ? 'allocated_universal_credit_logs' : 'allocated_housing_benefit_logs';
 
       try {
         console.log('🗑️ Deleting log:', {
