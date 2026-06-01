@@ -61,13 +61,38 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
     if (resident) {
       setFormData({
         ...resident,
-        "Resident Type": resident["Resident Type"] || "Standard resident",
-        "Benefits": resident["Benefits"] || [],
-        "Room Transfers": resident["Room Transfers"] || [],
-        "Accommodation Transfers": resident["Accommodation Transfers"] || [],
-        "Other Documents": resident["Other Documents"] || []
+        "First Name": resident["First Name"] || resident.first_name || resident.First_Name || "",
+        "Last Name": resident["Last Name"] || resident.last_name || resident.Last_Name || "",
+        "Date of Birth": resident["Date of Birth"] || resident.date_of_birth || resident.Date_Of_Birth || "",
+        "Phone Number": resident["Phone Number"] || resident.phone_number || resident.Phone_Number || "",
+        "Email Address": resident["Email Address"] || resident.email_address || resident.Email_Address || "",
+        "Resident Type": resident["Resident Type"] || resident.resident_type || resident.Resident_Type || "Standard resident",
+        "Accommodation Type": resident["Accommodation Type"] || resident.accommodation_type || resident.Accommodation_Type || "Shared House",
+        "Property Address": resident["Property Address"] || resident.property_address || resident.Property_Address || "",
+        "Property ID": resident["Property ID"] || resident.property_id || resident.Property_Id || "",
+        "Property Name": resident["Property Name"] || resident.property_name || resident.Property_Name || "",
+        "Accommodation ID": resident["Accommodation ID"] || resident.accommodation_id || resident.Accommodation_Id || "",
+        "Unit/Room Number": resident["Unit/Room Number"] || resident.unit_room_number || resident.Unit_Room_Number || "",
+        "Move-in Date": resident["Move-in Date"] || resident.move_in_date || resident.Move_In_Date || "",
+        "Move-out Date": resident["Move-out Date"] || resident.move_out_date || resident.Move_Out_Date || "",
+        "Support Worker": resident["Support Worker"] || resident.support_worker || resident.Support_Worker || "",
+        "Medical Conditions": resident["Medical Conditions"] || resident.medical_conditions || resident.Medical_Conditions || "",
+        "Status": resident["Status"] || resident.status || "Active",
+        "Notes": resident["Notes"] || resident.notes || "",
+        "Claim Reference Number": resident["Claim Reference Number"] || resident.claim_reference_number || resident.Claim_Reference_Number || "",
+        "Submission Reference": resident["Submission Reference"] || resident.submission_reference || resident.Submission_Reference || "",
+        "National Insurance Number": resident["National Insurance Number"] || resident.national_insurance_number || resident.National_Insurance_Number || "",
+        "Benefits": resident["Benefits"] || resident.benefits || [],
+        "Room Transfers": resident["Room Transfers"] || resident.room_transfers || [],
+        "Accommodation Transfers": resident["Accommodation Transfers"] || resident.accommodation_transfers || [],
+        "Sign Up Pack Link": resident["Sign Up Pack Link"] || resident.sign_up_pack_link || resident.Sign_Up_Pack_Link || "",
+        "Photo ID URL": resident["Photo ID URL"] || resident.photo_id_url || resident.Photo_Id_Url || "",
+        "Future Address": resident["Future Address"] || resident.future_address || resident.Future_Address || "",
+        "Future Housing Type": resident["Future Housing Type"] || resident.future_housing_type || resident.Future_Housing_Type || "",
+        "Move-on Outcome": resident["Move-on Outcome"] || resident.move_on_outcome || resident.Move_On_Outcome || "",
+        "Other Documents": resident["Other Documents"] || resident.other_documents || []
       });
-      setPhotoUrlInput(resident["Photo ID URL"] || "");
+      setPhotoUrlInput(resident["Photo ID URL"] || resident.photo_id_url || resident.Photo_Id_Url || "");
       setShowGoogleDriveHelp(resident["Photo ID URL"]?.includes('drive.google.com') || false);
     }
   }, [resident]);
