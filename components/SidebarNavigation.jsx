@@ -27,6 +27,7 @@ import {
   Shield,
   Heart,
   Folder,
+  ListTodo,
   Settings,
   Lock,
   FileStack,
@@ -66,6 +67,7 @@ export default function SidebarNavigation() {
 
   const operationsNav = [
     { name: "Tasks", href: "/tasks", icon: CheckSquare, current: pathname === "/tasks" },
+    { name: "Office Routines", href: "/routines", icon: ListTodo, current: pathname === "/routines" },
     { name: "Incidents", href: "/incidents", icon: AlertTriangle, current: pathname === "/incidents" },
     { name: "Office Logs", href: "/officelogs", icon: FileText, current: pathname === "/officelogs" },
     { name: "Repairs", href: "/repairs", icon: Wrench, current: pathname === "/repairs" },
