@@ -25,7 +25,7 @@ export default function TaskCard({
   const dueDate = task["Due Date"] || task.due_date;
   const status = task.Status || task.status;
   const priority = task.Priority || task.priority;
-  const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id;
+  const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id || task.assigned_to;
   const loggedBy = task["Logged By"] || task.logged_by;
   const targetDuration = task["Target Duration"] || task.target_duration;
   const actualStartTime = task["Actual Start Time"] || task.actual_start_time;
@@ -157,7 +157,7 @@ export default function TaskCard({
 
       {/* Action Buttons (Visible on hover or if in progress) */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!isCompleted && !isInProgress && assignedToUserId === currentUser?.["Full Name"] && (
+        {!isCompleted && !isInProgress && (assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase() && (
           <Button
             variant="ghost"
             size="sm"
