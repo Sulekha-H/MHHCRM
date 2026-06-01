@@ -82,7 +82,9 @@ export default function TasksPage() {
 
       // Routine Injection Logic
       const assigneeName = filters.assignee === "all" ? currentUserData?.["Full Name"] : filters.assignee;
-      const targetUser = activeUsers.find(u => u["Full Name"] === assigneeName);
+      const targetUser = activeUsers.find(u =>
+        (u["Full Name"] || "").trim().toLowerCase() === (assigneeName || "").trim().toLowerCase()
+      );
       
       if (targetUser) {
         const injected = await injectRoutineTasks(supabase, targetUser, tasksData || [], selectedDate);
@@ -110,7 +112,9 @@ export default function TasksPage() {
 
     // Filter by assignee
     if (filters.assignee !== "all") {
-      filtered = filtered.filter(t => t["Assigned To User ID"] === filters.assignee);
+      filtered = filtered.filter(t =>
+        (t["Assigned To User ID"] || "").trim().toLowerCase() === filters.assignee.trim().toLowerCase()
+      );
     }
 
     // Search filter
@@ -217,8 +221,9 @@ export default function TasksPage() {
     });
   };
 
-  const routineTasks = sortTasks(filteredTasks.filter(t => ROUTINE_TITLES.includes(t.Title)), 'routine');
-  const miscTasks = sortTasks(filteredTasks.filter(t => !ROUTINE_TITLES.includes(t.Title)), 'misc');
+  const routineTitlesLower = ROUTINE_TITLES.map(t => t.trim().toLowerCase());
+  const routineTasks = sortTasks(filteredTasks.filter(t => routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'routine');
+  const miscTasks = sortTasks(filteredTasks.filter(t => !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'misc');
 
   const upNextId = routineTasks.find(t => (t.Status || "").toLowerCase() === "to do")?.ID;
 
