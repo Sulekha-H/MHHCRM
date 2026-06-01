@@ -68,7 +68,7 @@ export default function TasksPage() {
       if (usersError) throw usersError;
 
       const activeUsers = Array.isArray(usersData) ? usersData.filter(u => {
-        const name = u?.["Full Name"]?.trim() || '';
+        const name = (u?.["Full Name"] || u?.full_name || "")?.trim() || '';
         return name && !['Tair', 'Iveta lobinate', 'amit noach'].includes(name) && !name.toLowerCase().includes('test');
       }) : [];
 
@@ -81,9 +81,9 @@ export default function TasksPage() {
       setProperties(propertiesData || []);
 
       // Routine Injection Logic
-      const assigneeName = filters.assignee === "all" ? currentUserData?.["Full Name"] : filters.assignee;
+      const assigneeName = filters.assignee === "all" ? (currentUserData?.["Full Name"] || currentUserData?.full_name) : filters.assignee;
       const targetUser = activeUsers.find(u =>
-        (u["Full Name"] || "").trim().toLowerCase() === (assigneeName || "").trim().toLowerCase()
+        (u["Full Name"] || u?.full_name || "").trim().toLowerCase() === (assigneeName || "").trim().toLowerCase()
       );
       
       if (targetUser) {
@@ -270,17 +270,20 @@ export default function TasksPage() {
           >
             All Staff
           </Button>
-          {users.map(u => (
-            <Button
-              key={u.ID}
-              variant={filters.assignee === u["Full Name"] ? "default" : "outline"}
-              className={filters.assignee === u["Full Name"] ? "bg-cyan-600" : ""}
-              onClick={() => setFilters(f => ({ ...f, assignee: u["Full Name"] }))}
-              size="sm"
-            >
-              {u["Full Name"].split(' ')[0]}
-            </Button>
-          ))}
+          {users.map(u => {
+            const userName = u["Full Name"] || u.full_name;
+            return (
+              <Button
+                key={u.ID || u.id}
+                variant={filters.assignee === userName ? "default" : "outline"}
+                className={filters.assignee === userName ? "bg-cyan-600" : ""}
+                onClick={() => setFilters(f => ({ ...f, assignee: userName }))}
+                size="sm"
+              >
+                {userName.split(' ')[0]}
+              </Button>
+            );
+          })}
         </div>
 
         {/* Search Bar */}
@@ -367,7 +370,7 @@ export default function TasksPage() {
       {viewingTask && (
         <TaskDetailModal
           task={viewingTask}
-          assignedUser={users.find(u => u["Full Name"] === viewingTask["Assigned To User ID"])}
+          assignedUser={users.find(u => (u["Full Name"] || u.full_name) === viewingTask["Assigned To User ID"])}
           onClose={() => setViewingTask(null)}
           onEdit={(t) => { setViewingTask(null); setEditingTask(t); }}
           onStartTask={handleStartTask}

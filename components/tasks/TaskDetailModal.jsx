@@ -36,7 +36,7 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
     const dueDate = task["Due Date"] || task.due_date;
     const status = task.Status || task.status;
     const priority = task.Priority || task.priority;
-    const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id;
+    const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id || task.assigned_to;
     const relatedEntity = task["Related Entity"] || task.related_entity;
     const relatedEntityId = task["Related Entity ID"] || task.related_entity_id;
     const loggedBy = task["Logged By"] || task.logged_by;
@@ -145,7 +145,7 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                         </div>
 
                         <DialogFooter className="mt-8 flex flex-wrap gap-2">
-                            {(assignedToUserId === currentUser?.["Full Name"]) && (
+                            {((assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()) && (
                                 <>
                                     {status === "To Do" && (
                                         <Button
