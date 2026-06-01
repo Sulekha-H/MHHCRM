@@ -5,14 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Calendar, User, Clock, AlertTriangle, Trash2, Play, CheckCircle2 } from "lucide-react";
 import { format, differenceInSeconds } from "date-fns";
 
-export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStartTask, onCompleteTask, assignedUser, assignedUserName, currentUser }) {
+export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStartTask, onCompleteTask, assignedUser, assignedUserName, currentUser, isRoutine }) {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isOverDuration, setIsOverDuration] = useState(false);
 
   // Handle both Supabase and base44 field formats
 
   // Handle both Supabase and base44 field formats
-  const title = task.Title || task.title;
+  let title = task.Title || task.title;
+  if (title === "Fiixit / CRM" || title === "Monday.com / CRM") {
+    title = `- ${title}`;
+  }
   const description = task.Description || task.description;
   const dueDate = task["Due Date"] || task.due_date;
   const status = task.Status || task.status;
@@ -89,6 +92,8 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
   };
   
   const isOverdue = new Date(dueDate) < new Date() && status !== 'completed' && status !== 'Completed';
+  const isDueSoon = !isOverdue && status !== 'completed' && status !== 'Completed' &&
+                    new Date(dueDate).getTime() - new Date().getTime() < 3600000; // 1 hour
   const isCompleted = status === 'completed' || status === 'Completed';
   const finalAssignedUserName = assignedUserName || assignedToUserId || "Unassigned";
   const userColor = assignedUser?.display_color || assignedUser?.["Display Color"];
@@ -101,7 +106,7 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
 
   return (
     <Card 
-      className={`hover:shadow-md transition-shadow duration-200 cursor-pointer ${isOverDuration ? 'animate-pulse border-red-500' : ''}`}
+      className={`hover:shadow-md transition-shadow duration-200 cursor-pointer overflow-hidden ${isOverDuration ? 'animate-pulse border-red-500' : ''} ${isRoutine ? 'bg-white' : 'bg-white'}`}
       style={cardBorderStyle}
       onClick={() => onViewDetails(task)}
     >
@@ -138,20 +143,34 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 p-4">
         {/* Status and Priority */}
-        <div className="flex gap-2 flex-wrap">
-          <Badge className={getStatusColor(status)}>
+        <div className="flex gap-2 flex-wrap items-center">
+          <Badge className={`${getStatusColor(status)} text-[10px] uppercase tracking-wider font-bold h-5 px-2`}>
             {status?.replace(/_/g, ' ')}
           </Badge>
-          <Badge className={getPriorityColor(priority)}>
-            {priority} priority
-          </Badge>
+          {!isRoutine && (
+            <Badge className={`${getPriorityColor(priority)} text-[10px] uppercase tracking-wider font-bold h-5 px-2`}>
+              {priority}
+            </Badge>
+          )}
           {isOverdue && (
-            <Badge variant="destructive">
-              <AlertTriangle className="w-3 h-3 mr-1" />
+            <Badge variant="destructive" className="text-[10px] uppercase tracking-wider font-bold h-5 px-2">
+              <AlertTriangle className="w-2.5 h-2.5 mr-1" />
               Overdue
             </Badge>
+          )}
+          {isDueSoon && (
+            <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] uppercase tracking-wider font-bold h-5 px-2">
+              <Clock className="w-2.5 h-2.5 mr-1" />
+              Due Soon
+            </Badge>
+          )}
+          {targetDuration && (
+            <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 ml-auto">
+              <Clock className="w-3 h-3" />
+              {targetDuration} MIN
+            </div>
           )}
         </div>
         
@@ -165,27 +184,26 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
         )}
 
         {/* Due Date, Assignee, and Logged By - Prominent Section */}
-        <div className="pt-3 border-t space-y-2 bg-slate-50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span className="text-slate-600 font-medium">
-              Due: {dueDate ? format(new Date(dueDate), 'PPp') : 'No due date'}
-            </span>
-          </div>
-          {assignedToUserId && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-600">
-                Assigned to: {finalAssignedUserName}
+        <div className={`pt-2 border-t space-y-1 ${isRoutine ? '' : 'bg-slate-50 rounded-lg p-2'}`}>
+          {!isRoutine && (
+            <div className="flex items-center gap-2 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-slate-500">
+                Due: {dueDate ? format(new Date(dueDate), 'MMM d, HH:mm') : 'No date'}
               </span>
             </div>
           )}
-          {loggedBy && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="w-4 h-4 text-cyan-500" />
-              <span className="font-medium text-slate-900">
-                Logged by: <span className="text-cyan-700">{loggedBy}</span>
+          {assignedToUserId && !isRoutine && (
+            <div className="flex items-center gap-2 text-xs">
+              <User className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-slate-500 truncate">
+                {finalAssignedUserName}
               </span>
+            </div>
+          )}
+          {loggedBy && !isRoutine && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-[10px] font-bold text-cyan-600 bg-cyan-50 px-1.5 py-0.5 rounded uppercase">By {loggedBy}</span>
             </div>
           )}
         </div>

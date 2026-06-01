@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns";
+import { format, startOfDay, isSameDay } from "date-fns";
+import { injectRoutineTasks } from "@/lib/taskUtils";
+import { ROUTINE_TITLES } from "@/lib/constants/routines";
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
@@ -260,11 +262,28 @@ useEffect(() => {
       if (propertiesError) throw propertiesError;
       console.log(`✅ [SUPABASE] Loaded ${propertiesData?.length || 0} non-deleted properties`);
       
-      setTasks(Array.isArray(tasksData) ? tasksData : []);
+      const fetchedTasks = Array.isArray(tasksData) ? tasksData : [];
+      setTasks(fetchedTasks);
       setUsers(Array.isArray(activeUsers) ? activeUsers : []);
-      //console.log('DEBUG: Users passed to TaskForm:', Array.isArray(activeUsers) ? activeUsers : []); // ADDED LINE
       setResidents(Array.isArray(residentsData) ? residentsData : []);
       setProperties(Array.isArray(propertiesData) ? propertiesData : []);
+
+      // Inject routine tasks if needed
+      if (userEmail && activeUsers.length > 0) {
+        const currentUserData = activeUsers.find(u => u.Email === userEmail);
+        if (currentUserData) {
+          const injected = await injectRoutineTasks(supabase, currentUserData, fetchedTasks);
+          if (injected) {
+            // Reload tasks if new ones were injected
+            const { data: updatedTasks } = await supabase
+              .from('tasks')
+              .select('*')
+              .or('Deleted.is.null,Deleted.eq.false')
+              .order('Created Date', { ascending: false });
+            setTasks(updatedTasks || []);
+          }
+        }
+      }
       
     } catch (error) {
       console.error("❌ [SUPABASE] Critical error loading data:", error);
@@ -608,20 +627,12 @@ useEffect(() => {
 
   const taskCounts = getTaskCounts();
 
-  const groupedTasks = (Array.isArray(filteredTasks) ? filteredTasks : []).reduce((acc, task) => {
-    const assignee = task["Assigned To User ID"] || 'Unassigned';
-    if (!acc[assignee]) {
-      acc[assignee] = [];
-    }
-    acc[assignee].push(task);
-    return acc;
-  }, {});
-
-  Object.keys(groupedTasks).forEach(assignee => {
-    groupedTasks[assignee].sort((a, b) => {
+  const sortTasks = (taskList) => {
+    return [...taskList].sort((a, b) => {
       const statusA = (a.Status || a.status || "").toLowerCase();
       const statusB = (b.Status || b.status || "").toLowerCase();
 
+      // Completed always at bottom
       if (statusA === "completed" && statusB !== "completed") return 1;
       if (statusA !== "completed" && statusB === "completed") return -1;
 
@@ -646,169 +657,183 @@ useEffect(() => {
         return dueDateA.getTime() - dueDateB.getTime();
       }
     });
-  });
+  };
+
+  const displayAssignee = filters.assignee === "all" ? currentUser?.["Full Name"] : filters.assignee;
+
+  // Split tasks into routine and miscellaneous
+  const routineTasks = sortTasks(filteredTasks.filter(t =>
+    ROUTINE_TITLES.includes(t.Title) && t["Assigned To User ID"] === displayAssignee
+  ));
+
+  const miscellaneousTasks = sortTasks(filteredTasks.filter(t =>
+    !ROUTINE_TITLES.includes(t.Title) && (filters.assignee === "all" || t["Assigned To User ID"] === filters.assignee)
+  ));
+
+  const routineSummary = routineTasks.reduce((acc, t) => {
+    if (t.Status === "Completed") acc.completed++;
+    acc.total++;
+    return acc;
+  }, { completed: 0, total: 0 });
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 p-6 max-w-[1600px] mx-auto bg-slate-50 min-h-screen">
+      {/* Header with Date */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Task Management</h1>
-          <p className="text-slate-600">Track and manage tasks for your team</p>
-          {currentUser && (
-            <p className="text-xs text-slate-400 mt-1">Logged in as: {currentUser.Email}</p>
-          )}
+          <h1 className="text-3xl font-bold text-slate-900">{format(new Date(), 'EEEE, do MMMM')}</h1>
+          <p className="text-slate-500 mt-1">Manage your routines and miscellaneous tasks</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <Button
             onClick={exportToCSV}
             variant="outline"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
             disabled={loading || filteredTasks.length === 0}
           >
             <Download className="w-4 h-4" />
-            Export to CSV
+            Export
           </Button>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-cyan-600 hover:bg-cyan-700 shadow-sm"
+            className="bg-cyan-600 hover:bg-cyan-700 shadow-sm text-white font-medium px-6"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add New Task
+            New Task
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "overdue", assignee: "all" }))}
+      {/* Staff Selection Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+        <button
+          onClick={() => setFilters(prev => ({ ...prev, assignee: "all" }))}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border ${
+            filters.assignee === "all"
+              ? "bg-cyan-600 text-white border-cyan-600 shadow-md"
+              : "bg-white text-slate-600 border-slate-200 hover:border-cyan-300 hover:bg-cyan-50"
+          }`}
         >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-red-700">Overdue</p>
-                <p className="text-2xl font-bold text-red-900 mt-1">{taskCounts.overdue}</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "to_do", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-blue-700">To Do</p>
-                <p className="text-2xl font-bold text-blue-900 mt-1">{taskCounts.to_do}</p>
-              </div>
-              <ListTodo className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 border-yellow-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "in_progress", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-yellow-700">In Progress</p>
-                <p className="text-2xl font-bold text-yellow-900 mt-1">{taskCounts.in_progress}</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => setFilters(prev => ({ ...prev, status: "completed", assignee: "all" }))}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-green-700">Completed</p>
-                <p className="text-2xl font-bold text-green-900 mt-1">{taskCounts.completed}</p>
-              </div>
-              <CheckCircle2 className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 cursor-pointer hover:shadow-md transition-shadow" 
-          onClick={() => { 
-            if (currentUser?.["Full Name"]) {
-              setFilters(prev => ({ ...prev, assignee: currentUser["Full Name"], status: "all" }));
-            }
-          }}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-purple-700">My Tasks</p>
-                <p className="text-2xl font-bold text-purple-900 mt-1">{taskCounts.myTasks}</p>
-              </div>
-              <div className="w-8 h-8 bg-purple-200 rounded-full flex items-center justify-center">
-                <span className="text-purple-700 font-bold text-sm">ME</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          Team Overview
+        </button>
+        {users.map((u) => (
+          <button
+            key={u.ID}
+            onClick={() => setFilters(prev => ({ ...prev, assignee: u["Full Name"] }))}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all border truncate ${
+              filters.assignee === u["Full Name"]
+                ? "bg-cyan-600 text-white border-cyan-600 shadow-md"
+                : "bg-white text-slate-600 border-slate-200 hover:border-cyan-300 hover:bg-cyan-50"
+            }`}
+          >
+            {u["Full Name"]}
+          </button>
+        ))}
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Search tasks by title, description, assignee, or creator..."
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                className="pl-10"
-              />
-            </div>
-            <div className="w-full md:w-48">
-              <Select value={sortOrder} onValueChange={setSortOrder}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="priority">By Priority</SelectItem>
-                </SelectContent>
-              </Select>
+      {/* Main Content Layout: Routine vs Miscellaneous */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
+        {/* Left Column: Routine Tasks (Timeline Style) */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-cyan-600" />
+              Routine Tasks
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{routineSummary.completed}/{routineSummary.total} Done</span>
+              <Badge variant="secondary" className="bg-cyan-50 text-cyan-700 border-cyan-100">
+                {routineTasks.length} Scheduled
+              </Badge>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-3">Filter by Status</h3>
-          <Tabs value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value, assignee: "all" }))}>
-            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
-              <TabsTrigger value="all">All ({taskCounts.total})</TabsTrigger>
-              <TabsTrigger value="to_do">To Do</TabsTrigger>
-              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="relative pl-8 space-y-4 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200">
+            {routineTasks.length === 0 ? (
+              <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center ml-[-2rem] pl-8">
+                <p className="text-slate-400 italic">No routine tasks found for today</p>
+              </div>
+            ) : (
+              routineTasks.map((task) => (
+                <div key={task.ID} className="relative">
+                  <div className="absolute left-[-25px] top-4 w-4 h-4 rounded-full bg-cyan-600 border-4 border-white shadow-sm z-10"></div>
+                  <TaskCard
+                    task={task}
+                    onEdit={handleEdit}
+                    onViewDetails={handleViewDetails}
+                    onDelete={handleDelete}
+                    onStartTask={handleStartTask}
+                    onCompleteTask={handleCompleteTask}
+                    assignedUser={users.find(u => u["Full Name"] === task["Assigned To User ID"])}
+                    assignedUserName={task["Assigned To User ID"]}
+                    currentUser={currentUser}
+                    isRoutine={true}
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-3">Filter by Priority</h3>
-          <Tabs value={filters.priority} onValueChange={(value) => setFilters(prev => ({ ...prev, priority: value, assignee: "all" }))}>
-            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
-              <TabsTrigger value="all_priority">All Priority</TabsTrigger>
-              <TabsTrigger value="urgent">Urgent</TabsTrigger>
-              <TabsTrigger value="high">High</TabsTrigger>
-              <TabsTrigger value="medium">Medium</TabsTrigger>
-              <TabsTrigger value="low">Low</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* Right Column: Miscellaneous Stuff (List Style) */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <ListTodo className="w-5 h-5 text-purple-600" />
+              Miscellaneous Stuff
+            </h2>
+            <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100">
+              {miscellaneousTasks.length} Total
+            </Badge>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Search misc tasks..."
+                  value={filters.search}
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="pl-10 bg-slate-50 border-none h-9 text-sm focus-visible:ring-cyan-500"
+                />
+              </div>
+              <div className="w-32">
+                <Select value={sortOrder} onValueChange={setSortOrder}>
+                  <SelectTrigger className="h-9 text-sm border-slate-200">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="priority">Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {miscellaneousTasks.length === 0 ? (
+              <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center">
+                <p className="text-slate-400 italic">No miscellaneous tasks found</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {miscellaneousTasks.map((task) => (
+                  <TaskCard
+                    key={task.ID}
+                    task={task}
+                    onEdit={handleEdit}
+                    onViewDetails={handleViewDetails}
+                    onDelete={handleDelete}
+                    onStartTask={handleStartTask}
+                    onCompleteTask={handleCompleteTask}
+                    assignedUser={users.find(u => u["Full Name"] === task["Assigned To User ID"])}
+                    assignedUserName={task["Assigned To User ID"]}
+                    currentUser={currentUser}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -844,69 +869,12 @@ useEffect(() => {
         />
       )}
 
-      {loading ? (
-        <div className="text-center py-12">
-          <p className="text-slate-500">Loading tasks...</p>
-        </div>
-      ) : filteredTasks.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ListTodo className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">No tasks found</h3>
-            <p className="text-slate-500 mb-4">
-              {filters.search ? "Try adjusting your search terms" : "Get started by adding your first task"}
-            </p>
-            {!filters.search && (
-              <Button onClick={() => setShowForm(true)} className="bg-cyan-600 hover:bg-cyan-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Task
-              </Button>
-            )}
-            <div className="mt-4 text-xs text-slate-400">
-              Total tasks in system: {tasks.length}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-8">
-          {Object.keys(groupedTasks).sort((a, b) => {
-            if (a === 'Unassigned') return 1;
-            if (b === 'Unassigned') return -1;
-            if (a === currentUser?.["Full Name"]) return -1;
-            if (b === currentUser?.["Full Name"]) return 1;
-            return a.localeCompare(b);
-          }).map(assignee => (
-            <div key={assignee} className="space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h3 className="text-xl font-semibold text-slate-900">
-                  {assignee === currentUser?.["Full Name"] && '⭐ '}
-                  {assignee}
-                  <span className="ml-3 text-base font-normal text-slate-500">
-                    ({groupedTasks[assignee].length} {groupedTasks[assignee].length === 1 ? 'task' : 'tasks'})
-                  </span>
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {groupedTasks[assignee].map((task) => {
-                  const assignedUser = (Array.isArray(users) ? users : []).find(u => u["Full Name"] === task["Assigned To User ID"]);
-                  return (
-                    <TaskCard
-                      key={task.ID}
-                      task={task}
-                      onEdit={handleEdit}
-                      onViewDetails={handleViewDetails}
-                      onDelete={handleDelete}
-                      onStartTask={handleStartTask}
-                      onCompleteTask={handleCompleteTask}
-                      assignedUser={assignedUser}
-                      assignedUserName={task["Assigned To User ID"]}
-                      currentUser={currentUser}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+      {loading && (
+        <div className="fixed inset-0 bg-slate-900/10 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl shadow-xl flex items-center gap-4">
+            <div className="w-6 h-6 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="font-medium text-slate-700">Loading your workspace...</p>
+          </div>
         </div>
       )}
     </div>
