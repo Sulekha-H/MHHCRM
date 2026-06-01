@@ -131,15 +131,15 @@ useEffect(() => {
       setCurrentUser(user);
 
       const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
-        supabase.from('support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
-        supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('allocated_support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
+        supabase.from('allocated_quarterly_reviews').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
         supabase.from('allocated_residents').select('*').eq('"Deleted"', false),
         supabase.from('properties').select('*').eq('Deleted', false),
         supabase.from('accommodations').select('*').eq('Deleted', false),
         supabase.from('users').select('*')
       ]);
 
-      console.log('✅ Support notes loaded:', supportNotesResult.data?.length || 0);
+      console.log('✅ Allocated support notes loaded:', supportNotesResult.data?.length || 0);
       console.log('📋 Raw support notes data sample:', supportNotesResult.data?.[0]);
       console.log('✅ Quarterly reviews loaded:', quarterlyReviewsResult.data?.length || 0);
       console.log('✅ Residents loaded:', residentsResult.data?.length || 0);
@@ -273,7 +273,7 @@ useEffect(() => {
     try {
       console.log('📝 Received planData from form:', planData);
 
-      const tableName = planData["Plan Type"] === 'quarterly_reviews' ? 'quarterly_reviews' : 'support_notes';
+      const tableName = planData["Plan Type"] === 'quarterly_reviews' ? 'allocated_quarterly_reviews' : 'allocated_support_notes';
       console.log('🗃️ Using table:', tableName);
       console.log('✏️ Edit mode:', !!editingPlan, editingPlan?.id);
 
@@ -325,7 +325,7 @@ useEffect(() => {
   const confirmDelete = async () => {
     if (planToDelete) {
       try {
-        const tableName = planToDelete.plan_type === 'quarterly_reviews' ? 'quarterly_reviews' : 'support_notes';
+        const tableName = planToDelete.plan_type === 'quarterly_reviews' ? 'allocated_quarterly_reviews' : 'allocated_support_notes';
 
         await supabase.from(tableName).update({
           "Deleted": true,
@@ -774,6 +774,7 @@ useEffect(() => {
               activePlanType={activeTab}
               onSubmit={handleSubmit}
               onCancel={() => { setShowForm(false); setEditingPlan(null); setViewingPlan(null); }}
+              isAllocated={true}
             />
           </div>
         )}

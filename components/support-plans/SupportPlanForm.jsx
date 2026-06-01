@@ -12,9 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, FileText, Calendar } from "lucide-react";
 import { format } from 'date-fns';
 
-export default function SupportPlanForm_Supabase({ plan, residents, users, currentUser, activePlanType, onSubmit, onCancel }) {
+export default function SupportPlanForm_Supabase({ plan, residents, users, currentUser, activePlanType, onSubmit, onCancel, isAllocated = false }) {
   const getInitialDateTime = () => {
-    const client = useClerkSupabaseClient();
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -494,7 +493,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-6">Quarterly Review History</h3>
               <div className="bg-slate-50 rounded-lg p-4 border">
-                <QuarterlyReviewHistory residentId={formData.resident_id} />
+                <QuarterlyReviewHistory residentId={formData.resident_id} isAllocated={isAllocated} />
               </div>
             </div>
           )}
@@ -549,9 +548,10 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
 }
 
 // New component to display quarterly review history
-function QuarterlyReviewHistory({ residentId }) {
+function QuarterlyReviewHistory({ residentId, isAllocated }) {
   const [reviewHistory, setReviewHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const supabase = useClerkSupabaseClient();
 
   useEffect(() => {
     const loadReviewHistory = async () => {
@@ -563,12 +563,17 @@ function QuarterlyReviewHistory({ residentId }) {
 
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('support_notes')
+        const tableName = isAllocated ? 'allocated_quarterly_reviews' : 'support_notes';
+        let query = supabase
+          .from(tableName)
           .select('*')
-          .eq('"Resident ID"', residentId)
-          .eq('"Plan Type"', 'quarterly_reviews')
-          .order('"Log Date"', { ascending: false });
+          .eq('"Resident ID"', residentId);
+
+        if (!isAllocated) {
+          query = query.eq('"Plan Type"', 'quarterly_reviews');
+        }
+
+        const { data, error } = await query.order('"Log Date"', { ascending: false });
 
         if (error) throw error;
         setReviewHistory(data || []);
