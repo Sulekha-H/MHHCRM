@@ -90,6 +90,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     "Sign Up Google Drive Link": "",
     "Photo Of Individual (Google Drive)": "",
     "Resident Photographic ID Link (Google Drive)": "",
+    "Has No PA": false,
     "PA/Worker Name": "",
     "PA/Worker Contact": "",
     "PA/Worker Email": "",
@@ -141,6 +142,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Partial English": resident["Partial English"] || resident.partial_english || resident.Partial_English || false,
         "Language Spoken": resident["Language Spoken"] || resident.language_spoken || resident.Language_Spoken || "",
         "Communication Needs": resident["Communication Needs"] || resident.communication_needs || resident.Communication_Needs || "",
+        "Has No PA": resident["Has No PA"] || resident.has_no_pa || false,
         "PA/Worker Name": resident["PA/Worker Name"] || resident.pa_worker_name || resident.PA_Worker_Name || "",
         "PA/Worker Contact": resident["PA/Worker Contact"] || resident.pa_worker_contact || resident.PA_Worker_Contact || "",
         "PA/Worker Email": resident["PA/Worker Email"] || resident.pa_worker_email || resident.PA_Worker_Email || "",
@@ -175,6 +177,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
         "National Insurance Number": "", "Benefits": [], "Room Transfers": [], "Accommodation Transfers": [],
         "Sign Up Google Drive Link": "", "Photo Of Individual (Google Drive)": "", "Resident Photographic ID Link (Google Drive)": "",
+        "Has No PA": false,
         "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
         "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
       });
@@ -1428,7 +1431,24 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Children's Services / Personal Adviser</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-900">Children's Services / Personal Adviser</h3>
+                <div className="flex items-center space-x-2 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
+                  <input
+                    type="checkbox"
+                    id="has_no_pa"
+                    checked={formData["Has No PA"]}
+                    onChange={(e) => handleChange("Has No PA", e.target.checked)}
+                    className="w-4 h-4 accent-blue-600 cursor-pointer"
+                  />
+                  <Label
+                    htmlFor="has_no_pa"
+                    className="text-sm font-medium text-slate-700 cursor-pointer"
+                  >
+                    Has No PA
+                  </Label>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="pa_worker_name" className="mb-2 block">PA/Worker Name</Label>
@@ -1437,6 +1457,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     value={formData["PA/Worker Name"]}
                     onChange={(e) => handleChange("PA/Worker Name", e.target.value)}
                     placeholder="e.g., Sarah Smith"
+                    disabled={formData["Has No PA"]}
                   />
                 </div>
                 <div>
@@ -1446,6 +1467,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     value={formData["PA/Worker Contact"]}
                     onChange={(e) => handleChange("PA/Worker Contact", e.target.value)}
                     placeholder="e.g., 07123456789"
+                    disabled={formData["Has No PA"]}
                   />
                 </div>
                 <div>
@@ -1456,6 +1478,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     value={formData["PA/Worker Email"]}
                     onChange={(e) => handleChange("PA/Worker Email", e.target.value)}
                     placeholder="e.g., sarah.smith@council.gov.uk"
+                    disabled={formData["Has No PA"]}
                   />
                 </div>
                 <div>
@@ -1465,6 +1488,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     value={formData["PA/Worker Borough"]}
                     onChange={(e) => handleChange("PA/Worker Borough", e.target.value)}
                     placeholder="e.g., Birmingham"
+                    disabled={formData["Has No PA"]}
                   />
                 </div>
                 <div>
@@ -1474,6 +1498,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     value={formData["PA/Worker Team"]}
                     onChange={(e) => handleChange("PA/Worker Team", e.target.value)}
                     placeholder="e.g., Leaving Care Team"
+                    disabled={formData["Has No PA"]}
                   />
                 </div>
                 <div>
@@ -1483,6 +1508,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
                     value={formData["PA/Worker Duty Line"]}
                     onChange={(e) => handleChange("PA/Worker Duty Line", e.target.value)}
                     placeholder="e.g., 0121 123 4567"
+                    disabled={formData["Has No PA"]}
                   />
                 </div>
               </div>

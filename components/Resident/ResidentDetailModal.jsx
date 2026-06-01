@@ -86,6 +86,7 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const communicationNeeds = resident["Communication Needs"] || resident.Communication_Needs || resident.communication_needs;
   const medicalConditions = resident["Medical Conditions"] || resident.Medical_Conditions || resident.medical_conditions;
   const notes = resident["Notes"] || resident.Notes || resident.notes;
+  const hasNoPa = resident["Has No PA"] || resident.has_no_pa || false;
   const paWorkerName = resident["PA/Worker Name"] || resident.Pa_Worker_Name || resident.pa_worker_name;
   const paWorkerContact = resident["PA/Worker Contact"] || resident.Pa_Worker_Contact || resident.pa_worker_contact;
   const paWorkerEmail = resident["PA/Worker Email"] || resident.Pa_Worker_Email || resident.pa_worker_email;
@@ -247,13 +248,16 @@ export default function ResidentDetailModal({ resident, accommodations, properti
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-4">Children's Services/Trust</h3>
-                  <div className="space-y-4">
-                    <DetailItem icon={<Users />} label="PA/Worker Name">{paWorkerName}</DetailItem>
-                    <DetailItem icon={<Phone />} label="PA/Worker Contact">{paWorkerContact}</DetailItem>
-                    <DetailItem icon={<Mail />} label="PA/Worker Email">{paWorkerEmail}</DetailItem>
-                    <DetailItem icon={<MapPin />} label="Borough">{paWorkerBorough}</DetailItem>
-                    <DetailItem icon={<Users />} label="Team Name">{paWorkerTeam}</DetailItem>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-slate-800">Children's Services/Trust</h3>
+                    {hasNoPa && <Badge variant="secondary" className="bg-slate-100 text-slate-600">No PA assigned</Badge>}
+                  </div>
+                  <div className={`space-y-4 ${hasNoPa ? 'opacity-50' : ''}`}>
+                    <DetailItem icon={<Users />} label="PA/Worker Name">{hasNoPa ? "N/A" : paWorkerName}</DetailItem>
+                    <DetailItem icon={<Phone />} label="PA/Worker Contact">{hasNoPa ? "N/A" : paWorkerContact}</DetailItem>
+                    <DetailItem icon={<Mail />} label="PA/Worker Email">{hasNoPa ? "N/A" : paWorkerEmail}</DetailItem>
+                    <DetailItem icon={<MapPin />} label="Borough">{hasNoPa ? "N/A" : paWorkerBorough}</DetailItem>
+                    <DetailItem icon={<Users />} label="Team Name">{hasNoPa ? "N/A" : paWorkerTeam}</DetailItem>
                   </div>
                 </div>
               </div>
