@@ -91,9 +91,10 @@ export default function TaskCard({ task, onEdit, onViewDetails, onDelete, onStar
     return colors[status] || colors.to_do || colors["To Do"];
   };
   
-  const isOverdue = new Date(dueDate) < new Date() && status !== 'completed' && status !== 'Completed';
-  const isDueSoon = !isOverdue && status !== 'completed' && status !== 'Completed' &&
-                    new Date(dueDate).getTime() - new Date().getTime() < 3600000; // 1 hour
+  const dueDateObj = dueDate ? new Date(dueDate) : null;
+  const isOverdue = dueDateObj && dueDateObj < new Date() && status !== 'completed' && status !== 'Completed';
+  const isDueSoon = !isOverdue && dueDateObj && status !== 'completed' && status !== 'Completed' &&
+                    dueDateObj.getTime() - new Date().getTime() < 3600000; // 1 hour
   const isCompleted = status === 'completed' || status === 'Completed';
   const finalAssignedUserName = assignedUserName || assignedToUserId || "Unassigned";
   const userColor = assignedUser?.display_color || assignedUser?.["Display Color"];
