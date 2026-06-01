@@ -8,6 +8,7 @@ import { Plus, Search, Download, AlertTriangle, Clock, CheckCircle2, ListTodo } 
 import { AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfDay, isSameDay } from "date-fns";
@@ -19,7 +20,12 @@ import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function TasksPage() {
+  const [mounted, setMounted] = useState(false);
   const supabase = useClerkSupabaseClient()
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const {session} = useSession();
   const { user } = useUser();
   const [tasks, setTasks] = useState([]);
@@ -662,19 +668,23 @@ useEffect(() => {
   const displayAssignee = filters.assignee === "all" ? currentUser?.["Full Name"] : filters.assignee;
 
   // Split tasks into routine and miscellaneous
+  const routineList = Array.isArray(ROUTINE_TITLES) ? ROUTINE_TITLES : [];
+
   const routineTasks = sortTasks(filteredTasks.filter(t =>
-    ROUTINE_TITLES.includes(t.Title) && t["Assigned To User ID"] === displayAssignee
+    routineList.includes(t.Title) && t["Assigned To User ID"] === displayAssignee
   ));
 
   const miscellaneousTasks = sortTasks(filteredTasks.filter(t =>
-    !ROUTINE_TITLES.includes(t.Title) && (filters.assignee === "all" || t["Assigned To User ID"] === filters.assignee)
+    !routineList.includes(t.Title) && (filters.assignee === "all" || t["Assigned To User ID"] === filters.assignee)
   ));
 
   const routineSummary = routineTasks.reduce((acc, t) => {
-    if (t.Status === "Completed") acc.completed++;
+    if (t.Status === "Completed" || t.status === "Completed") acc.completed++;
     acc.total++;
     return acc;
   }, { completed: 0, total: 0 });
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-6 p-6 max-w-[1600px] mx-auto bg-slate-50 min-h-screen">
