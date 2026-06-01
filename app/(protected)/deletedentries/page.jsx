@@ -62,6 +62,7 @@ export default function DeletedEntries() {
 
   const loadAllDeletedData = async () => {
     try {
+      setDeletedSupportPlans([]);
       const tables = [
         { name: 'residents', setter: setDeletedResidents },
         { name: 'properties', setter: setDeletedProperties },
@@ -69,7 +70,10 @@ export default function DeletedEntries() {
         { name: 'incidents', setter: setDeletedIncidents },
         { name: 'tasks', setter: setDeletedTasks },
         { name: 'repairs', setter: setDeletedRepairs },
-        { name: 'support_notes', setter: setDeletedSupportPlans },
+        { name: 'support_notes', setter: (data) => setDeletedSupportPlans(prev => [...prev, ...data]) },
+        { name: 'allocated_support_notes', setter: (data) => setDeletedSupportPlans(prev => [...prev, ...data]) },
+        { name: 'quarterly_reviews', setter: (data) => setDeletedSupportPlans(prev => [...prev, ...data]) },
+        { name: 'allocated_quarterly_reviews', setter: (data) => setDeletedSupportPlans(prev => [...prev, ...data]) },
         { name: 'office_logs', setter: setDeletedOfficeLogs },
         { name: 'service_charges', setter: setDeletedServiceCharges },
         { name: 'cash_logs', setter: setDeletedCashLogs },
