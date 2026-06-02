@@ -660,10 +660,10 @@ useEffect(() => {
                                     {index === 0 && (
                                       <Badge className="bg-blue-100 text-blue-800 text-xs">Latest</Badge>
                                     )}
-                                    <Badge className={getStatusColor(log.status)}>
-                                      {log.status.replace('_', ' ')}
+                                    <Badge className={getStatusColor(log.status || log.Status)}>
+                                      {(log.status || log.Status)?.replace('_', ' ')}
                                     </Badge>
-                                    {log.sanctions && (
+                                    {(log.sanctions || log.Sanctions) && (
                                       <Badge className="bg-red-100 text-red-800 text-xs">Sanctions</Badge>
                                     )}
                                   </div>
@@ -680,32 +680,32 @@ useEffect(() => {
                                   </Button>
                                 </div>
 
-                                <h5 className="font-medium text-slate-900 mb-1">{log.title}</h5>
+                                <h5 className="font-medium text-slate-900 mb-1">{log.title || log.Title}</h5>
 
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-3">
                                   <div className="flex items-center gap-2 text-slate-600">
                                     <Calendar className="w-4 h-4 text-slate-400" />
-                                    <span>{format(new Date(log.log_date), 'dd/MM/yyyy HH:mm')}</span>
+                                    <span>{format(new Date(log.log_date || log["Log Date"]), 'dd/MM/yyyy HH:mm')}</span>
                                   </div>
 
-                                  {log.amount > 0 && (
+                                  {(log.amount > 0 || log.Amount > 0) && (
                                     <div className="flex items-center gap-2 text-slate-600">
                                       <Banknote className="w-4 h-4 text-green-600" />
-                                      <span>£{log.amount.toFixed(2)}</span>
+                                      <span>£{(log.amount || log.Amount).toFixed(2)}</span>
                                     </div>
                                   )}
 
-                                  {log.logged_by && (
+                                  {(log.logged_by || log["Logged By"]) && (
                                     <div className="flex items-center gap-2 text-slate-600">
                                       <UserIcon className="w-4 h-4 text-slate-400" />
-                                      <span>{log.logged_by}</span>
+                                      <span>{log.logged_by || log["Logged By"]}</span>
                                     </div>
                                   )}
                                 </div>
 
-                                {log.description && (
+                                {(log.description || log.Description) && (
                                   <p className="text-sm text-slate-600 mt-2 line-clamp-2">
-                                    {log.description}
+                                    {log.description || log.Description}
                                   </p>
                                 )}
                               </div>
@@ -810,10 +810,10 @@ useEffect(() => {
                                 {index === 0 && (
                                   <Badge className="bg-orange-100 text-orange-800 text-xs">Latest</Badge>
                                 )}
-                                <Badge className={getStatusColor(log.status)}>
-                                  {log.status.replace('_', ' ')}
+                                <Badge className={getStatusColor(log.status || log.Status)}>
+                                  {(log.status || log.Status)?.replace('_', ' ')}
                                 </Badge>
-                                {log.sanctions && (
+                                {(log.sanctions || log.Sanctions) && (
                                   <Badge className="bg-red-100 text-red-800 text-xs">Sanctions</Badge>
                                 )}
                               </div>
@@ -830,32 +830,32 @@ useEffect(() => {
                               </Button>
                             </div>
 
-                            <h5 className="font-medium text-slate-900 mb-1">{log.title}</h5>
+                            <h5 className="font-medium text-slate-900 mb-1">{log.title || log.Title}</h5>
 
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-3">
                               <div className="flex items-center gap-2 text-slate-600">
                                 <Calendar className="w-4 h-4 text-slate-400" />
-                                <span>{format(new Date(log.log_date), 'dd/MM/yyyy HH:mm')}</span>
+                                <span>{format(new Date(log.log_date || log["Log Date"]), 'dd/MM/yyyy HH:mm')}</span>
                               </div>
 
-                              {log.amount > 0 && (
+                              {(log.amount > 0 || log.Amount > 0) && (
                                 <div className="flex items-center gap-2 text-slate-600">
                                   <Banknote className="w-4 h-4 text-green-600" />
-                                  <span>£{log.amount.toFixed(2)}</span>
+                                  <span>£{(log.amount || log.Amount).toFixed(2)}</span>
                                 </div>
                               )}
 
-                              {log.logged_by && (
+                              {(log.logged_by || log["Logged By"]) && (
                                 <div className="flex items-center gap-2 text-slate-600">
                                   <UserIcon className="w-4 h-4 text-slate-400" />
-                                  <span>{log.logged_by}</span>
+                                  <span>{log.logged_by || log["Logged By"]}</span>
                                 </div>
                               )}
                             </div>
 
-                            {log.description && (
+                            {(log.description || log.Description) && (
                               <p className="text-sm text-slate-600 mt-2 line-clamp-2">
-                                {log.description}
+                                {log.description || log.Description}
                               </p>
                             )}
                           </div>

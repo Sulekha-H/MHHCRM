@@ -29,6 +29,8 @@ const DetailItem = ({ icon, label, children }) => (
 );
 
 const getStatusColor = (status) => {
+  if (!status) return "bg-slate-100 text-slate-800";
+  const normalized = status.toLowerCase().replace(/ /g, '_');
   const colors = {
     pending: "bg-yellow-100 text-yellow-800",
     in_progress: "bg-blue-100 text-blue-800",
@@ -36,10 +38,12 @@ const getStatusColor = (status) => {
     issue_raised: "bg-red-100 text-red-800",
     closed: "bg-slate-100 text-slate-800"
   };
-  return colors[status] || "bg-slate-100 text-slate-800";
+  return colors[normalized] || "bg-slate-100 text-slate-800";
 };
 
 const getLogTypeColor = (logType) => {
+  if (!logType) return "bg-slate-100 text-slate-800";
+  const normalized = logType.toLowerCase().replace(/ /g, '_');
   const colors = {
     application_log: "bg-purple-100 text-purple-800",
     requested_support_notes: "bg-blue-100 text-blue-800",
@@ -51,9 +55,14 @@ const getLogTypeColor = (logType) => {
     room_transfers: "bg-teal-100 text-teal-800",
     hb_calls: "bg-pink-100 text-pink-800",
     hb_leavers: "bg-slate-100 text-slate-800",
-    portal_check: "bg-green-100 text-green-800"
+    portal_check: "bg-green-100 text-green-800",
+    payment_update: "bg-emerald-100 text-emerald-800",
+    claim_issue: "bg-rose-100 text-rose-800",
+    change_of_circumstances: "bg-amber-100 text-amber-800",
+    appeal: "bg-violet-100 text-violet-800",
+    general_update: "bg-slate-100 text-slate-800"
   };
-  return colors[logType] || "bg-slate-100 text-slate-800";
+  return colors[normalized] || "bg-slate-100 text-slate-800";
 };
 
 export default function BenefitLogDetailModal({ 
@@ -65,20 +74,37 @@ export default function BenefitLogDetailModal({
 }) {
   if (!log) return null;
 
-  const residentName = log.resident_id ? getResidentName(log.resident_id) : 'N/A';
-  const benefitType = log.benefit_type === 'housing_benefit' ? 'Housing Benefit' : 
-                      log.benefit_type === 'universal_credit' ? 'Universal Credit' : 
+  // Defensive field access for both normalized and PascalCase database keys
+  const title = log.Title || log.title;
+  const status = log.Status || log.status;
+  const logType = log["Log Type"] || log.log_type;
+  const benefit_type = log["Benefit Type"] || log.benefit_type || log.Benefit_Type;
+  const sanctions = log.Sanctions || log.sanctions;
+  const residentId = log["Resident ID"] || log.resident_id;
+  const logDate = log["Log Date"] || log.log_date;
+  const loggedBy = log["Logged By"] || log.logged_by || log.staff_member;
+  const description = log.Description || log.description;
+  const amount = log.Amount || log.amount;
+  const applicationDate = log["Application Date"] || log.application_date;
+  const sanctionDate = log["Sanction Date"] || log.sanction_date;
+  const sanctionAmount = log["Sanction Amount"] || log.sanction_amount;
+  const dateResolved = log["Date Resolved"] || log.date_resolved;
+  const notes = log.Notes || log.notes;
+
+  const residentName = residentId ? getResidentName(residentId) : 'N/A';
+  const benefitTypeLabel = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' ? 'Housing Benefit' :
+                      benefit_type?.toLowerCase().replace(/ /g, '_') === 'universal_credit' ? 'Universal Credit' :
                       'Landlord Portal';
   
-  const isHBApplicationLog = log.benefit_type === 'housing_benefit' && log.log_type === 'application_log';
-  const isRequestedSupportNotes = log.benefit_type === 'housing_benefit' && log.log_type === 'requested_support_notes';
-  const isRequestedDocuments = log.benefit_type === 'housing_benefit' && log.log_type === 'requested_documents';
-  const isSuspendedClaims = log.benefit_type === 'housing_benefit' && log.log_type === 'suspended_claims';
-  const isAwaitingActivation = log.benefit_type === 'housing_benefit' && log.log_type === 'awaiting_activation';
-  const isChangeOfAddresses = log.benefit_type === 'housing_benefit' && log.log_type === 'change_of_addresses';
-  const isRoomTransfers = log.benefit_type === 'housing_benefit' && log.log_type === 'room_transfers';
-  const isHBCalls = log.benefit_type === 'housing_benefit' && log.log_type === 'hb_calls';
-  const isHBLeavers = log.benefit_type === 'housing_benefit' && log.log_type === 'hb_leavers';
+  const isHBApplicationLog = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'application_log';
+  const isRequestedSupportNotes = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'requested_support_notes';
+  const isRequestedDocuments = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'requested_documents';
+  const isSuspendedClaims = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'suspended_claims';
+  const isAwaitingActivation = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'awaiting_activation';
+  const isChangeOfAddresses = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'change_of_addresses';
+  const isRoomTransfers = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'room_transfers';
+  const isHBCalls = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'hb_calls';
+  const isHBLeavers = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'hb_leavers';
 
 
   return (
@@ -92,12 +118,12 @@ export default function BenefitLogDetailModal({
                   <HandCoins className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex-1">
-                  <DialogTitle className="text-2xl font-bold text-slate-900">{log.title}</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold text-slate-900">{title}</DialogTitle>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <Badge className={getStatusColor(log.status)}>{log.status?.replace('_', ' ')}</Badge>
-                    <Badge variant="outline" className={getLogTypeColor(log.log_type)}>{log.log_type?.replace(/_/g, ' ')}</Badge>
-                    <Badge variant="outline">{benefitType}</Badge>
-                    {log.sanctions && <Badge className="bg-red-100 text-red-800">Sanctions</Badge>}
+                    <Badge className={getStatusColor(status)}>{status?.replace('_', ' ')}</Badge>
+                    <Badge variant="outline" className={getLogTypeColor(logType)}>{logType?.replace(/_/g, ' ')}</Badge>
+                    <Badge variant="outline">{benefitTypeLabel}</Badge>
+                    {sanctions && <Badge className="bg-red-100 text-red-800">Sanctions</Badge>}
                   </div>
                 </div>
               </div>
@@ -108,15 +134,15 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Log Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -187,12 +213,12 @@ export default function BenefitLogDetailModal({
                   )}
                 </div>
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -202,11 +228,11 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Support Notes Request Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
                   {log.date_of_request && (
                     <DetailItem icon={<Calendar />} label="Date of Request">
@@ -218,9 +244,9 @@ export default function BenefitLogDetailModal({
                       {log.support_notes_requested_dates}
                     </DetailItem>
                   )}
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -256,12 +282,12 @@ export default function BenefitLogDetailModal({
                   )}
                 </div>
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -271,11 +297,11 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Requested Documents Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
                   {log.requested_document_type && (
                     <DetailItem icon={<FileText />} label="Requested Document Type">
@@ -292,19 +318,19 @@ export default function BenefitLogDetailModal({
                       {log.method_documents_sent.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                     </DetailItem>
                   )}
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -314,15 +340,15 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Suspended Claims Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -379,12 +405,12 @@ export default function BenefitLogDetailModal({
                   )}
                 </div>
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -394,15 +420,15 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Awaiting Activation Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                   {log.date_activated && (
@@ -412,22 +438,22 @@ export default function BenefitLogDetailModal({
                   )}
                 </div>
 
-                {log.description && (
+                {description && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Description</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.description}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{description}</p>
                     </div>
                   </>
                 )}
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -437,15 +463,15 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Change of Address Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -504,12 +530,12 @@ export default function BenefitLogDetailModal({
                   </>
                 )}
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -519,15 +545,15 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Room Transfer Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -613,12 +639,12 @@ export default function BenefitLogDetailModal({
                   )}
                 </div>
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -628,20 +654,20 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">HB Call Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
                   {log.date_called && (
                     <DetailItem icon={<Calendar />} label="Date Called">
                       {format(new Date(log.date_called), 'dd MMMM yyyy')}
                     </DetailItem>
                   )}
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -693,12 +719,12 @@ export default function BenefitLogDetailModal({
                   </>
                 )}
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -708,20 +734,20 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">HB Leaver Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
                   {log.move_out_date && (
                     <DetailItem icon={<Calendar />} label="Move Out Date">
                       {format(new Date(log.move_out_date), 'dd MMMM yyyy')}
                     </DetailItem>
                   )}
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                 </div>
@@ -770,12 +796,12 @@ export default function BenefitLogDetailModal({
                   )}
                 </div>
 
-                {log.notes && (
+                {notes && (
                   <>
                     <Separator className="my-6" />
                     <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                     <div className="bg-slate-50 rounded-lg p-4">
-                      <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                     </div>
                   </>
                 )}
@@ -785,63 +811,69 @@ export default function BenefitLogDetailModal({
               <>
                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Log Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {log.resident_id && (
+                  {residentId && (
                     <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
                   )}
                   <DetailItem icon={<Calendar />} label="Log Date & Time">
-                    {log.log_date ? format(new Date(log.log_date), 'dd MMMM yyyy, HH:mm') : null}
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
                   </DetailItem>
-                  {(log.logged_by || log.staff_member) && (
+                  {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
-                      {log.logged_by || log.staff_member}
+                      {loggedBy}
                     </DetailItem>
                   )}
                   
-                  {log.log_type === 'application_log' && log.application_date && log.benefit_type === 'housing_benefit' && (
+                  {applicationDate && (
                       <DetailItem icon={<FileText />} label="Application Date">
-                          {format(new Date(log.application_date), 'dd MMMM yyyy')}
+                          {format(new Date(applicationDate), 'dd MMMM yyyy')}
                       </DetailItem>
                   )}
                   
-                  {(log.amount != null && log.amount > 0) && (
+                  {(amount != null && amount > 0) && (
                       <DetailItem icon={<Banknote />} label="Amount">
-                          £{log.amount.toFixed(2)}
+                          £{amount.toFixed(2)}
+                      </DetailItem>
+                  )}
+
+                  {dateResolved && (
+                      <DetailItem icon={<CheckCircle2 />} label="Date Resolved">
+                          {format(new Date(dateResolved), 'dd MMMM yyyy')}
                       </DetailItem>
                   )}
                 </div>
 
-                {log.description && (
+                {description && (
                     <>
                         <Separator className="my-6" />
                         <h3 className="text-xl font-semibold text-slate-800 mb-4">Description</h3>
                         <div className="bg-slate-50 rounded-lg p-4">
-                            <p className="text-slate-700 whitespace-pre-wrap">{log.description}</p>
+                            <p className="text-slate-700 whitespace-pre-wrap">{description}</p>
                         </div>
                     </>
                 )}
 
-                {log.benefit_type === 'universal_credit' && log.sanctions && (
+                {sanctions && (
                     <>
                         <Separator className="my-6" />
                         <h3 className="text-xl font-semibold text-slate-800 mb-4">Sanctions Information</h3>
                         <div className="bg-red-50 rounded-lg p-4 border border-red-200">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {log.sanction_date && (
+                                {sanctionDate && (
                                     <div>
                                         <Label className="text-sm font-medium text-slate-700">Sanction Date:</Label>
-                                        <p className="text-slate-900 font-semibold mt-1">{format(new Date(log.sanction_date), 'dd MMMM yyyy')}</p>
+                                        <p className="text-slate-900 font-semibold mt-1">{format(new Date(sanctionDate), 'dd MMMM yyyy')}</p>
                                     </div>
                                 )}
-                                {log.sanction_amount && (
+                                {sanctionAmount != null && sanctionAmount > 0 && (
                                     <div>
                                         <Label className="text-sm font-medium text-slate-700">Sanction Amount:</Label>
-                                        <p className="text-slate-900 font-semibold mt-1">£{log.sanction_amount.toFixed(2)}</p>
+                                        <p className="text-slate-900 font-semibold mt-1">£{sanctionAmount.toFixed(2)}</p>
                                     </div>
                                 )}
-                                {log.date_resolved && (
+                                {dateResolved && (
                                     <div>
                                         <Label className="text-sm font-medium text-slate-700">Date Resolved:</Label>
-                                        <p className="text-slate-900 font-semibold mt-1">{format(new Date(log.date_resolved), 'dd MMMM yyyy')}</p>
+                                        <p className="text-slate-900 font-semibold mt-1">{format(new Date(dateResolved), 'dd MMMM yyyy')}</p>
                                     </div>
                                 )}
                             </div>
@@ -849,17 +881,17 @@ export default function BenefitLogDetailModal({
                     </>
                 )}
 
-                {log.notes && (
+                {notes && (
                     <>
                         <Separator className="my-6" />
                         <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
                         <div className="bg-slate-50 rounded-lg p-4">
-                            <p className="text-slate-700 whitespace-pre-wrap">{log.notes}</p>
+                            <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
                         </div>
                     </>
                 )}
 
-                {log.status === 'issue_raised' && (
+                {(status?.toLowerCase() === 'issue_raised' || status?.toLowerCase() === 'issue raised') && (
                     <>
                         <Separator className="my-6" />
                         <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">

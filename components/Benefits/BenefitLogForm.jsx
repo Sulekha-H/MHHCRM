@@ -22,14 +22,14 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
 
   const [formData, setFormData] = useState(log ? {
     id: log.ID || log.id || "",
-    resident_id: log["Resident ID"] || log.resident_id || "",
-    benefit_type: log["Benefit Type"] || log.benefit_type || activeBenefitType || "housing_benefit",
-    log_type: log["Log Type"] || log.log_type || "application_log",
+    resident_id: log["Resident ID"] || log.resident_id || log.Resident_ID || "",
+    benefit_type: log["Benefit Type"] || log.benefit_type || log.Benefit_Type || activeBenefitType || "housing_benefit",
+    log_type: log["Log Type"] || log.log_type || log.Log_Type || "application_log",
     title: log.Title || log.title || "",
     description: log.Description || log.description || "",
     log_date: getInitialDateTime(),
     status: log.Status || log.status || "pending",
-    logged_by: log["Logged By"] || log.logged_by || currentUser?.["Full Name"] || currentUser?.full_name || "",
+    logged_by: log["Logged By"] || log.logged_by || log.Logged_By || currentUser?.["Full Name"] || currentUser?.full_name || "",
     notes: log.Notes || log.notes || "",
     date_application_started: log["Date Application Started"] || log.date_application_started || "",
     application_saved_date: log["Application Saved Date"] || log.application_saved_date || "",
@@ -93,6 +93,13 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     date_hb_notified_of_move_out: log["Date HB Notified of Move Out"] || log.date_hb_notified_of_move_out || "",
     hb_notified_method_email: log["HB Notified Method Email"] !== null && log["HB Notified Method Email"] !== undefined ? log["HB Notified Method Email"] : (log.hb_notified_method_email || false),
     hb_notified_method_website: log["HB Notified Method Website"] !== null && log["HB Notified Method Website"] !== undefined ? log["HB Notified Method Website"] : (log.hb_notified_method_website || false),
+    // Universal Credit specific fields
+    amount: log.Amount || log.amount || 0,
+    application_date: log["Application Date"] || log.application_date || "",
+    sanctions: log.Sanctions !== null && log.Sanctions !== undefined ? log.Sanctions : (log.sanctions || false),
+    sanction_date: log["Sanction Date"] || log.sanction_date || "",
+    sanction_amount: log["Sanction Amount"] || log.sanction_amount || 0,
+    date_resolved: log["Date Resolved"] || log.date_resolved || "",
   } : {
     id: "",
     resident_id: "",
@@ -166,6 +173,13 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     date_hb_notified_of_move_out: "",
     hb_notified_method_email: false,
     hb_notified_method_website: false,
+    // Universal Credit specific fields
+    amount: 0,
+    application_date: "",
+    sanctions: false,
+    sanction_date: "",
+    sanction_amount: 0,
+    date_resolved: "",
   });
 
   // Update logged_by when currentUser becomes available
@@ -222,7 +236,12 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
       'room_transfers': 'Room Transfers',
       'hb_calls': 'HB Calls',
       'hb_leavers': 'HB Leavers',
-      'portal_check': 'Portal Check'
+      'portal_check': 'Portal Check',
+      'payment_update': 'Payment Update',
+      'claim_issue': 'Claim Issue',
+      'change_of_circumstances': 'Change of Circumstances',
+      'appeal': 'Appeal',
+      'general_update': 'General Update'
     };
     
     // Map status to database format
@@ -231,6 +250,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
       'in_progress': 'In Progress',
       'completed': 'Completed',
       'issue_raised': 'Issue Raised',
+      'issue-raised': 'Issue Raised',
       'closed': 'Closed',
       'application_to_be_completed': 'Application To Be Completed',
       'application_saved_not_submitted': 'Application Saved Not Submitted',
@@ -270,6 +290,17 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     if (formData.benefit_type === 'universal_credit') {
       supabaseData["Follow Up Action"] = formData.action_to_follow || null;
       supabaseData["Follow Up Completed"] = formData.action_to_follow_completed;
+      supabaseData["Amount"] = formData.amount;
+      supabaseData["Application Date"] = formData.application_date || null;
+      supabaseData["Sanctions"] = formData.sanctions;
+      supabaseData["Sanction Date"] = formData.sanction_date || null;
+      supabaseData["Sanction Amount"] = formData.sanction_amount;
+      supabaseData["Date Resolved"] = formData.date_resolved || null;
+
+      if (formData.sanctions && !formData.sanction_date) {
+        alert('Please provide a Sanction Date when Sanctions is enabled');
+        return;
+      }
     }
     
     // Add fields specific to Housing Benefit
@@ -1384,9 +1415,133 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
             </div>
           )}
 
+          {/* Universal Credit Specific Fields */}
+          {formData.benefit_type === "universal_credit" && (
+            <div className="space-y-6 border-t pt-4">
+              <h3 className="text-lg font-semibold text-slate-900">Universal Credit Details</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => handleChange("title", e.target.value)}
+                    placeholder="e.g., UC Update - John Doe"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="application_date">Application Date</Label>
+                  <Input
+                    id="application_date"
+                    type="date"
+                    value={formData.application_date}
+                    onChange={(e) => handleChange("application_date", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleChange("description", e.target.value)}
+                  placeholder="Details of the update or issue"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="amount">Amount (£)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => handleChange("amount", parseFloat(e.target.value) || 0)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="date_resolved">Date Resolved</Label>
+                  <Input
+                    id="date_resolved"
+                    type="date"
+                    value={formData.date_resolved}
+                    onChange={(e) => handleChange("date_resolved", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 bg-slate-50 p-4 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="sanctions"
+                    checked={formData.sanctions}
+                    onCheckedChange={(checked) => handleChange("sanctions", checked)}
+                  />
+                  <Label htmlFor="sanctions" className="font-semibold text-red-600 cursor-pointer">
+                    Sanctions Applied
+                  </Label>
+                </div>
+
+                {formData.sanctions && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <Label htmlFor="sanction_date">Sanction Date *</Label>
+                      <Input
+                        id="sanction_date"
+                        type="date"
+                        value={formData.sanction_date}
+                        onChange={(e) => handleChange("sanction_date", e.target.value)}
+                        required={formData.sanctions}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sanction_amount">Sanction Amount (£)</Label>
+                      <Input
+                        id="sanction_amount"
+                        type="number"
+                        step="0.01"
+                        value={formData.sanction_amount}
+                        onChange={(e) => handleChange("sanction_amount", parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="text-base font-semibold text-slate-900">Follow-up Action</h4>
+                <div>
+                  <Label htmlFor="action_to_follow">Follow-up Action Required</Label>
+                  <Textarea
+                    id="action_to_follow"
+                    value={formData.action_to_follow}
+                    onChange={(e) => handleChange("action_to_follow", e.target.value)}
+                    placeholder="Describe any follow-up action needed..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="action_to_follow_completed"
+                    checked={formData.action_to_follow_completed}
+                    onCheckedChange={(checked) => handleChange("action_to_follow_completed", checked)}
+                  />
+                  <Label htmlFor="action_to_follow_completed" className="cursor-pointer text-sm font-medium">
+                    Follow-up action completed
+                  </Label>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Landlord Portal Specific Fields */}
           {formData.benefit_type === "landlord_portal" && (
-            <div className="space-y-6">
+            <div className="space-y-6 border-t pt-4">
               <div>
                 <Label htmlFor="title">Title *</Label>
                 <Input
