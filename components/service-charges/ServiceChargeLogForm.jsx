@@ -102,6 +102,13 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Prevent saving 0 amount as Overdue or Due (should be Exempt or Paid if 0)
+    const amount = parseFloat(formData.monthly_amount) || 0;
+    if (amount === 0 && (formData.payment_status === 'overdue' || formData.payment_status === 'due')) {
+      alert("A service charge with £0.00 amount cannot be marked as 'Due' or 'Overdue'. Please mark it as 'Exempt' or 'Paid', or provide a valid amount.");
+      return;
+    }
     
     // Get resident info to populate denormalized fields
     const resident = residents.find(r => getResidentId(r) === formData.resident_id);
