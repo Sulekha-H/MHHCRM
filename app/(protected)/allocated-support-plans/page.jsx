@@ -1101,9 +1101,7 @@ useEffect(() => {
                         if (!r.accommodation_id) return false;
                         const accommodation = accommodations.find(a => a.id === r.accommodation_id);
                         if (!accommodation?.property_id) return false;
-                        const property = properties.find(p => p.id === accommodation.property_id);
-                        const isRylandProperty = property?.name?.toLowerCase().includes('ryland');
-                        return !isRylandProperty;
+                        return true;
                       });
 
                       const residentsToDisplay = activeResidents
