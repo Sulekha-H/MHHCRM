@@ -21,6 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Helper function to normalize column names from Supabase
 const normalizeData = (data) => {
@@ -757,19 +759,36 @@ useEffect(() => {
           </div>
         )}
 
-        {showForm && (
-          <div className="mt-6">
-            <SupportPlanForm_Supabase
-              plan={editingPlan}
-              residents={residents}
-              users={users}
-              currentUser={currentUser}
-              activePlanType={activeTab}
-              onSubmit={handleSubmit}
-              onCancel={() => { setShowForm(false); setEditingPlan(null); setViewingPlan(null); }}
-            />
-          </div>
-        )}
+        <Dialog
+          open={showForm}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowForm(false);
+              setEditingPlan(null);
+              setViewingPlan(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+            <DialogHeader className="sr-only">
+              <DialogTitle>{editingPlan ? 'Edit Support Entry' : 'Add New Support Entry'}</DialogTitle>
+              <DialogDescription>Complete the form below to save the support note or quarterly review.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[90vh]">
+              <div className="p-6">
+                <SupportPlanForm_Supabase
+                  plan={editingPlan}
+                  residents={residents}
+                  users={users}
+                  currentUser={currentUser}
+                  activePlanType={activeTab}
+                  onSubmit={handleSubmit}
+                  onCancel={() => { setShowForm(false); setEditingPlan(null); setViewingPlan(null); }}
+                />
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
         <TabsContent value="support_notes" className="mt-6">
           <Card>
