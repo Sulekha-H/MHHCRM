@@ -282,6 +282,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
                       <SelectTrigger><SelectValue placeholder="Select support worker" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Hasib">Hasib</SelectItem>
+                        <SelectItem value="Jess">Jess</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
