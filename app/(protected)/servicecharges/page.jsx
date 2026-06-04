@@ -80,6 +80,53 @@ useEffect(() => {
   loadData();
 }, [supabase, user]);
 
+// Auto-cleanup of £0.00 overdue/due service charges
+useEffect(() => {
+  if (!supabase || !user) return;
+
+  const cleanupZeroCharges = async () => {
+    try {
+      // Find charges with £0.00 amount that are 'Overdue' or 'Due' and not deleted
+      const { data: chargesToClean, error: fetchError } = await supabase
+        .from('service_charges')
+        .select('ID')
+        .eq('Monthly Amount', 0)
+        .eq('Deleted', false)
+        .in('Payment Status', ['Overdue', 'Due']);
+
+      if (fetchError) {
+        console.error('Error fetching £0 charges for cleanup:', fetchError);
+        return;
+      }
+
+      if (chargesToClean && chargesToClean.length > 0) {
+        console.log(`🧹 Found ${chargesToClean.length} overdue/due £0.00 charges to clean up.`);
+        const ids = chargesToClean.map(c => c.ID);
+
+        const { error: updateError } = await supabase
+          .from('service_charges')
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": `System Cleanup (${user.fullName || user.username || 'User'})`
+          })
+          .in('ID', ids);
+
+        if (updateError) {
+          console.error('Error during £0 charges cleanup:', updateError);
+        } else {
+          console.log('✅ Successfully cleaned up £0.00 overdue/due service charges.');
+          loadData(); // Reload data after cleanup
+        }
+      }
+    } catch (err) {
+      console.error('Fatal error in service charge cleanup:', err);
+    }
+  };
+
+  cleanupZeroCharges();
+}, [supabase, user]);
+
   const getResidentName = useCallback((residentId) => {
     const resident = residents.find(r => (r.ID || r.id) === residentId);
     
@@ -378,6 +425,14 @@ try {
             return chargeMonth === monthKey;
           });
 
+          // If there is an existing charge for this month and its amount is 0, ignore it for reminders
+          if (chargeForMonth) {
+            const amount = chargeForMonth.monthly_amount || chargeForMonth["Monthly Amount"] || 0;
+            if (parseFloat(amount) === 0) {
+              return;
+            }
+          }
+
           let dayOfMonth = Math.min(expectedPaymentDay, new Date(monthStartDate.getFullYear(), monthStartDate.getMonth() + 1, 0).getDate());
           const expectedDueDate = new Date(monthStartDate.getFullYear(), monthStartDate.getMonth(), dayOfMonth);
           expectedDueDate.setHours(0, 0, 0, 0);
@@ -608,7 +663,9 @@ try {
   const overdueCharges = serviceCharges.filter(charge => {
     const chargeResidentId = charge.resident_id || charge["Resident ID"];
     const resident = realResidents.find(r => (r.ID || r.id) === chargeResidentId);
-    return resident && charge.payment_status === "overdue";
+    // Filter out overdue charges with £0.00 amount
+    const amount = charge.monthly_amount || charge["Monthly Amount"] || 0;
+    return resident && charge.payment_status === "overdue" && parseFloat(amount) > 0;
   });
 
   return (
@@ -907,9 +964,10 @@ try {
                                   
                                   if (chargeForMonth) {
                                     const chargeExempt = chargeForMonth.exempt || chargeForMonth.Exempt;
+                                    const amount = chargeForMonth.monthly_amount || chargeForMonth["Monthly Amount"] || 0;
                                     if (chargeExempt || chargeForMonth.payment_status === 'exempt') {
                                       isExempt = true;
-                                    } else if (chargeForMonth.payment_status !== 'paid') {
+                                    } else if (chargeForMonth.payment_status !== 'paid' && parseFloat(amount) > 0) {
                                       const chargeDueDate = chargeForMonth.due_date || chargeForMonth["Due Date"];
                                       if (chargeDueDate) {
                                         const dueDate = new Date(chargeDueDate);
