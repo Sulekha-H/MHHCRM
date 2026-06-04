@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-  HandCoins, Calendar, User, FileText, Edit, X, Banknote, CheckCircle2, AlertTriangle, Trash2, CheckCircle, XCircle, Building, Home
+  HandCoins, Calendar, User, FileText, Edit, X, Banknote, CheckCircle2, AlertTriangle, Trash2, CheckCircle, XCircle, Building, Home, Link as LinkIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -94,6 +94,8 @@ export default function BenefitLogDetailModal({
   const residentName = residentId ? getResidentName(residentId) : 'N/A';
   const benefitTypeLabel = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' ? 'Housing Benefit' :
                       benefit_type?.toLowerCase().replace(/ /g, '_') === 'universal_credit' ? 'Universal Credit' :
+                      benefit_type?.toLowerCase().replace(/ /g, '_') === 'pip' ? 'PIP' :
+                      benefit_type?.toLowerCase().replace(/ /g, '_') === 'wca' ? 'WCA' :
                       'Landlord Portal';
   
   const isHBApplicationLog = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'application_log';
@@ -105,6 +107,8 @@ export default function BenefitLogDetailModal({
   const isRoomTransfers = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'room_transfers';
   const isHBCalls = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'hb_calls';
   const isHBLeavers = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' && logType?.toLowerCase().replace(/ /g, '_') === 'hb_leavers';
+  const isPIP = benefit_type?.toLowerCase().replace(/ /g, '_') === 'pip';
+  const isWCA = benefit_type?.toLowerCase().replace(/ /g, '_') === 'wca';
 
 
   return (
@@ -718,6 +722,83 @@ export default function BenefitLogDetailModal({
                     </div>
                   </>
                 )}
+
+                {notes && (
+                  <>
+                    <Separator className="my-6" />
+                    <h3 className="text-xl font-semibold text-slate-800 mb-4">Notes</h3>
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <p className="text-slate-700 whitespace-pre-wrap">{notes}</p>
+                    </div>
+                  </>
+                )}
+              </>
+            ) : isPIP || isWCA ? (
+              // Special display for PIP and WCA
+              <>
+                <h3 className="text-xl font-semibold text-slate-800 mb-4">{isPIP ? 'PIP' : 'WCA'} Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {residentId && (
+                    <DetailItem icon={<User />} label="Resident">{residentName}</DetailItem>
+                  )}
+                  <DetailItem icon={<Calendar />} label="Log Date & Time">
+                    {logDate ? format(new Date(logDate), 'dd MMMM yyyy, HH:mm') : null}
+                  </DetailItem>
+                  {loggedBy && (
+                    <DetailItem icon={<User />} label="Logged By">
+                      {loggedBy}
+                    </DetailItem>
+                  )}
+                </div>
+
+                <Separator className="my-6" />
+                <h3 className="text-xl font-semibold text-slate-800 mb-4">Application Info</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {log.date_sent_off && (
+                    <DetailItem icon={<Calendar />} label="Date Sent Off">
+                      {format(new Date(log.date_sent_off), 'dd MMMM yyyy')}
+                    </DetailItem>
+                  )}
+                  {log.completed_by && (
+                    <DetailItem icon={<User />} label="Who Completed It">
+                      {log.completed_by}
+                    </DetailItem>
+                  )}
+                  {log.gd_link && (
+                    <div className="col-span-full">
+                      <DetailItem icon={<LinkIcon />} label="GD Link of Application">
+                        <a href={log.gd_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                          {log.gd_link}
+                        </a>
+                      </DetailItem>
+                    </div>
+                  )}
+                </div>
+
+                <Separator className="my-6" />
+                <h3 className="text-xl font-semibold text-slate-800 mb-4">Assessment & Outcome</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {log.outcome && (
+                    <DetailItem icon={<CheckCircle2 />} label="Outcome">
+                      {log.outcome}
+                    </DetailItem>
+                  )}
+                  {log.decision_date && (
+                    <DetailItem icon={<Calendar />} label="Decision Date">
+                      {format(new Date(log.decision_date), 'dd MMMM yyyy')}
+                    </DetailItem>
+                  )}
+                  {(log.award_amount != null && log.award_amount > 0) && (
+                    <DetailItem icon={<Banknote />} label="Award Amount">
+                      £{log.award_amount.toFixed(2)}
+                    </DetailItem>
+                  )}
+                  {log.next_review_date && (
+                    <DetailItem icon={<Calendar />} label="Next Review Date">
+                      {format(new Date(log.next_review_date), 'dd MMMM yyyy')}
+                    </DetailItem>
+                  )}
+                </div>
 
                 {notes && (
                   <>

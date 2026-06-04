@@ -81,19 +81,25 @@ const loadData = async () => {
     console.log(`✅ Loaded ${residentsData.length} residents`);
     console.log(`✅ Loaded ${propertiesData.length} properties`);
 
-    // --- Load Housing Benefit & Universal Credit logs in parallel ---
-    const [hbRes, ucRes] = await Promise.all([
+    // --- Load Benefit logs in parallel ---
+    const [hbRes, ucRes, pipRes, wcaRes] = await Promise.all([
       supabase.from('housing_benefit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
-      supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
+      supabase.from('universal_credit_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
+      supabase.from('pip_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null'),
+      supabase.from('wca_logs').select('*').or('"Deleted".eq.false,"Deleted".is.null')
     ]);
 
     if (hbRes.error) console.error("❌ HB logs error:", hbRes.error);
     if (ucRes.error) console.error("❌ UC logs error:", ucRes.error);
+    if (pipRes.error) console.error("❌ PIP logs error:", pipRes.error);
+    if (wcaRes.error) console.error("❌ WCA logs error:", wcaRes.error);
 
     const hbLogs = normalizeData(hbRes.data || []).map(log => ({ ...log, benefit_type: 'housing_benefit' }));
     const ucLogs = normalizeData(ucRes.data || []).map(log => ({ ...log, benefit_type: 'universal_credit' }));
+    const pipLogs = normalizeData(pipRes.data || []).map(log => ({ ...log, benefit_type: 'pip' }));
+    const wcaLogs = normalizeData(wcaRes.data || []).map(log => ({ ...log, benefit_type: 'wca' }));
 
-    const combinedLogs = [...hbLogs, ...ucLogs]
+    const combinedLogs = [...hbLogs, ...ucLogs, ...pipLogs, ...wcaLogs]
       .filter(log => !log.deleted)
       .sort((a, b) => new Date(b.log_date) - new Date(a.log_date));
 
@@ -148,7 +154,10 @@ useEffect(() => {
       const benefitType = logData["Benefit Type"] || logData.benefit_type;
       // Normalize benefit type for comparison
       const normalizedBenefitType = benefitType?.toLowerCase().replace(/\s+/g, '_');
-      const tableName = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+      let tableName = 'housing_benefit_logs';
+      if (normalizedBenefitType === 'universal_credit') tableName = 'universal_credit_logs';
+      else if (normalizedBenefitType === 'pip') tableName = 'pip_logs';
+      else if (normalizedBenefitType === 'wca') tableName = 'wca_logs';
       
       console.log(`📤 Inserting/updating to table: ${tableName}`);
       console.log(`📤 Data being sent:`, logData);
@@ -227,7 +236,10 @@ useEffect(() => {
     if (logToDelete) {
       // Normalize benefit_type for table determination (handle both "Universal Credit" and "universal_credit")
       const normalizedBenefitType = logToDelete.benefit_type?.toLowerCase().replace(/\s+/g, '_');
-      const targetTable = normalizedBenefitType === 'universal_credit' ? 'universal_credit_logs' : 'housing_benefit_logs';
+      let targetTable = 'housing_benefit_logs';
+      if (normalizedBenefitType === 'universal_credit') targetTable = 'universal_credit_logs';
+      else if (normalizedBenefitType === 'pip') targetTable = 'pip_logs';
+      else if (normalizedBenefitType === 'wca') targetTable = 'wca_logs';
       
       try {
         console.log('🗑️ Deleting log:', { 
@@ -282,6 +294,36 @@ useEffect(() => {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
     link.setAttribute('download', `housing_benefit_logs_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPIPToCSV = () => {
+    const pipLogs = logs.filter(log => log.benefit_type === 'pip' && !log.deleted);
+    const csvContent = "PIP Logs Export"; // Simplified for now
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `pip_logs_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const exportWCAToCSV = () => {
+    const wcaLogs = logs.filter(log => log.benefit_type === 'wca' && !log.deleted);
+    const csvContent = "WCA Logs Export"; // Simplified for now
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `wca_logs_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -493,6 +535,134 @@ useEffect(() => {
             <CardContent className="p-12 text-center">
               <HandCoins className="w-12 h-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No logs found for Housing Benefit</h3>
+              <p className="text-slate-500">Get started by adding a new log entry.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  function renderPIPContent() {
+    const normalizeLogType = (logType) => {
+      if (!logType) return '';
+      return logType.toLowerCase().replace(/\s+/g, '_');
+    };
+
+    const applicationLogs = filteredLogs.filter(log => normalizeLogType(log.log_type) === 'application_log');
+    const assessmentOutcomes = filteredLogs.filter(log => normalizeLogType(log.log_type) === 'assessment_outcome');
+    const otherLogs = filteredLogs.filter(log => normalizeLogType(log.log_type) !== 'application_log' && normalizeLogType(log.log_type) !== 'assessment_outcome');
+
+    return (
+      <div className="space-y-8">
+        <section>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Application Logs</h2>
+          {applicationLogs.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {applicationLogs.map(log => (
+                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500">No application logs for PIP found.</p>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Assessment Outcomes</h2>
+          {assessmentOutcomes.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {assessmentOutcomes.map(log => (
+                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500">No assessment outcomes for PIP found.</p>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Other Updates</h2>
+          {otherLogs.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {otherLogs.map(log => (
+                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500">No other updates for PIP found.</p>
+          )}
+        </section>
+
+        {filteredLogs.length === 0 && !loading && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <HandCoins className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No logs found for PIP</h3>
+              <p className="text-slate-500">Get started by adding a new log entry.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  function renderWCAContent() {
+    const normalizeLogType = (logType) => {
+      if (!logType) return '';
+      return logType.toLowerCase().replace(/\s+/g, '_');
+    };
+
+    const applicationLogs = filteredLogs.filter(log => normalizeLogType(log.log_type) === 'application_log');
+    const assessmentOutcomes = filteredLogs.filter(log => normalizeLogType(log.log_type) === 'assessment_outcome');
+    const otherLogs = filteredLogs.filter(log => normalizeLogType(log.log_type) !== 'application_log' && normalizeLogType(log.log_type) !== 'assessment_outcome');
+
+    return (
+      <div className="space-y-8">
+        <section>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Application Logs</h2>
+          {applicationLogs.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {applicationLogs.map(log => (
+                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500">No application logs for WCA found.</p>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Assessment Outcomes</h2>
+          {assessmentOutcomes.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {assessmentOutcomes.map(log => (
+                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500">No assessment outcomes for WCA found.</p>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Other Updates</h2>
+          {otherLogs.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {otherLogs.map(log => (
+                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-500">No other updates for WCA found.</p>
+          )}
+        </section>
+
+        {filteredLogs.length === 0 && !loading && (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <HandCoins className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 mb-2">No logs found for WCA</h3>
               <p className="text-slate-500">Get started by adding a new log entry.</p>
             </CardContent>
           </Card>
@@ -941,6 +1111,28 @@ useEffect(() => {
               Export UC to CSV
             </Button>
           )}
+          {activeTab === 'pip' && (
+            <Button
+              onClick={exportPIPToCSV}
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={loading || logs.filter(l => l.benefit_type === 'pip' && !l.deleted).length === 0}
+            >
+              <Download className="w-4 h-4" />
+              Export PIP to CSV
+            </Button>
+          )}
+          {activeTab === 'wca' && (
+            <Button
+              onClick={exportWCAToCSV}
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={loading || logs.filter(l => l.benefit_type === 'wca' && !l.deleted).length === 0}
+            >
+              <Download className="w-4 h-4" />
+              Export WCA to CSV
+            </Button>
+          )}
           <Button
             onClick={() => setShowForm(true)}
             className="bg-sky-600 hover:bg-sky-700 shadow-sm"
@@ -971,9 +1163,11 @@ useEffect(() => {
         setEditingLog(null);
         setViewingLog(null);
       }}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="housing_benefit">Housing Benefit</TabsTrigger>
           <TabsTrigger value="universal_credit">Universal Credit</TabsTrigger>
+          <TabsTrigger value="pip">PIP</TabsTrigger>
+          <TabsTrigger value="wca">WCA</TabsTrigger>
         </TabsList>
 
         {showForm && (
@@ -1008,6 +1202,12 @@ useEffect(() => {
         </TabsContent>
         <TabsContent value="universal_credit" className="mt-6">
           {renderUniversalCreditContent()}
+        </TabsContent>
+        <TabsContent value="pip" className="mt-6">
+          {renderPIPContent()}
+        </TabsContent>
+        <TabsContent value="wca" className="mt-6">
+          {renderWCAContent()}
         </TabsContent>
       </Tabs>
 

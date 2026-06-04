@@ -50,8 +50,8 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
   const residentId = log["Resident ID"] || log.resident_id;
   const loggedBy = log["Logged By"] || log.logged_by || log.staff_member;
   const description = log.Description || log.description;
-  const amount = log.Amount || log.amount;
-  const applicationDate = log["Application Date"] || log.application_date;
+  const amount = log.Amount || log.amount || log["Award Amount"] || log.award_amount;
+  const applicationDate = log["Application Date"] || log.application_date || log["Date Sent Off"] || log.date_sent_off;
 
   return (
     <Card 
@@ -143,7 +143,7 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
                 <div className="flex items-center gap-2 text-sm">
                     <Banknote className="w-4 h-4 text-green-600" />
                     <span className="text-slate-600 font-medium">
-                        Amount: £{amount.toFixed(2)}
+                        {log["Award Amount"] || log.award_amount ? "Award Amount:" : "Amount:"} £{amount.toFixed(2)}
                     </span>
                 </div>
             </div>
