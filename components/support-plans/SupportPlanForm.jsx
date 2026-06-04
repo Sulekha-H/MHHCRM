@@ -221,15 +221,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
                   <SelectContent>
                     {residents?.filter(r => {
                       const residentStatus = (r.Status || r.status || '').toLowerCase();
-                      if (residentStatus !== 'active') return false;
-
-                      // If this is a quarterly review, filter out Ryland residents
-                      if (isQuarterlyReview) {
-                        const address = (r.Address || r.address || '').toLowerCase();
-                        return !address.includes('ryland');
-                      }
-
-                      return true;
+                      return residentStatus === 'active';
                     }).map(resident => (
                       <SelectItem key={resident.Id || resident.id} value={resident.Id || resident.id}>
                         {resident.First_Name || resident.first_name} {resident.Last_Name || resident.last_name}
