@@ -184,26 +184,42 @@ useEffect(() => {
         }
         console.log(`✅ Log inserted into ${tableName}`, data);
 
-        // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is created
-        if (logData.benefit_type === 'housing_benefit' && logData.log_type === 'application_log') {
-          const resident = residents.find(r => r.id === logData.resident_id);
-          const residentFullName = resident ? `${resident.first_name} ${resident.last_name}` : 'Resident';
+      }
 
-          const awaitingActivationLog = {
-            resident_id: logData.resident_id,
-            benefit_type: 'housing_benefit', // This log is specifically for HB
-            log_type: 'awaiting_activation',
-            title: `Awaiting Activation - ${residentFullName}`,
-            description: `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData.completed_application_submitted_date ? format(new Date(logData.completed_application_submitted_date), 'dd/MM/yyyy') : 'pending'}`,
-            log_date: new Date().toISOString().slice(0, 16),
-            status: 'awaiting_activation',
-            logged_by: logData.logged_by || '',
-            notes: `Linked to application: ${logData.title || 'HB Application'}`
-          };
+      // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is marked as "Completed Application Submitted"
+      const currentBenefitType = logData["Benefit Type"] || logData.benefit_type;
+      const currentLogType = logData["Log Type"] || logData.log_type;
+      const currentStatus = logData.Status || logData.status;
 
-          await supabase.from('housing_benefit_logs').insert([awaitingActivationLog]); // This always goes to HB table
-          console.log('✅ Auto-created Awaiting Activation log for resident:', logData.resident_id);
-        }
+      const isHousingBenefit = currentBenefitType === 'Housing Benefit' || currentBenefitType === 'housing_benefit';
+      const isApplicationLog = currentLogType === 'Application Log' || currentLogType === 'application_log';
+      const isCompletedStatus = currentStatus === 'Completed Application Submitted' || currentStatus === 'completed_application_submitted';
+
+      // Duplicate prevention: Only trigger if it's a new log OR if the status is changing to Completed
+      const isNewLog = !editingLog;
+      const wasNotCompletedBefore = editingLog && editingLog.status !== 'Completed Application Submitted' && editingLog.status !== 'completed_application_submitted';
+
+      if (isHousingBenefit && isApplicationLog && isCompletedStatus && (isNewLog || wasNotCompletedBefore)) {
+        const resId = logData["Resident ID"] || logData.resident_id;
+        const resident = residents.find(r => r.id === resId || r.ID === resId);
+        const residentFullName = resident ? `${resident.first_name || resident["First Name"]} ${resident.last_name || resident["Last Name"]}` : 'Resident';
+
+        const awaitingActivationLog = {
+          "ID": crypto.randomUUID(),
+          "Resident ID": resId,
+          "Benefit Type": 'Housing Benefit',
+          "Log Type": 'Awaiting Activation',
+          "Title": `Awaiting Activation - ${residentFullName}`,
+          "Description": `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData["Completed Application Submitted Date"] || logData.completed_application_submitted_date ? format(new Date(logData["Completed Application Submitted Date"] || logData.completed_application_submitted_date), 'dd/MM/yyyy') : 'pending'}`,
+          "Log Date": new Date().toISOString().slice(0, 16),
+          "Status": 'Awaiting Activation',
+          "Logged By": logData["Logged By"] || logData.logged_by || '',
+          "Notes": `Linked to application: ${logData.Title || logData.title || 'HB Application'}`,
+          "Created Date": new Date().toISOString()
+        };
+
+        await supabase.from('housing_benefit_logs').insert([awaitingActivationLog]);
+        console.log('✅ Auto-created Awaiting Activation log for resident:', resId);
       }
 
       setShowForm(false);
