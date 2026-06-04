@@ -100,11 +100,19 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     sanction_date: log["Sanction Date"] || log.sanction_date || "",
     sanction_amount: log["Sanction Amount"] || log.sanction_amount || 0,
     date_resolved: log["Date Resolved"] || log.date_resolved || "",
+    // PIP and WCA fields
+    date_sent_off: log["Date Sent Off"] || log.date_sent_off || "",
+    completed_by: log["Completed By"] || log.completed_by || "",
+    gd_link: log["GD Link"] || log.gd_link || "",
+    outcome: log["Outcome"] || log.outcome || "",
+    decision_date: log["Decision Date"] || log.decision_date || "",
+    award_amount: log["Award Amount"] || log.award_amount || 0,
+    next_review_date: log["Next Review Date"] || log.next_review_date || "",
   } : {
     id: "",
     resident_id: "",
     benefit_type: activeBenefitType || "housing_benefit",
-    log_type: activeBenefitType === "universal_credit" ? "application_log" : (activeBenefitType === "landlord_portal" ? "portal_check" : "application_log"),
+    log_type: (activeBenefitType === "universal_credit" || activeBenefitType === "pip" || activeBenefitType === "wca") ? "application_log" : (activeBenefitType === "landlord_portal" ? "portal_check" : "application_log"),
     title: "",
     description: "",
     log_date: getInitialDateTime(),
@@ -180,6 +188,14 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     sanction_date: "",
     sanction_amount: 0,
     date_resolved: "",
+    // PIP and WCA fields
+    date_sent_off: "",
+    completed_by: "",
+    gd_link: "",
+    outcome: "",
+    decision_date: "",
+    award_amount: 0,
+    next_review_date: "",
   });
 
   // Update logged_by when currentUser becomes available
@@ -221,7 +237,9 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     const benefitTypeMap = {
       'housing_benefit': 'Housing Benefit',
       'universal_credit': 'Universal Credit',
-      'landlord_portal': 'Landlord Portal'
+      'landlord_portal': 'Landlord Portal',
+      'pip': 'PIP',
+      'wca': 'WCA'
     };
     
     // Map log_type to database format
@@ -304,6 +322,16 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     }
     
     // Add fields specific to Housing Benefit
+    if (formData.benefit_type === 'pip' || formData.benefit_type === 'wca') {
+      supabaseData["Date Sent Off"] = formData.date_sent_off || null;
+      supabaseData["Completed By"] = formData.completed_by || null;
+      supabaseData["GD Link"] = formData.gd_link || null;
+      supabaseData["Outcome"] = formData.outcome || null;
+      supabaseData["Decision Date"] = formData.decision_date || null;
+      supabaseData["Award Amount"] = formData.award_amount;
+      supabaseData["Next Review Date"] = formData.next_review_date || null;
+    }
+
     if (formData.benefit_type === 'housing_benefit') {
       supabaseData["Date Application Started"] = formData.date_application_started || null;
       supabaseData["Application Saved Date"] = formData.application_saved_date || null;
@@ -414,14 +442,15 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
         { value: "hb_calls", label: "HB Calls" },
         { value: "hb_leavers", label: "HB Leavers" }
       ];
-    } else if (formData.benefit_type === "universal_credit") {
+    } else if (formData.benefit_type === "universal_credit" || formData.benefit_type === "pip" || formData.benefit_type === "wca") {
       return [
         { value: "application_log", label: "Application Log" },
         { value: "payment_update", label: "Payment Update" },
         { value: "claim_issue", label: "Claim Issue" },
         { value: "change_of_circumstances", label: "Change of Circumstances" },
         { value: "appeal", label: "Appeal" },
-        { value: "general_update", label: "General Update" }
+        { value: "general_update", label: "General Update" },
+        { value: "assessment_outcome", label: "Assessment Outcome" }
       ];
     } else if (formData.benefit_type === "landlord_portal") {
       return [
@@ -548,6 +577,8 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
                 <SelectContent>
                   <SelectItem value="housing_benefit">Housing Benefit</SelectItem>
                   <SelectItem value="universal_credit">Universal Credit</SelectItem>
+                  <SelectItem value="pip">PIP</SelectItem>
+                  <SelectItem value="wca">WCA</SelectItem>
                   <SelectItem value="landlord_portal">Landlord Portal</SelectItem>
                 </SelectContent>
               </Select>
@@ -1408,6 +1439,95 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
                       type="date"
                       value={formData.date_uploaded}
                       onChange={(e) => handleChange("date_uploaded", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PIP and WCA Specific Fields */}
+          {(formData.benefit_type === "pip" || formData.benefit_type === "wca") && (
+            <div className="space-y-6 border-t pt-4">
+              <h3 className="text-lg font-semibold text-slate-900">{formData.benefit_type === "pip" ? "PIP" : "WCA"} Details</h3>
+
+              <div className="space-y-4 bg-slate-50 p-4 rounded-lg">
+                <h4 className="text-sm font-semibold text-slate-700">Application Info</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="date_sent_off">Date Sent Off</Label>
+                    <Input
+                      id="date_sent_off"
+                      type="date"
+                      value={formData.date_sent_off}
+                      onChange={(e) => handleChange("date_sent_off", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="completed_by">Who Completed It</Label>
+                    <Input
+                      id="completed_by"
+                      value={formData.completed_by}
+                      onChange={(e) => handleChange("completed_by", e.target.value)}
+                      placeholder="e.g., Staff Name or Resident"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="gd_link">GD Link of Application</Label>
+                  <Input
+                    id="gd_link"
+                    value={formData.gd_link}
+                    onChange={(e) => handleChange("gd_link", e.target.value)}
+                    placeholder="Google Drive link"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4 bg-slate-50 p-4 rounded-lg">
+                <h4 className="text-sm font-semibold text-slate-700">Assessment & Outcome</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="outcome">Outcome</Label>
+                    <Select value={formData.outcome} onValueChange={(value) => handleChange("outcome", value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select outcome" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Awarded">Awarded</SelectItem>
+                        <SelectItem value="Not Awarded">Not Awarded</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="decision_date">Decision Date</Label>
+                    <Input
+                      id="decision_date"
+                      type="date"
+                      value={formData.decision_date}
+                      onChange={(e) => handleChange("decision_date", e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="award_amount">Award Amount (£)</Label>
+                    <Input
+                      id="award_amount"
+                      type="number"
+                      step="0.01"
+                      value={formData.award_amount}
+                      onChange={(e) => handleChange("award_amount", parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="next_review_date">Next Review Date</Label>
+                    <Input
+                      id="next_review_date"
+                      type="date"
+                      value={formData.next_review_date}
+                      onChange={(e) => handleChange("next_review_date", e.target.value)}
                     />
                   </div>
                 </div>
