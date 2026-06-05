@@ -130,14 +130,14 @@ export default function CashLogFormSupabase({ cashLog, residents, properties, cu
   const monthOptions = generateMonthOptions();
 
   return (
-    <Card className="mb-6 shadow-md">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
+    <div className="space-y-6">
+      <div className="pb-4 border-b">
+        <h2 className="text-xl font-bold flex items-center gap-2">
           <PoundSterling className="w-5 h-5 text-green-600" />
           {cashLog && (cashLog.id || cashLog.ID) ? "Edit Cash Log Entry" : "Add Cash Log Entry"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h2>
+      </div>
+      <div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -289,7 +289,7 @@ export default function CashLogFormSupabase({ cashLog, residents, properties, cu
             </div>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
