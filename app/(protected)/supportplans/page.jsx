@@ -711,8 +711,8 @@ useEffect(() => {
             </div>
 
             <div className="flex items-center gap-3 bg-white rounded-lg p-3 border border-slate-200">
-              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 bg-gray-100 rounded">
-                <span className="text-xs text-slate-400 font-medium">N/A -</span>
+              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs text-slate-400 font-medium">NA</span>
               </div>
               <div>
                 <div className="font-medium text-sm text-slate-900">Not Applicable</div>
@@ -926,9 +926,9 @@ useEffect(() => {
 
                                   if (isBeforeMoveIn) {
                                     return (
-                                      <TableCell key={weekStartDate.toISOString()} className="text-center bg-gray-100">
+                                      <TableCell key={weekStartDate.toISOString()} className="text-center">
                                         <div className="w-full flex items-center justify-center">
-                                          <span className="text-xs text-slate-400 font-medium">N/A -</span>
+                                          <span className="text-xs text-slate-400 font-medium">NA</span>
                                         </div>
                                       </TableCell>
                                     );
