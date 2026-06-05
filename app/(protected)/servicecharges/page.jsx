@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Receipt, AlertCircle, Download, PoundSterling, HelpCircle, PlusCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, setDate } from "date-fns";
 import ServiceChargeLogFormSupabase from "@/components/service-charges/ServiceChargeLogForm";
@@ -810,20 +812,30 @@ try {
             </CardContent>
           </Card>
 
-          {showForm && (
-            <div className="mt-6">
-              <ServiceChargeLogFormSupabase
-                charge={editingCharge}
-                residents={residents.filter(r => !isTestData(r))}
-                accommodations={accommodations}
-                properties={properties}
-                currentUser={currentUser}
-                allCharges={serviceCharges}
-                onSubmit={handleSubmit}
-                onCancel={() => { setShowForm(false); setEditingCharge(null); }}
-              />
-            </div>
-          )}
+          <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditingCharge(null); } }}>
+            <DialogContent className="max-w-4xl p-0 overflow-hidden">
+              <DialogHeader className="p-6 pb-0 sr-only">
+                <DialogTitle>{editingCharge ? 'Edit Service Charge' : 'Add Service Charge'}</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the service charge below.
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[90vh]">
+                <div className="p-6">
+                  <ServiceChargeLogFormSupabase
+                    charge={editingCharge}
+                    residents={residents.filter(r => !isTestData(r))}
+                    accommodations={accommodations}
+                    properties={properties}
+                    currentUser={currentUser}
+                    allCharges={serviceCharges}
+                    onSubmit={handleSubmit}
+                    onCancel={() => { setShowForm(false); setEditingCharge(null); }}
+                  />
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
 
           {viewingCharge && (
             <ServiceChargeDetailModal
@@ -1085,19 +1097,29 @@ try {
             </CardContent>
           </Card>
 
-          {showCashForm && (
-            <div className="mt-6">
-              <CashLogFormSupabase
-                cashLog={editingCashLog}
-                residents={residents.filter(r => !isTestData(r))}
-                properties={properties}
-                currentUser={currentUser}
-                onSubmit={handleCashLogSubmit}
-                onCancel={() => { setShowCashForm(false); setEditingCashLog(null); }}
-                onDelete={handleCashLogDelete}
-              />
-            </div>
-          )}
+          <Dialog open={showCashForm} onOpenChange={(open) => { if (!open) { setShowCashForm(false); setEditingCashLog(null); } }}>
+            <DialogContent className="max-w-4xl p-0 overflow-hidden">
+              <DialogHeader className="p-6 pb-0 sr-only">
+                <DialogTitle>{editingCashLog ? 'Edit Cash Log Entry' : 'Add Cash Log Entry'}</DialogTitle>
+                <DialogDescription>
+                  Enter the details for the cash log entry below.
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[90vh]">
+                <div className="p-6">
+                  <CashLogFormSupabase
+                    cashLog={editingCashLog}
+                    residents={residents.filter(r => !isTestData(r))}
+                    properties={properties}
+                    currentUser={currentUser}
+                    onSubmit={handleCashLogSubmit}
+                    onCancel={() => { setShowCashForm(false); setEditingCashLog(null); }}
+                    onDelete={handleCashLogDelete}
+                  />
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
 
           {viewingCashLog && (
             <CashLogDetailModal

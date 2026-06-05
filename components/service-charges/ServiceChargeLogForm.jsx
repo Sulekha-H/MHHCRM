@@ -179,14 +179,14 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
   };
 
   return (
-    <Card className="mb-6 shadow-md">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
+    <div className="space-y-6">
+      <div className="pb-4 border-b">
+        <h2 className="text-xl font-bold flex items-center gap-2">
           <Receipt className="w-5 h-5 text-indigo-600" />
           {charge && (charge.id || charge.ID) ? "Edit Service Charge" : "Add Service Charge"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h2>
+      </div>
+      <div>
         <form onSubmit={handleSubmit} className="space-y-6">
           {residentBalance > 0 && (
             <Alert className="mb-6 bg-amber-50 border-amber-200">
@@ -461,7 +461,7 @@ export default function ServiceChargeLogForm({ charge, residents, users, current
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
