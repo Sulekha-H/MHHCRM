@@ -422,10 +422,60 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-status logic for Housing Benefit
+      if (newData.benefit_type === 'housing_benefit') {
+        // HB Calls
+        if (newData.log_type === 'hb_calls' && field === 'hb_call_resolved' && value === true) {
+          newData.status = 'resolved';
+        }
+        // HB Leavers
+        if (newData.log_type === 'hb_leavers' && field === 'hb_notified' && value === true) {
+          newData.status = 'completed';
+        }
+        // Room Transfers
+        if (newData.log_type === 'room_transfers' && field === 'hb_updated' && value === true) {
+          newData.status = 'completed';
+        }
+        // Change of Addresses
+        if (newData.log_type === 'change_of_addresses') {
+          if ((field === 'change_of_address_completed_hb' || field === 'change_of_address_completed_uc')) {
+            if (newData.change_of_address_completed_hb && newData.change_of_address_completed_uc) {
+              newData.status = 'completed';
+            }
+          }
+        }
+        // Missing Payments
+        if (newData.log_type === 'missing_payments' && field === 'payment_received' && value === true) {
+          newData.status = 'payment_received';
+        }
+        // Awaiting Activation
+        if (newData.log_type === 'awaiting_activation' && field === 'date_activated' && value !== "") {
+          newData.status = 'activated';
+        }
+        // Suspended Claims
+        if (newData.log_type === 'suspended_claims' && field === 'claim_reactivated' && value === true) {
+          newData.status = 'completed';
+        }
+        // Requested Documents / Support Notes
+        if ((newData.log_type === 'requested_documents' && field === 'date_requested_documents_sent' && value !== "") ||
+            (newData.log_type === 'requested_support_notes' && (field === 'support_notes_uploaded' || field === 'support_notes_sent') && value === true)) {
+          newData.status = 'completed';
+        }
+        // Application Log
+        if (newData.log_type === 'application_log') {
+          if (field === 'completed_application_submitted_date' && value !== "") {
+            newData.status = 'completed_application_submitted';
+          } else if (field === 'application_saved_date' && value !== "" && newData.status !== 'completed_application_submitted') {
+            newData.status = 'application_saved_not_submitted';
+          }
+        }
+      }
+
+      return newData;
+    });
   };
 
   const getLogTypeOptions = () => {
