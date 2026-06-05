@@ -11,7 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, FileCheck, CheckCircle2 } from "lucide-react";
 
 export default function ComplianceForm({ log, properties, currentUser, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(log || {
+  const [formData, setFormData] = useState(log ? {
+    ...log,
+    logged_by: currentUser?.full_name || currentUser?.fullName || log.logged_by || ""
+  } : {
     property_id: "",
     compliance_type: "gas_safety",
     certificate_name: "",
@@ -25,29 +28,31 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
     file_url: "",
     notes: "",
     priority: "medium",
-    logged_by: currentUser?.full_name || "",
+    logged_by: currentUser?.full_name || currentUser?.fullName || "",
     actioned: false,
     actioned_date: "",
     actioned_notes: ""
   });
 
-  // Update logged_by when currentUser becomes available
+  // Update logged_by whenever currentUser or log changes to ensure it's accurate
   useEffect(() => {
-    if (!log && currentUser?.full_name && formData.logged_by === "") {
+    const currentName = currentUser?.full_name || currentUser?.fullName;
+    if (currentName) {
       setFormData(prev => ({
         ...prev,
-        logged_by: currentUser.full_name
+        logged_by: currentName
       }));
     }
-  }, [currentUser, log, formData.logged_by]);
+  }, [currentUser]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Ensure logged_by is set before submission
+    // Ensure logged_by is updated to current user on every save
+    const currentName = currentUser?.full_name || currentUser?.fullName || formData.logged_by || "";
     const dataToSubmit = {
       ...formData,
-      logged_by: formData.logged_by || currentUser?.full_name || ""
+      logged_by: currentName
     };
     
     // Map form values to database format
@@ -356,10 +361,10 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
           </div>
           
           {/* Logged By */}
-          {currentUser && (
+          {(currentUser?.full_name || currentUser?.fullName || formData.logged_by) && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <p className="text-sm text-purple-900">
-                <span className="font-semibold">Logged by:</span> {currentUser.full_name}
+                <span className="font-semibold">Logged by:</span> {currentUser?.full_name || currentUser?.fullName || formData.logged_by}
               </p>
             </div>
           )}

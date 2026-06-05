@@ -54,11 +54,20 @@ export default function Compliance() {
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
 
-useEffect(() => {
-  if (supabase && user) {
-    loadData();
-  }
-}, [supabase, user]);
+  useEffect(() => {
+    if (user) {
+      setCurrentUser({
+        ...user,
+        full_name: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim()
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (supabase && user) {
+      loadData();
+    }
+  }, [supabase, user]);
   
   const getPropertyName = useCallback((propertyId) => {
     const property = properties.find(p => p.id === propertyId);
@@ -199,11 +208,6 @@ const handleSubmit = async (logData) => {
           ? (logData["Actioned Notes"] || null)
           : null,
     };
-
-    if (!cleanedLogData["Logged By"] && currentUser?.email) {
-      const userRecord = users.find(u => u.email === currentUser.email);
-      cleanedLogData["Logged By"] = userRecord?.full_name || currentUser.email;
-    }
 
     if (editingLog && editingLog.id) {
       const { error } = await supabase
