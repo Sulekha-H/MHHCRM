@@ -19,9 +19,11 @@ import {
   Trash2,
   AlertCircle,
   CheckCircle2,
-  Clock
+  Clock,
+  Eye
 } from "lucide-react";
 import ComplianceCheckForm from "@/components/compliance-checks/ComplianceCheckForm";
+import ComplianceCheckDetailModal from "@/components/compliance-checks/ComplianceCheckDetailModal";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
 import { Input } from "@/components/ui/input";
 
@@ -33,7 +35,9 @@ export default function ComplianceChecksPage() {
   const [accommodations, setAccommodations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const [editingLog, setEditingLog] = useState(null);
+  const [selectedLog, setSelectedLog] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPropertyFilter, setSelectedPropertyFilter] = useState("all");
 
@@ -317,6 +321,17 @@ export default function ComplianceChecksPage() {
                             size="icon"
                             className="h-8 w-8 text-slate-400 hover:text-indigo-600"
                             onClick={() => {
+                              setSelectedLog(log);
+                              setShowDetail(true);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-400 hover:text-indigo-600"
+                            onClick={() => {
                               setEditingLog(log);
                               setShowForm(true);
                             }}
@@ -389,6 +404,15 @@ export default function ComplianceChecksPage() {
           </>
         )}
       </div>
+
+      <ComplianceCheckDetailModal
+        log={selectedLog}
+        isOpen={showDetail}
+        onClose={() => {
+          setShowDetail(false);
+          setSelectedLog(null);
+        }}
+      />
     </div>
   );
 }
