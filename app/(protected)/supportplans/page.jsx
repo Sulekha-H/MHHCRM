@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Edit, CheckCircle, PlusCircle, XCircle, Download, Calendar, FileText } from "lucide-react";
-import { format } from "date-fns";
+import { format, isSameWeek } from "date-fns";
 import SupportPlanForm_Supabase from "@/components/support-plans/SupportPlanForm";
 import SupportPlanDetailModal from "@/components/support-plans/SupportPlanDetailModal";
 import {
@@ -849,7 +849,7 @@ useEffect(() => {
                     }
                     return weeks;
                   };
-                  const weekDates = generateWeekDates('2025-12-29', 24); //dates 
+                  const weekDates = generateWeekDates('2025-12-29', 52); //dates
 
                   return (
                     <div key={property.id}>
@@ -859,9 +859,17 @@ useEffect(() => {
                           <TableRow>
                             <TableHead className="min-w-[200px] sticky left-0 bg-white z-10">Resident Name</TableHead>
                             <TableHead className="min-w-[150px]">Claim Ref No.</TableHead>
-                            {weekDates.map(date => (
-                              <TableHead key={date.toISOString()} className="text-center">W/C {format(date, 'dd/MM/yy')}</TableHead>
-                            ))}
+                            {weekDates.map(date => {
+                              const isCurrentWeek = isSameWeek(date, new Date(), { weekStartsOn: 1 });
+                              return (
+                                <TableHead
+                                  key={date.toISOString()}
+                                  className={`text-center ${isCurrentWeek ? 'bg-red-600 text-white font-bold' : ''}`}
+                                >
+                                  W/C {format(date, 'dd/MM/yy')}
+                                </TableHead>
+                              );
+                            })}
                           </TableRow>
                         </TableHeader>
                         <TableBody>

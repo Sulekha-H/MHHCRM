@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, CheckCircle, AlertTriangle, FileStack, XCircle, Download, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
+import { format, isSameWeek } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import WeeklySWDocLogForm_Supabase from "@/components/weekly-sw-docs/WeeklySWDocLogForm";
@@ -147,7 +147,7 @@ useEffect(() => {
         return weeks;
     };
     
-    const weekDates = generateWeekDates('2025-12-29', 24);
+    const weekDates = generateWeekDates('2025-12-29', 52);
 
     const handleEdit = useCallback((logData) => {
         setViewingLog(null);
@@ -568,11 +568,17 @@ useEffect(() => {
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead className="min-w-[200px] sticky left-0 bg-white z-10">Document Type</TableHead>
-                                            {weekDates.map(date => (
-                                                <TableHead key={date.toISOString()} className="text-center min-w-[100px]">
-                                                    W/C {format(date, 'dd/MM/yy')}
-                                                </TableHead>
-                                            ))}
+                                            {weekDates.map(date => {
+                                                const isCurrentWeek = isSameWeek(date, new Date(), { weekStartsOn: 1 });
+                                                return (
+                                                    <TableHead
+                                                        key={date.toISOString()}
+                                                        className={`text-center min-w-[100px] ${isCurrentWeek ? 'bg-red-600 text-white font-bold' : ''}`}
+                                                    >
+                                                        W/C {format(date, 'dd/MM/yy')}
+                                                    </TableHead>
+                                                );
+                                            })}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
