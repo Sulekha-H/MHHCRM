@@ -26,7 +26,10 @@ export default function Settings() {
     const email = clerkUser?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
     if (!email) return false;
 
-    const authorizedUsers = ['amaani@myhopehousing.org.uk'];
+    const authorizedUsers = [
+      'amaani@myhopehousing.org.uk',
+      'sulekha@myhopehousing.org.uk'
+    ];
     return authorizedUsers.includes(email);
   };
 
