@@ -29,7 +29,7 @@ const DetailItem = ({ icon, label, children }) => (
   </div>
 );
 
-export default function UtilityDetailModal({ utility, propertyName, onEdit, onClose, onDelete }) {
+export default function UtilityDetailModal({ utility, propertyName, onEdit, onClose, onDelete, isManagement }) {
   if (!utility) return null;
 
   const formatDate = (dateString) => {
@@ -145,15 +145,17 @@ export default function UtilityDetailModal({ utility, propertyName, onEdit, onCl
             </div>
           </div>
           <DialogFooter className="p-6 bg-slate-50 border-t sticky bottom-0">
-            <Button
-              variant="destructive"
-              onClick={() => onDelete(utility)}
-              className="mr-auto"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-            <Button variant="outline" onClick={onClose}>Close</Button>
+            {isManagement && (
+              <Button
+                variant="destructive"
+                onClick={() => onDelete(utility)}
+                className="mr-auto"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            )}
+            <Button variant="outline" className={!isManagement ? "mr-auto" : ""} onClick={onClose}>Close</Button>
             <Button onClick={() => onEdit(utility)} className="bg-teal-600 hover:bg-teal-700">
               <Edit className="w-4 h-4 mr-2" />
               Edit Utility

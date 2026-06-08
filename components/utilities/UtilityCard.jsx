@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Zap, MapPin, Building2, Eye, Edit, Trash2 } from "lucide-react";
 
-export default function UtilityCard({ utility, propertyName, onEdit, onViewDetails, onDelete }) {
+export default function UtilityCard({ utility, propertyName, onEdit, onViewDetails, onDelete, isManagement }) {
   const utilityType = utility["Utility Type"] || "Utility";
   const companyName = utility["Company Name"] || "Unknown Provider";
   const accountNumber = utility["Account Number"] || utility["Company Account Number"] || "N/A";
@@ -73,14 +73,16 @@ export default function UtilityCard({ utility, propertyName, onEdit, onViewDetai
               <Edit className="w-4 h-4 mr-1" /> Edit
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(utility)}
-            className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {isManagement && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(utility)}
+              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,14 @@ import UtilityDetailModal from "@/components/utilities/UtilityDetailModal";
 import { format } from "date-fns";
 
 export default function UtilitiesPage() {
+  const { user } = useUser();
   const supabase = useClerkSupabaseClient();
+
+  const isManagement = useMemo(() => {
+    const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+    return email === 'amaani@myhopehousing.org.uk' || email === 'sulekha@myhopehousing.org.uk';
+  }, [user]);
+
   const [utilities, setUtilities] = useState([]);
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -232,6 +240,7 @@ export default function UtilitiesPage() {
           }}
           onDelete={handleDelete}
           onClose={() => setViewingUtility(null)}
+          isManagement={isManagement}
         />
       )}
 
@@ -284,6 +293,7 @@ export default function UtilitiesPage() {
                       }}
                       onViewDetails={(u) => setViewingUtility(u)}
                       onDelete={handleDelete}
+                      isManagement={isManagement}
                     />
                   ))}
                 </div>
