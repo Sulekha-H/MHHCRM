@@ -52,7 +52,10 @@ export default function SidebarNavigation() {
 
   const hasAdminAccess = (user) => {
     if (!user?.emailAddresses?.[0]?.emailAddress) return false;
-    const adminUsers = ['amaani@myhopehousing.org.uk'].map(email => email.toLowerCase());
+    const adminUsers = [
+      'amaani@myhopehousing.org.uk',
+      'sulekha@myhopehousing.org.uk'
+    ].map(email => email.toLowerCase());
     const userEmail = user.emailAddresses[0].emailAddress?.trim().toLowerCase();
     return adminUsers.includes(userEmail);
   };
