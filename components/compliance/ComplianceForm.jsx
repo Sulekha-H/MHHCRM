@@ -10,7 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, FileCheck, CheckCircle2 } from "lucide-react";
 
+const PRESET_CERT_NAMES = [
+  "Electrical Installation Condition Report",
+  "Gas Safety Record",
+  "PAT Test",
+  "gas certs",
+  "SSI Pat Testing"
+];
+
 export default function ComplianceForm({ log, properties, currentUser, onSubmit, onCancel }) {
+  const [isOtherName, setIsOtherName] = useState(
+    log?.certificate_name && !PRESET_CERT_NAMES.includes(log.certificate_name)
+  );
+
   const [formData, setFormData] = useState(log ? {
     ...log,
     logged_by: currentUser?.full_name || currentUser?.fullName || log.logged_by || ""
@@ -167,15 +179,41 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 space-y-2">
                 <Label htmlFor="certificate_name">Certificate Name/Title *</Label>
-                <Input 
-                  id="certificate_name" 
-                  value={formData.certificate_name} 
-                  onChange={e => handleChange("certificate_name", e.target.value)} 
-                  placeholder="e.g., Gas Safety Certificate for Maple House" 
-                  required 
-                />
+                <Select
+                  value={isOtherName ? "other" : formData.certificate_name}
+                  onValueChange={v => {
+                    if (v === "other") {
+                      setIsOtherName(true);
+                      handleChange("certificate_name", "");
+                    } else {
+                      setIsOtherName(false);
+                      handleChange("certificate_name", v);
+                    }
+                  }}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select certificate name" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRESET_CERT_NAMES.map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                    <SelectItem value="other">Other (Type custom name)</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {isOtherName && (
+                  <Input
+                    id="certificate_name"
+                    value={formData.certificate_name}
+                    onChange={e => handleChange("certificate_name", e.target.value)}
+                    placeholder="Enter custom certificate name"
+                    required
+                  />
+                )}
               </div>
             </div>
           </div>
