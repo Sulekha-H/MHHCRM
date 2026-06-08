@@ -248,6 +248,11 @@ export default function BenefitLogDetailModal({
                       {log.support_notes_requested_dates}
                     </DetailItem>
                   )}
+                  {(log["Deadline Date"] || log.deadline_date) && (
+                    <DetailItem icon={<Calendar />} label="Deadline Date">
+                      {format(new Date(log["Deadline Date"] || log.deadline_date), 'dd MMMM yyyy')}
+                    </DetailItem>
+                  )}
                   {loggedBy && (
                     <DetailItem icon={<User />} label="Logged By">
                       {loggedBy}
