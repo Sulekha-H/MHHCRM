@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
 import BenefitLogDetailModal from "@/components/Benefits/BenefitLogDetailModal";
-import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameWeek } from "date-fns";
 
 // Helper function to normalize Supabase data to snake_case for the modal/form
 const normalizeLogData = (log) => {
@@ -555,11 +555,13 @@ export default function LandlordPortalSupabase() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {calendarWeeks.map((week) => (
-                  <TableRow key={week.weekCommencing.toISOString()}>
-                    <TableCell className="font-medium">
-                      {format(week.weekCommencing, 'dd/MM/yyyy')}
-                    </TableCell>
+                {calendarWeeks.map((week) => {
+                  const isCurrentWeek = isSameWeek(week.weekCommencing, new Date(), { weekStartsOn: 1 });
+                  return (
+                    <TableRow key={week.weekCommencing.toISOString()}>
+                      <TableCell className={`font-medium ${isCurrentWeek ? 'bg-red-600 text-white font-bold' : ''}`}>
+                        {format(week.weekCommencing, 'dd/MM/yyyy')}
+                      </TableCell>
                     {week.days.map((day, index) => {
                       if (!day) {
                         return <TableCell key={index}></TableCell>;
@@ -613,7 +615,7 @@ export default function LandlordPortalSupabase() {
                       );
                     })}
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
 
