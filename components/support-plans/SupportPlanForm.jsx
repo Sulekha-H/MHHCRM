@@ -142,7 +142,7 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
     if (isNewRecord) {
       supabaseData["ID"] = crypto.randomUUID();
       supabaseData["Created Date"] = new Date().toISOString();
-      supabaseData["Created By"] = currentUser?.email || "Unknown";
+      supabaseData["Created By"] = currentUser?.email || currentUser?.primaryEmailAddress?.emailAddress || "Unknown";
     }
 
     // Add fields specific to support_notes table

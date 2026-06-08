@@ -130,7 +130,13 @@ useEffect(() => {
   const loadData = async () => {
     setLoading(true);
     try {
-      setCurrentUser(user);
+      if (user) {
+        setCurrentUser({
+          ...user,
+          full_name: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          email: user.primaryEmailAddress?.emailAddress || ""
+        });
+      }
 
       const [supportNotesResult, quarterlyReviewsResult, residentsResult, propertiesResult, accommodationsResult, usersResult] = await Promise.all([
         supabase.from('allocated_support_notes').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false }),
@@ -332,7 +338,7 @@ useEffect(() => {
         await supabase.from(tableName).update({
           "Deleted": true,
           "Deleted Date": new Date().toISOString(),
-          "Deleted By": currentUser?.email || "Unknown User"
+          "Deleted By": currentUser?.email || user?.primaryEmailAddress?.emailAddress || "Unknown User"
         }).eq('"ID"', planToDelete.id);
 
         setPlanToDelete(null);
@@ -985,7 +991,7 @@ useEffect(() => {
                                               resident_id: resident.id,
                                               plan_type: 'support_notes',
                                               log_date: new Date(weekStartDate.getTime() + (12 * 60 * 60 * 1000)).toISOString().slice(0, 16),
-                                              key_worker: currentUser?.email || "",
+                                              key_worker: user?.primaryEmailAddress?.emailAddress || "",
                                               status: 'document_combined_uploaded',
                                               title: `Weekly Note for ${resident.first_name} ${resident.last_name} - W/C ${format(weekStartDate, 'dd/MM/yy')}`
                                             };
@@ -1191,7 +1197,7 @@ useEffect(() => {
                                       log_date: new Date().toISOString().slice(0, 16),
                                       status: 'up_to_date',
                                       title: `Quarterly Review - ${resident.first_name} ${resident.last_name}`,
-                                      key_worker: currentUser?.email || ""
+                                      key_worker: user?.primaryEmailAddress?.emailAddress || ""
                                     };
                                     handleEdit(newReview);
                                   }}
@@ -1262,7 +1268,7 @@ useEffect(() => {
                               log_date: new Date().toISOString().slice(0, 16),
                               status: 'up_to_date',
                               title: '',
-                              key_worker: currentUser?.email || ""
+                              key_worker: user?.primaryEmailAddress?.emailAddress || ""
                             };
                             handleEdit(newReview);
                           }}
