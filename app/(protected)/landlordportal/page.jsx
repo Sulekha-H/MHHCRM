@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Plus, Search, HandCoins, CheckCircle, PlusCircle, Download } from "lucide-react";
+import { Plus, Search, HandCoins, CheckCircle, PlusCircle, Download, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
 import BenefitLogDetailModal from "@/components/Benefits/BenefitLogDetailModal";
@@ -488,16 +490,29 @@ export default function LandlordPortalSupabase() {
         </CardContent>
       </Card>
 
-      {showForm && (
-        <BenefitLogForm_Supabase
-          log={editingLog}
-          residents={residents}
-          currentUser={currentUser}
-          activeBenefitType="landlord_portal"
-          onSubmit={handleSubmit}
-          onCancel={() => { setShowForm(false); setEditingLog(null); }}
-        />
-      )}
+      <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditingLog(null); } }}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0 sr-only">
+            <DialogTitle>{editingLog ? 'Edit Portal Check' : 'Add Portal Check'}</DialogTitle>
+            <DialogDescription>
+              Enter the details for the landlord portal check below.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[90vh]">
+            <div className="p-6">
+              <BenefitLogForm_Supabase
+                log={editingLog}
+                residents={residents}
+                currentUser={currentUser}
+                activeBenefitType="landlord_portal"
+                onSubmit={handleSubmit}
+                onCancel={() => { setShowForm(false); setEditingLog(null); }}
+                hideCard={true}
+              />
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {viewingLog && (
         <BenefitLogDetailModal

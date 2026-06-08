@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, FileCheck, AlertTriangle, Calendar, ExternalLink, Building2, MapPin, ChevronDown, ChevronRight, Download } from "lucide-react";
+import { Plus, Search, Edit, FileCheck, AlertTriangle, Calendar, ExternalLink, Building2, MapPin, ChevronDown, ChevronRight, Download, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, differenceInDays } from "date-fns";
 import ComplianceForm_Supabase from "@/components/compliance/ComplianceForm";
 import ComplianceDetailModal from "@/components/compliance/ComplianceDetailModal";
@@ -509,15 +511,28 @@ const handleSubmit = async (logData) => {
         />
       )}
 
-      {showForm && (
-        <ComplianceForm_Supabase
-          log={editingLog}
-          properties={properties}
-          currentUser={currentUser}
-          onSubmit={handleSubmit}
-          onCancel={() => { setShowForm(false); setEditingLog(null); }}
-        />
-      )}
+      <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditingLog(null); } }}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-0 sr-only">
+            <DialogTitle>{editingLog ? 'Edit Compliance Record' : 'Add Compliance Record'}</DialogTitle>
+            <DialogDescription>
+              Enter the details for the compliance record below.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[90vh]">
+            <div className="p-6">
+              <ComplianceForm_Supabase
+                log={editingLog}
+                properties={properties}
+                currentUser={currentUser}
+                onSubmit={handleSubmit}
+                onCancel={() => { setShowForm(false); setEditingLog(null); }}
+                hideCard={true}
+              />
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <Card className="mb-6">
         <CardContent className="p-6">
