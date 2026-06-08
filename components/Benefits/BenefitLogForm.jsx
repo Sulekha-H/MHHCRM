@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, HandCoins } from "lucide-react";
 
-export default function BenefitLogForm_Supabase({ log, residents, currentUser, activeBenefitType, onSubmit, onCancel }) {
+export default function BenefitLogForm_Supabase({ log, residents, currentUser, activeBenefitType, onSubmit, onCancel, hideCard = false }) {
   const getInitialDateTime = () => {
     if (log?.["Log Date"] || log?.log_date) {
       const date = log["Log Date"] || log.log_date;
@@ -578,16 +578,8 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     ];
   };
 
-  return (
-    <Card className="mb-6 shadow-md">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <HandCoins className="w-5 h-5 text-sky-600" />
-          {log ? "Edit Benefit Log" : "Add New Benefit Log"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-6">
           {/* Top Section - Resident and Benefit Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {formData.benefit_type !== "landlord_portal" && (
@@ -1857,6 +1849,22 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
             </Button>
           </div>
         </form>
+  );
+
+  if (hideCard) {
+    return formContent;
+  }
+
+  return (
+    <Card className="mb-6 shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <HandCoins className="w-5 h-5 text-sky-600" />
+          {log ? "Edit Benefit Log" : "Add New Benefit Log"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {formContent}
       </CardContent>
     </Card>
   );

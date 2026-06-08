@@ -18,7 +18,7 @@ const PRESET_CERT_NAMES = [
   "SSI Pat Testing"
 ];
 
-export default function ComplianceForm({ log, properties, currentUser, onSubmit, onCancel }) {
+export default function ComplianceForm({ log, properties, currentUser, onSubmit, onCancel, hideCard = false }) {
   const [isOtherName, setIsOtherName] = useState(
     log?.certificate_name && !PRESET_CERT_NAMES.includes(log.certificate_name)
   );
@@ -133,16 +133,8 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
   // Check if the certificate is expired
   const isExpired = formData.expiry_date && new Date(formData.expiry_date) < new Date();
 
-  return (
-    <Card className="mb-6 shadow-md">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2">
-          <FileCheck className="w-5 h-5 text-emerald-600" />
-          {log ? "Edit Compliance Record" : "Add New Compliance Record"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Basic Information */}
           <div>
@@ -417,6 +409,22 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
             </Button>
           </div>
         </form>
+  );
+
+  if (hideCard) {
+    return formContent;
+  }
+
+  return (
+    <Card className="mb-6 shadow-md">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <FileCheck className="w-5 h-5 text-emerald-600" />
+          {log ? "Edit Compliance Record" : "Add New Compliance Record"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {formContent}
       </CardContent>
     </Card>
   );
