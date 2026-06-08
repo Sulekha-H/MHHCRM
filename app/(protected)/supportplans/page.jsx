@@ -1270,7 +1270,7 @@ useEffect(() => {
                             })}
                           </TableRow>
                         );
-                      })}
+                      })})()}
                   </TableBody>
                 </Table>
               </div>
