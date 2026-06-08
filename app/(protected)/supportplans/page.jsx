@@ -8,8 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Edit, CheckCircle, PlusCircle, XCircle, Download, Calendar, FileText } from "lucide-react";
-import { format, isSameWeek } from "date-fns";
+import { Plus, Search, Edit, CheckCircle, PlusCircle, XCircle, Download, Calendar, FileText, AlertCircle } from "lucide-react";
+import {
+  format,
+  isSameWeek,
+  addMonths,
+  startOfMonth,
+  endOfMonth,
+  isBefore,
+  isAfter,
+  isSameMonth,
+  startOfWeek
+} from "date-fns";
 import SupportPlanForm_Supabase from "@/components/support-plans/SupportPlanForm";
 import SupportPlanDetailModal from "@/components/support-plans/SupportPlanDetailModal";
 import {
@@ -40,6 +50,36 @@ const normalizeData = (data) => {
 
 export default function SupportPlans_Supabase() {
   const { user } = useUser();
+
+  // Helper: Calculate next QR due date for a resident
+  const calculateNextQRDueDate = useCallback((residentId, residentMoveInDate, allPlans) => {
+    // Get all completed quarterly reviews for this resident
+    const residentReviews = allPlans
+      .filter(p => p.resident_id === residentId && p.plan_type === 'quarterly_reviews' && !p.deleted)
+      .sort((a, b) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime());
+
+    if (residentReviews.length > 0) {
+      // If there are reviews, next one is due 3 months from the latest log date
+      const latestReview = residentReviews[0];
+      return addMonths(new Date(latestReview.log_date), 3);
+    } else if (residentMoveInDate) {
+      // If no reviews, 1st one is due 3 months from move-in date
+      return addMonths(new Date(residentMoveInDate), 3);
+    }
+
+    return null;
+  }, []);
+
+  const getRolling12Months = useCallback(() => {
+    const months = [];
+    // Start from current month
+    const start = startOfMonth(new Date());
+    for (let i = 0; i < 12; i++) {
+      months.push(addMonths(start, i));
+    }
+    return months;
+  }, []);
+
   const supabase = useClerkSupabaseClient();
   const [supportPlans, setSupportPlans] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -1090,12 +1130,153 @@ useEffect(() => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="quarterly_reviews" className="mt-6">
+        <TabsContent value="quarterly_reviews" className="mt-6 space-y-6">
+          {/* QR Monthly Grid Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-indigo-600" />
-                Quarterly Reviews
+                Quarterly Review Schedule
+              </CardTitle>
+              <p className="text-slate-600">Monthly schedule for upcoming quarterly reviews</p>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px] sticky left-0 bg-white z-10">Resident Name</TableHead>
+                      {getRolling12Months().map(monthDate => (
+                        <TableHead key={monthDate.toISOString()} className="text-center min-w-[100px]">
+                          {format(monthDate, 'MMM')}<br />
+                          <span className="text-xs text-slate-500">{format(monthDate, 'yyyy')}</span>
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const rollingMonths = getRolling12Months();
+                      const activeStaffEmail = user?.primaryEmailAddress?.emailAddress || "";
+
+                      return residents
+                        .filter(r => (r.status || r.Status || '').toLowerCase() === 'active')
+                        .sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''))
+                        .map(resident => {
+                          const rawMoveInDate = resident.move_in_date || resident['move-in_date'] || resident['Move-in Date'] || resident['Move In Date'];
+                          const nextDueDate = calculateNextQRDueDate(resident.id, rawMoveInDate, supportPlans);
+
+                          return (
+                            <TableRow key={resident.id}>
+                            <TableCell className="font-medium sticky left-0 bg-white z-10">
+                              {resident.first_name} {resident.last_name}
+                            </TableCell>
+                            {rollingMonths.map(monthDate => {
+                              const monthStart = startOfMonth(monthDate);
+                              const monthEnd = endOfMonth(monthDate);
+                              const today = new Date();
+
+                              let status = 'none'; // none, due, overdue, completed
+                              let wcDate = null;
+
+                              if (nextDueDate) {
+                                if (isSameMonth(nextDueDate, monthDate)) {
+                                  if (isBefore(nextDueDate, today)) {
+                                    status = 'overdue';
+                                  } else {
+                                    status = 'due';
+                                  }
+                                  wcDate = startOfWeek(nextDueDate, { weekStartsOn: 1 });
+                                } else if (isBefore(nextDueDate, monthStart) && isBefore(nextDueDate, today)) {
+                                  // This resident has an overdue QR from a previous month
+                                  // We should show it in the current month as overdue if it's the current month
+                                  if (isSameMonth(monthDate, today)) {
+                                    status = 'overdue';
+                                    wcDate = startOfWeek(nextDueDate, { weekStartsOn: 1 });
+                                  }
+                                }
+                              }
+
+                              // Check if a review was already completed in this month
+                              const reviewInMonth = supportPlans.find(p =>
+                                p.resident_id === resident.id &&
+                                p.plan_type === 'quarterly_reviews' &&
+                                !p.deleted &&
+                                isSameMonth(new Date(p.log_date), monthDate)
+                              );
+
+                              if (reviewInMonth) {
+                                status = 'completed';
+                              }
+
+                              return (
+                                <TableCell
+                                  key={monthDate.toISOString()}
+                                  className={`text-center p-2 ${
+                                    status === 'due' ? 'bg-red-50' :
+                                    status === 'overdue' ? 'bg-red-100' :
+                                    status === 'completed' ? 'bg-green-50' : ''
+                                  }`}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full h-auto py-2 flex flex-col gap-1"
+                                    onClick={() => {
+                                      if (reviewInMonth) {
+                                        handleViewDetails(reviewInMonth);
+                                      } else {
+                                        const newReview = {
+                                          resident_id: resident.id,
+                                          plan_type: 'quarterly_reviews',
+                                          log_date: (status === 'due' || status === 'overdue') && nextDueDate
+                                            ? format(nextDueDate, 'yyyy-MM-dd')
+                                            : format(monthDate, 'yyyy-MM-dd'),
+                                          status: 'up_to_date',
+                                          title: `Quarterly Review - ${resident.first_name} ${resident.last_name}`,
+                                          key_worker: activeStaffEmail
+                                        };
+                                        handleEdit(newReview);
+                                      }
+                                    }}
+                                  >
+                                    {status === 'completed' ? (
+                                      <CheckCircle className="w-5 h-5 text-green-600 mx-auto" />
+                                    ) : status === 'due' ? (
+                                      <>
+                                        <Badge variant="destructive" className="bg-red-600 hover:bg-red-700 animate-pulse">DUE</Badge>
+                                        <span className="text-[10px] font-medium text-red-800">W/C {format(wcDate, 'dd/MM')}</span>
+                                      </>
+                                    ) : status === 'overdue' ? (
+                                      <>
+                                        <div className="flex flex-col items-center">
+                                          <AlertCircle className="w-5 h-5 text-red-600" />
+                                          <Badge variant="destructive" className="bg-red-800 hover:bg-red-900 text-[10px] py-0 px-1">OVERDUE</Badge>
+                                        </div>
+                                        <span className="text-[10px] font-bold text-red-900">W/C {format(wcDate, 'dd/MM')}</span>
+                                      </>
+                                    ) : (
+                                      <PlusCircle className="w-5 h-5 text-slate-300 hover:text-slate-400 mx-auto" />
+                                    )}
+                                  </Button>
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Existing QR History Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+                Quarterly Review History
               </CardTitle>
               <p className="text-slate-600">Track quarterly review meetings and assessments - complete history for all residents</p>
             </CardHeader>
