@@ -139,7 +139,8 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
   const invoicePaymentStatus = getValue("Invoice Payment Status", "invoice_payment_status");
   const reportedBy = getValue("Reported By", "reported_by");
   const reportedByType = getValue("Reported By Type", "reported_by_type");
-  const loggedVia = getValue("Logged Via", "logged_via");
+  const loggedViaRaw = getValue("Logged Via", "logged_via");
+  const loggedVia = loggedViaRaw || (title?.startsWith("Repair from Compliance Check:") ? "Compliance Check" : null);
 
   const priorityColorValue = priority?.toLowerCase() === 'emergency' ? '#9333ea' :
                              priority?.toLowerCase() === 'urgent' ? '#dc2626' :
