@@ -32,7 +32,6 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
   const photoIdUrl = resident["Photo ID URL"];
   const propertyName = resident["Property Name"];
   const unitRoomNumber = resident["Unit/Room Number"];
-  const residentType = resident["Resident Type"];
 
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -59,7 +58,6 @@ export default function AllocatedResidentCard({ resident, onEdit, onViewDetails,
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-slate-900 text-lg truncate">{firstName} {lastName}</h3>
-                {residentType && <p className="text-xs text-blue-600 font-medium">{residentType}</p>}
                 {claimRef && <p className="text-xs text-slate-500 truncate">Ref: {claimRef}</p>}
                 {keyWorker && <p className="text-xs text-slate-500 truncate">SW: {keyWorker}</p>}
               </div>

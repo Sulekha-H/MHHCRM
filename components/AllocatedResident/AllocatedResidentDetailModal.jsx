@@ -75,7 +75,6 @@ export default function AllocatedResidentDetailModal({ resident, properties, acc
   const moveOnOutcome = resident["Move-on Outcome"];
   const propertyName = resident["Property Name"];
   const unitRoomNumber = resident["Unit/Room Number"];
-  const residentType = resident["Resident Type"];
   const otherDocuments = resident["Other Documents"] || [];
   const propertyId = resident["Property ID"] || resident.property_id;
   const accommodationId = resident["Accommodation ID"] || resident.accommodation_id;
@@ -114,7 +113,6 @@ export default function AllocatedResidentDetailModal({ resident, properties, acc
                     <DialogTitle className="text-3xl font-bold text-slate-900 break-words">{firstName} {lastName}</DialogTitle>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <Badge className={getStatusColor(status)}>{status}</Badge>
-                      {residentType && <Badge variant="outline" className="text-blue-600 border-blue-200">{residentType}</Badge>}
                     </div>
                   </div>
                 </div>
