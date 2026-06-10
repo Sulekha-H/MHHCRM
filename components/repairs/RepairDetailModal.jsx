@@ -68,6 +68,8 @@ export default function RepairDetailModal({
   const reportedOnFiixit = normalizeYesNoNA(repair.reported_on_fiixit);
   const fiixitUpdated = normalizeYesNoNA(repair.fiixit_updated);
 
+  const loggedVia = repair["Logged Via"] || repair.logged_via || (repair.title?.startsWith("Repair from Compliance Check:") ? "Compliance Check" : null);
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl w-full p-0">
@@ -85,7 +87,7 @@ export default function RepairDetailModal({
                       <Badge className={getStatusColor(repair.status)}>{repair.status?.replace('_', ' ')}</Badge>
                       <Badge className={getPriorityColor(repair.priority)}>{repair.priority} priority</Badge>
                       <Badge className={getRepairTypeColor(repair.repair_type)}>{repair.repair_type}</Badge>
-                      {(repair["Logged Via"] === "Compliance Check" || repair.logged_via === "Compliance Check") && (
+                      {loggedVia === "Compliance Check" && (
                         <Badge variant="outline" className="bg-indigo-100 text-indigo-800 border-indigo-200">Logged via Compliance Check</Badge>
                       )}
                     </div>
@@ -111,19 +113,19 @@ export default function RepairDetailModal({
                 {repair.reported_by} 
                 {repair.reported_by_type && (
                   <span className="text-sm font-normal text-slate-500 ml-1">
-                    ({repair.reported_by_type.replace('_', ' ')}{(repair["Logged Via"] === "Compliance Check" || repair.logged_via === "Compliance Check") ? " via Compliance Check" : ""})
+                    ({repair.reported_by_type.replace('_', ' ')}{loggedVia === "Compliance Check" ? " via Compliance Check" : ""})
                   </span>
                 )}
-                {(!repair.reported_by_type && (repair["Logged Via"] === "Compliance Check" || repair.logged_via === "Compliance Check")) && (
+                {(!repair.reported_by_type && loggedVia === "Compliance Check") && (
                   <span className="text-sm font-normal text-slate-500 ml-1">
                     (via Compliance Check)
                   </span>
                 )}
               </DetailItem>
               <DetailItem icon={<User />} label="Logged By">{repair.logged_by}</DetailItem>
-              {(repair["Logged Via"] || repair.logged_via) && (
+              {loggedVia && (
                 <DetailItem icon={<Wrench />} label="Logged Via">
-                  {repair["Logged Via"] || repair.logged_via}
+                  {loggedVia}
                 </DetailItem>
               )}
               <DetailItem icon={<CheckCircle />} label="Reported on Fiixit">

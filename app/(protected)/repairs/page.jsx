@@ -140,7 +140,9 @@ const filterRepairs = useCallback(() => {
   // Filter by source
   if (sourceFilter !== "all") {
     current = current.filter(repair => {
-      const loggedVia = repair["Logged Via"] || repair.logged_via;
+      const title = repair["Title"] || repair.title || "";
+      const loggedVia = repair["Logged Via"] || repair.logged_via || (title.startsWith("Repair from Compliance Check:") ? "Compliance Check" : null);
+
       if (sourceFilter === "compliance") {
         return loggedVia === "Compliance Check";
       }
