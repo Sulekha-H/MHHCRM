@@ -63,7 +63,8 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
       invoice_payment_status: repair.Invoice_Payment_Status || repair.invoice_payment_status || "unpaid",
       invoice_file_url: repair.Invoice_File_Url || repair.invoice_file_url || "",
       notes: repair.Notes || repair.notes || "",
-      images: repair.Images || repair.images || []
+      images: repair.Images || repair.images || [],
+      logged_via: repair.Logged_Via || repair.logged_via || repair["Logged Via"] || null
     } 
     : {
       title: "",
@@ -101,7 +102,8 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
       invoice_payment_status: "unpaid",
       invoice_file_url: "",
       notes: "",
-      images: []
+      images: [],
+      logged_via: null
     });
 
   const [locationType, setLocationType] = useState(() => {

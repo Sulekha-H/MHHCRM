@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Download, Wrench, AlertCircle, Filter, List } from "lucide-react";
+import { Plus, Search, Download, Wrench, AlertCircle, Filter, List, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfYear, endOfYear, eachMonthOfInterval } from "date-fns";
 import RepairFormSupabase from "@/components/repairs/RepairForm";
@@ -31,6 +31,8 @@ export default function Repairs() { // Component name changed
   const client = useClerkSupabaseClient();
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [isMigrating, setIsMigrating] = useState(false);
 
 const fetchAllData = useCallback(async () => {
   if (!supabase) return;
@@ -68,6 +70,42 @@ useEffect(() => {
   fetchAllData();
 }, [fetchAllData]);
 
+const handleMigrateSources = async () => {
+  if (!supabase || isMigrating) return;
+  if (!window.confirm("This will identify existing repairs from compliance checks and tag them correctly. Proceed?")) return;
+
+  setIsMigrating(true);
+  try {
+    const { data: repairsData, error } = await supabase
+      .from('repairs')
+      .select('ID, Title')
+      .or('"Deleted".is.null,"Deleted".eq.false');
+
+    if (error) throw error;
+
+    const complianceRepairs = (repairsData || []).filter(r =>
+      r.Title && r.Title.startsWith("Repair from Compliance Check:")
+    );
+
+    console.log(`Found ${complianceRepairs.length} repairs to migrate.`);
+
+    for (const repair of complianceRepairs) {
+      await supabase
+        .from('repairs')
+        .update({ "Logged Via": "Compliance Check" })
+        .eq('ID', repair.ID);
+    }
+
+    alert(`Successfully tagged ${complianceRepairs.length} repairs.`);
+    fetchAllData();
+  } catch (err) {
+    console.error("Migration error:", err);
+    alert("Error during migration: " + err.message);
+  } finally {
+    setIsMigrating(false);
+  }
+};
+
   
 // Filter and sort repairs
 const filterRepairs = useCallback(() => {
@@ -99,6 +137,20 @@ const filterRepairs = useCallback(() => {
     });
   }
 
+  // Filter by source
+  if (sourceFilter !== "all") {
+    current = current.filter(repair => {
+      const loggedVia = repair["Logged Via"] || repair.logged_via;
+      if (sourceFilter === "compliance") {
+        return loggedVia === "Compliance Check";
+      }
+      if (sourceFilter === "manual") {
+        return !loggedVia || loggedVia !== "Compliance Check";
+      }
+      return true;
+    });
+  }
+
   // Filter by search term
   if (searchTerm) {
     const search = searchTerm.toLowerCase();
@@ -125,7 +177,7 @@ const filterRepairs = useCallback(() => {
   }
 
   setFilteredRepairs(current);
-}, [repairs, searchTerm, activeTab, activeMonthTab, priorityFilter, propertyFilter]);
+}, [repairs, searchTerm, activeTab, activeMonthTab, priorityFilter, propertyFilter, sourceFilter]);
 
 // Apply filters whenever dependencies change
 useEffect(() => {
@@ -214,43 +266,44 @@ useEffect(() => {
       
       // Convert from PascalCase_Underscore to "Space Separated" format for Supabase
       const formattedRepairData = {
-        "Title": repairData.Title,
-        "Property ID": repairData.Property_Id,
-        "Accommodation ID": repairData.Accommodation_Id || null,
-        "Common Area": transformCommonArea(repairData.Common_Area),
-        "Repair Type": transformRepairType(repairData.Repair_Type),
-        "Priority": transformPriority(repairData.Priority),
-        "Status": transformStatus(repairData.Status),
-        "Description": repairData.Description || null,
-        "Reported By": repairData.Reported_By,
-        "Reported By Type": transformReportedByType(repairData.Reported_By_Type),
-        "Logged By": repairData.Logged_By || null,
-        "Reported on Fiixit": transformFiixitValue(repairData.Reported_On_Fiixit),
-        "Fiixit Updated": transformFiixitValue(repairData.Fiixit_Updated),
-        "Reported Date": repairData.Reported_Date,
-        "Assessed Date": repairData.Assessed_Date || null,
-        "Scheduled Date": repairData.Scheduled_Date || null,
-        "In Progress Date": repairData.In_Progress_Date || null,
-        "Completed Date": repairData.Completed_Date || null,
-        "Date Fixed": repairData.Date_Fixed || null,
-        "Is Cancelled": repairData.Is_Cancelled,
-        "Cancellation Reason": repairData.Cancellation_Reason || null,
-        "Cancelled Date": repairData.Cancelled_Date || null,
-        "Contractor": repairData.Contractor || null,
-        "Contractor Contact": repairData.Contractor_Contact || null,
-        "Estimated Cost": repairData.Estimated_Cost,
-        "Invoice Not Applicable": repairData.Invoice_Not_Applicable,
-        "Invoice Received Date": repairData.Invoice_Received_Date || null,
-        "Invoice Received From": repairData.Invoice_Received_From || null,
-        "Invoice Amount": repairData.Invoice_Amount,
-        "Payment Due Date": repairData.Payment_Due_Date || null,
-        "Date Invoice Paid": repairData.Date_Invoice_Paid || null,
-        "Invoice Number": repairData.Invoice_Number || null,
-        "Invoice Payment Status": transformInvoicePaymentStatus(repairData.Invoice_Payment_Status),
-        "Invoice File URL": repairData.Invoice_File_Url || null,
-        "Notes": repairData.Notes || null,
-        "Images": repairData.Images || [],
-        "Updated Date": repairData.Updated_Date
+        "Title": repairData.title,
+        "Property ID": repairData.property_id,
+        "Accommodation ID": repairData.accommodation_id || null,
+        "Common Area": transformCommonArea(repairData.common_area),
+        "Repair Type": transformRepairType(repairData.repair_type),
+        "Priority": transformPriority(repairData.priority),
+        "Status": transformStatus(repairData.status),
+        "Description": repairData.description || null,
+        "Reported By": repairData.reported_by,
+        "Reported By Type": transformReportedByType(repairData.reported_by_type),
+        "Logged By": repairData.logged_by || null,
+        "Reported on Fiixit": transformFiixitValue(repairData.reported_on_fiixit),
+        "Fiixit Updated": transformFiixitValue(repairData.fiixit_updated),
+        "Reported Date": repairData.reported_date,
+        "Assessed Date": repairData.assessed_date || null,
+        "Scheduled Date": repairData.scheduled_date || null,
+        "In Progress Date": repairData.in_progress_date || null,
+        "Completed Date": repairData.completed_date || null,
+        "Date Fixed": repairData.date_fixed || null,
+        "Is Cancelled": repairData.is_cancelled,
+        "Cancellation Reason": repairData.cancellation_reason || null,
+        "Cancelled Date": repairData.cancelled_date || null,
+        "Contractor": repairData.contractor || null,
+        "Contractor Contact": repairData.contractor_contact || null,
+        "Estimated Cost": repairData.estimated_cost,
+        "Invoice Not Applicable": repairData.invoice_not_applicable,
+        "Invoice Received Date": repairData.invoice_received_date || null,
+        "Invoice Received From": repairData.invoice_received_from || null,
+        "Invoice Amount": repairData.invoice_amount,
+        "Payment Due Date": repairData.payment_due_date || null,
+        "Date Invoice Paid": repairData.date_invoice_paid || null,
+        "Invoice Number": repairData.invoice_number || null,
+        "Invoice Payment Status": transformInvoicePaymentStatus(repairData.invoice_payment_status),
+        "Invoice File URL": repairData.invoice_file_url || null,
+        "Notes": repairData.notes || null,
+        "Images": repairData.images || [],
+        "Logged Via": repairData.logged_via || null,
+        "Updated Date": repairData.updated_date
       };
 
       if (editingRepair) {
@@ -324,7 +377,8 @@ useEffect(() => {
       invoice_payment_status: repair["Invoice Payment Status"] || repair.invoice_payment_status,
       invoice_file_url: repair["Invoice File URL"] || repair.invoice_file_url,
       notes: repair["Notes"] || repair.notes,
-      images: repair["Images"] || repair.images
+      images: repair["Images"] || repair.images,
+      logged_via: repair["Logged Via"] || repair.logged_via
     };
     
     setEditingRepair(formattedRepair);
@@ -371,7 +425,8 @@ useEffect(() => {
       invoice_payment_status: repair["Invoice Payment Status"] || repair.invoice_payment_status,
       invoice_file_url: repair["Invoice File URL"] || repair.invoice_file_url,
       notes: repair["Notes"] || repair.notes,
-      images: repair["Images"] || repair.images
+      images: repair["Images"] || repair.images,
+      logged_via: repair["Logged Via"] || repair.logged_via
     };
     
     setViewingRepair(formattedRepair);
@@ -757,6 +812,26 @@ useEffect(() => {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="All Sources" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="manual">Manual Entry</SelectItem>
+                <SelectItem value="compliance">Compliance Checks</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleMigrateSources}
+              disabled={isMigrating}
+              title="Tag existing compliance repairs"
+            >
+              <RefreshCw className={`w-4 h-4 ${isMigrating ? 'animate-spin' : ''}`} />
+            </Button>
             <Button variant="outline" size="icon">
               <List className="w-4 h-4" />
             </Button>

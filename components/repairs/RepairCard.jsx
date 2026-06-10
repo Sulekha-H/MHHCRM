@@ -139,6 +139,7 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
   const invoicePaymentStatus = getValue("Invoice Payment Status", "invoice_payment_status");
   const reportedBy = getValue("Reported By", "reported_by");
   const reportedByType = getValue("Reported By Type", "reported_by_type");
+  const loggedVia = getValue("Logged Via", "logged_via");
 
   const priorityColorValue = priority?.toLowerCase() === 'emergency' ? '#9333ea' :
                              priority?.toLowerCase() === 'urgent' ? '#dc2626' :
@@ -193,6 +194,11 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
                   <Badge className={`${getStatusColor(status)} border`}>
                     {status?.replace('_', ' ')}
                   </Badge>
+                  {loggedVia === "Compliance Check" && (
+                    <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold">
+                      Compliance
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <Calendar className="w-3 h-3" />
@@ -271,6 +277,11 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
                 <Badge className={`${getStatusColor(status)} border`}>
                   {status?.replace('_', ' ')}
                 </Badge>
+                {loggedVia === "Compliance Check" && (
+                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-semibold">
+                    Compliance
+                  </Badge>
+                )}
               </div>
             </div>
             <div className="flex gap-1">
@@ -383,7 +394,12 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
                   {reportedBy}
                   {reportedByType && (
                     <span className="ml-1 text-blue-600 capitalize">
-                      ({reportedByType.replace('_', ' ')})
+                      ({reportedByType.replace('_', ' ')}{loggedVia === "Compliance Check" ? " via Compliance Check" : ""})
+                    </span>
+                  )}
+                  {(!reportedByType && loggedVia === "Compliance Check") && (
+                    <span className="ml-1 text-blue-600 capitalize">
+                      (via Compliance Check)
                     </span>
                   )}
                 </span>

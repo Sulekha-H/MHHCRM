@@ -109,6 +109,7 @@ export default function ComplianceChecksPage() {
             "Reported By": supabaseData["Logged By"],
             "Reported By Type": "Staff",
             "Logged By": supabaseData["Logged By"],
+            "Logged Via": "Compliance Check",
             "Reported on Fiixit": "No",
             "Fiixit Updated": "No",
             "Reported Date": new Date().toISOString(),
