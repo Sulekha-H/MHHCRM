@@ -47,6 +47,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     support_notes_uploaded: log["Support Notes Uploaded"] !== null && log["Support Notes Uploaded"] !== undefined ? log["Support Notes Uploaded"] : (log.support_notes_uploaded || false),
     support_notes_sent: log["Support Notes Sent"] !== null && log["Support Notes Sent"] !== undefined ? log["Support Notes Sent"] : (log.support_notes_sent || false),
     date_uploaded_or_sent: log["Date Uploaded or Sent"] || log.date_uploaded_or_sent || "",
+    deadline_date: log["Deadline Date"] || log.deadline_date || "",
     // Requested Documents fields
     requested_document_type: log["Requested Document Type"] || log.requested_document_type || "",
     date_requested_documents_sent: log["Date Requested Documents Sent"] || log.date_requested_documents_sent || "",
@@ -135,6 +136,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     support_notes_uploaded: false,
     support_notes_sent: false,
     date_uploaded_or_sent: "",
+    deadline_date: "",
     // Requested Documents fields
     requested_document_type: "",
     date_requested_documents_sent: "",
@@ -350,6 +352,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
       supabaseData["Support Notes Uploaded"] = formData.support_notes_uploaded;
       supabaseData["Support Notes Sent"] = formData.support_notes_sent;
       supabaseData["Date Uploaded or Sent"] = formData.date_uploaded_or_sent || null;
+      supabaseData["Deadline Date"] = formData.deadline_date || null;
       
       // Requested Documents fields
       supabaseData["Requested Document Type"] = formData.requested_document_type || null;
@@ -1316,7 +1319,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="date_of_request">Date of Request</Label>
                   <Input
@@ -1324,6 +1327,17 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
                     type="date"
                     value={formData.date_of_request}
                     onChange={(e) => handleChange("date_of_request", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="deadline_date">Deadline Date *</Label>
+                  <Input
+                    id="deadline_date"
+                    type="date"
+                    value={formData.deadline_date}
+                    onChange={(e) => handleChange("deadline_date", e.target.value)}
+                    required={formData.log_type === 'requested_support_notes'}
                   />
                 </div>
 

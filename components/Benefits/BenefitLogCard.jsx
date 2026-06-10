@@ -52,6 +52,7 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
   const description = log.Description || log.description;
   const amount = log.Amount || log.amount || log["Award Amount"] || log.award_amount;
   const applicationDate = log["Application Date"] || log.application_date || log["Date Sent Off"] || log.date_sent_off;
+  const deadlineDate = log["Deadline Date"] || log.deadline_date;
 
   return (
     <Card 
@@ -133,6 +134,17 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
                     <FileText className="w-4 h-4 text-teal-500" />
                     <span className="text-slate-600">
                         Application Date: {format(new Date(applicationDate), 'PPP')}
+                    </span>
+                </div>
+            </div>
+        )}
+
+        {deadlineDate && (
+            <div className="pt-3 border-t">
+                <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="w-4 h-4 text-red-500" />
+                    <span className="text-slate-600 font-medium">
+                        Deadline: {format(new Date(deadlineDate), 'PPP')}
                     </span>
                 </div>
             </div>

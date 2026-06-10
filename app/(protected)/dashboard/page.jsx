@@ -61,7 +61,8 @@ export default function Dashboard() {
     roomTransfers: 0,
     hbCalls: 0,
     hbLeavers: 0,
-    total: 0
+    total: 0,
+    pendingSupportNoteRequests: []
   });
   const [quarterlyReviewSummary, setQuarterlyReviewSummary] = useState({
     overdue: [],
@@ -456,6 +457,37 @@ export default function Dashboard() {
           return logType === 'hb_leavers';
         }).length;
 
+        // Pending Support Note Reminders
+        const pendingSupportNoteRequests = benefitLogs
+          .filter(log => {
+            const deleted = log.Deleted || log.deleted || false;
+            if (deleted) return false;
+            const benefitType = (log["Benefit Type"] || '').toLowerCase().replace(/ /g, '_');
+            const logType = (log["Log Type"] || '').toLowerCase().replace(/ /g, '_');
+            const supportNotesSent = log["Support Notes Sent"] || log.support_notes_sent || false;
+            const deadlineDate = log["Deadline Date"] || log.deadline_date;
+
+            return benefitType === 'housing_benefit' &&
+                   logType === 'requested_support_notes' &&
+                   !supportNotesSent &&
+                   deadlineDate;
+          })
+          .map(log => {
+            const deadlineDate = new Date(log["Deadline Date"] || log.deadline_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            deadlineDate.setHours(0, 0, 0, 0);
+
+            const diffTime = deadlineDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            return {
+              ...log,
+              daysRemaining: diffDays
+            };
+          })
+          .sort((a, b) => a.daysRemaining - b.daysRemaining);
+
         setHousingBenefitSummary({
           requestedSupportNotes,
           requestedDocuments,
@@ -464,7 +496,8 @@ export default function Dashboard() {
           roomTransfers,
           hbCalls,
           hbLeavers,
-          total: recentHBLogs.length
+          total: recentHBLogs.length,
+          pendingSupportNoteRequests
         });
 
         // Referrals Summary
@@ -1061,7 +1094,59 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="text-center pt-3 border-t border-purple-200">
+                {housingBenefitSummary.pendingSupportNoteRequests.length > 0 && (
+                  <div className="mt-6 border-t border-purple-200 pt-4">
+                    <h4 className="text-sm font-semibold text-purple-800 mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Pending Support Note Requests
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {housingBenefitSummary.pendingSupportNoteRequests.map(request => {
+                        const resident = residents.find(r => r.ID === request["Resident ID"]);
+                        const isOverdue = request.daysRemaining < 0;
+                        const isDueSoon = request.daysRemaining >= 0 && request.daysRemaining <= 3;
+
+                        return (
+                          <div
+                            key={request.ID}
+                            className={`p-3 rounded-lg border flex flex-col justify-between ${
+                              isOverdue ? 'bg-red-50 border-red-200' :
+                              isDueSoon ? 'bg-orange-50 border-orange-200' :
+                              'bg-white border-purple-100'
+                            }`}
+                          >
+                            <div>
+                              <div className="font-medium text-slate-900 truncate">
+                                {resident ? `${resident["First Name"]} ${resident["Last Name"]}` : request.Title}
+                              </div>
+                              <div className="text-xs text-slate-600 mt-1 truncate">
+                                {request.Title}
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-3">
+                              <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                isOverdue ? 'bg-red-100 text-red-700' :
+                                isDueSoon ? 'bg-orange-100 text-orange-700' :
+                                'bg-purple-100 text-purple-700'
+                              }`}>
+                                {isOverdue ? (
+                                  `${Math.abs(request.daysRemaining)} ${Math.abs(request.daysRemaining) === 1 ? 'day' : 'days'} overdue`
+                                ) : (
+                                  `${request.daysRemaining} ${request.daysRemaining === 1 ? 'day' : 'days'} remaining`
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-500">
+                                Due: {format(new Date(request["Deadline Date"] || request.deadline_date), 'MMM d')}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-center pt-3 border-t border-purple-200 mt-4">
                   <div className="inline-flex items-center gap-2 text-sm text-purple-700">
                     <span className="font-semibold">Total Logs:</span>
                     <Badge className="bg-purple-600 text-white text-base px-3 py-1">
