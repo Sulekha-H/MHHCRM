@@ -85,6 +85,9 @@ export default function RepairDetailModal({
                       <Badge className={getStatusColor(repair.status)}>{repair.status?.replace('_', ' ')}</Badge>
                       <Badge className={getPriorityColor(repair.priority)}>{repair.priority} priority</Badge>
                       <Badge className={getRepairTypeColor(repair.repair_type)}>{repair.repair_type}</Badge>
+                      {(repair["Logged Via"] === "Compliance Check" || repair.logged_via === "Compliance Check") && (
+                        <Badge variant="outline" className="bg-indigo-100 text-indigo-800 border-indigo-200">Logged via Compliance Check</Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -106,9 +109,23 @@ export default function RepairDetailModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DetailItem icon={<User />} label="Reported By">
                 {repair.reported_by} 
-                {repair.reported_by_type && <span className="text-sm font-normal text-slate-500 ml-1">({repair.reported_by_type.replace('_', ' ')})</span>}
+                {repair.reported_by_type && (
+                  <span className="text-sm font-normal text-slate-500 ml-1">
+                    ({repair.reported_by_type.replace('_', ' ')}{(repair["Logged Via"] === "Compliance Check" || repair.logged_via === "Compliance Check") ? " via Compliance Check" : ""})
+                  </span>
+                )}
+                {(!repair.reported_by_type && (repair["Logged Via"] === "Compliance Check" || repair.logged_via === "Compliance Check")) && (
+                  <span className="text-sm font-normal text-slate-500 ml-1">
+                    (via Compliance Check)
+                  </span>
+                )}
               </DetailItem>
               <DetailItem icon={<User />} label="Logged By">{repair.logged_by}</DetailItem>
+              {(repair["Logged Via"] || repair.logged_via) && (
+                <DetailItem icon={<Wrench />} label="Logged Via">
+                  {repair["Logged Via"] || repair.logged_via}
+                </DetailItem>
+              )}
               <DetailItem icon={<CheckCircle />} label="Reported on Fiixit">
                 {reportedOnFiixit === 'yes' ? (
                   <span className="text-green-600 font-medium">Yes</span>
