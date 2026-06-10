@@ -10,37 +10,68 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Shield } from "lucide-react";
 
 export default function WarrantyForm({ warranty, properties, accommodations, currentUser, onSubmit, onCancel }) {
+  const normalizeStatus = (val) => {
+    if (!val) return "active";
+    const v = val.toLowerCase();
+    if (v.includes('pending')) return 'pending_renewal';
+    if (v.includes('active')) return 'active';
+    if (v.includes('expired')) return 'expired';
+    if (v.includes('claimed')) return 'claimed';
+    if (v.includes('cancelled')) return 'cancelled';
+    return v;
+  };
+
+  const normalizeWarrantyType = (val) => {
+    if (!val) return "manufacturer";
+    const v = val.toLowerCase();
+    if (v.includes('manufacturer')) return 'manufacturer';
+    if (v.includes('extended')) return 'extended';
+    if (v.includes('retailer')) return 'retailer';
+    if (v.includes('insurance')) return 'insurance';
+    return v;
+  };
+
   const [formData, setFormData] = useState(warranty ? {
-    product_name: warranty.Product_Name || warranty.product_name || "",
+    product_name: warranty["Product Name"] || warranty.Product_Name || warranty.product_name || "",
     brand: warranty.Brand || warranty.brand || "",
-    model_number: warranty.Model_Number || warranty.model_number || "",
-    serial_number: warranty.Serial_Number || warranty.serial_number || "",
-    location_type: (warranty.Property_Id === null && warranty.product_name) ? "office" : "property",
-    property_id: warranty.Property_Id || warranty.property_id || "",
-    accommodation_id: warranty.Accommodation_Id || warranty.accommodation_id || "",
-    purchase_date: warranty.Purchase_Date || warranty.purchase_date || "",
-    warranty_start_date: warranty.Warranty_Start_Date || warranty.warranty_start_date || "",
-    warranty_end_date: warranty.Warranty_End_Date || warranty.warranty_end_date || "",
-    warranty_period_months: warranty.Warranty_Period_Months !== null && warranty.Warranty_Period_Months !== undefined ? warranty.Warranty_Period_Months : (warranty.warranty_period_months !== null && warranty.warranty_period_months !== undefined ? warranty.warranty_period_months : 12),
+    model_number: warranty["Model Number"] || warranty.Model_Number || warranty.model_number || "",
+    serial_number: warranty["Serial Number"] || warranty.Serial_Number || warranty.serial_number || "",
+    location_type: (warranty.Office || (warranty["Property ID"] === null && (warranty["Product Name"] || warranty.product_name))) ? "office" : "property",
+    property_id: warranty["Property ID"] || warranty.Property_Id || warranty.property_id || "",
+    accommodation_id: warranty["Accommodation ID"] || warranty.Accommodation_Id || warranty.accommodation_id || "",
+    purchase_date: warranty["Purchase Date"] || warranty.Purchase_Date || warranty.purchase_date || "",
+    warranty_start_date: warranty["Warranty Start Date"] || warranty.Warranty_Start_Date || warranty.warranty_start_date || "",
+    warranty_end_date: warranty["Warranty End Date"] || warranty.Warranty_End_Date || warranty.warranty_end_date || "",
+    warranty_period_months: warranty["Warranty Period (Months)"] !== null && warranty["Warranty Period (Months)"] !== undefined
+      ? warranty["Warranty Period (Months)"]
+      : (warranty.Warranty_Period_Months !== null && warranty.Warranty_Period_Months !== undefined
+        ? warranty.Warranty_Period_Months
+        : (warranty.warranty_period_months !== null && warranty.warranty_period_months !== undefined ? warranty.warranty_period_months : 12)),
     supplier: warranty.Supplier || warranty.supplier || "",
-    purchase_price: warranty.Purchase_Price !== null && warranty.Purchase_Price !== undefined ? warranty.Purchase_Price : (warranty.purchase_price !== null && warranty.purchase_price !== undefined ? warranty.purchase_price : 0),
-    warranty_type: warranty.Warranty_Type || warranty.warranty_type || "manufacturer",
-    status: warranty.Status || warranty.status || "active",
-    warranty_document_url: warranty.Warranty_Document_Url || warranty.warranty_document_url || "",
-    receipt_url: warranty.Receipt_Url || warranty.receipt_url || "",
-    policy_provider: warranty.Policy_Provider || warranty.policy_provider || "",
-    policy_number: warranty.Policy_Number || warranty.policy_number || "",
-    letter_received_from: warranty.Letter_Received_From || warranty.letter_received_from || "",
-    direct_debit_payment_day: warranty.Direct_Debit_Payment_Day || warranty.direct_debit_payment_day || null,
-    online_account_website: warranty.Online_Account_Website || warranty.online_account_website || "",
-    online_account_email: warranty.Online_Account_Email || warranty.online_account_email || "",
-    online_account_password: warranty.Online_Account_Password || warranty.online_account_password || "",
-    auto_renewal: warranty.Auto_Renewal !== null && warranty.Auto_Renewal !== undefined ? warranty.Auto_Renewal : (warranty.auto_renewal || false),
-    renewal_reminder_date: warranty.Renewal_Reminder_Date || warranty.renewal_reminder_date || "",
-    renewal_contact_person: warranty.Renewal_Contact_Person || warranty.renewal_contact_person || "",
-    renewal_notes: warranty.Renewal_Notes || warranty.renewal_notes || "",
+    purchase_price: warranty["Purchase Price"] !== null && warranty["Purchase Price"] !== undefined
+      ? warranty["Purchase Price"]
+      : (warranty.Purchase_Price !== null && warranty.Purchase_Price !== undefined
+        ? warranty.Purchase_Price
+        : (warranty.purchase_price !== null && warranty.purchase_price !== undefined ? warranty.purchase_price : 0)),
+    warranty_type: normalizeWarrantyType(warranty["Warranty Type"] || warranty.Warranty_Type || warranty.warranty_type),
+    status: normalizeStatus(warranty.Status || warranty.status),
+    warranty_document_url: warranty["Warranty Document URL"] || warranty.Warranty_Document_Url || warranty.warranty_document_url || "",
+    receipt_url: warranty["Receipt URL"] || warranty.Receipt_Url || warranty.receipt_url || "",
+    policy_provider: warranty["Policy Provider"] || warranty.Policy_Provider || warranty.policy_provider || "",
+    policy_number: warranty["Policy Number"] || warranty.Policy_Number || warranty.policy_number || "",
+    letter_received_from: warranty["Letter Received From"] || warranty.Letter_Received_From || warranty.letter_received_from || "",
+    direct_debit_payment_day: warranty["Direct Debit Payment Day"] || warranty.Direct_Debit_Payment_Day || warranty.direct_debit_payment_day || null,
+    online_account_website: warranty["Online Account Website"] || warranty.Online_Account_Website || warranty.online_account_website || "",
+    online_account_email: warranty["Online Account Email"] || warranty.Online_Account_Email || warranty.online_account_email || "",
+    online_account_password: warranty["Online Account Password"] || warranty.Online_Account_Password || warranty.online_account_password || "",
+    auto_renewal: warranty["Auto Renewal"] !== null && warranty["Auto Renewal"] !== undefined
+      ? warranty["Auto Renewal"]
+      : (warranty.Auto_Renewal !== null && warranty.Auto_Renewal !== undefined ? warranty.Auto_Renewal : (warranty.auto_renewal || false)),
+    renewal_reminder_date: warranty["Renewal Reminder Date"] || warranty.Renewal_Reminder_Date || warranty.renewal_reminder_date || "",
+    renewal_contact_person: warranty["Renewal Contact Person"] || warranty.Renewal_Contact_Person || warranty.renewal_contact_person || "",
+    renewal_notes: warranty["Renewal Notes"] || warranty.Renewal_Notes || warranty.renewal_notes || "",
     notes: warranty.Notes || warranty.notes || "",
-    logged_by: warranty.Logged_By || warranty.logged_by || currentUser?.full_name || ""
+    logged_by: warranty["Logged By"] || warranty.Logged_By || warranty.logged_by || currentUser?.full_name || ""
   } : {
     product_name: "",
     brand: "",

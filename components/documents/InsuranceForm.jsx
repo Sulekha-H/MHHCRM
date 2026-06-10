@@ -10,29 +10,58 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Shield } from "lucide-react";
 
 export default function InsuranceForm({ insurance, properties, currentUser, onSubmit, onCancel }) {
+  const normalizeStatus = (val) => {
+    if (!val) return "active";
+    const v = val.toLowerCase();
+    if (v.includes('pending')) return 'pending_renewal';
+    if (v.includes('active')) return 'active';
+    if (v.includes('expired')) return 'expired';
+    if (v.includes('cancelled')) return 'cancelled';
+    return v;
+  };
+
+  const normalizeInsuranceType = (val) => {
+    if (!val) return "public_liability";
+    const v = val.toLowerCase();
+    if (v.includes('public')) return 'public_liability';
+    if (v.includes('buildings')) return 'buildings';
+    if (v.includes('contents')) return 'contents';
+    if (v.includes('employers')) return 'employers_liability';
+    if (v.includes('professional')) return 'professional_indemnity';
+    if (v.includes('motor')) return 'motor';
+    if (v.includes('equipment')) return 'equipment';
+    return v;
+  };
+
   const [formData, setFormData] = useState(insurance ? {
-    policy_name: insurance.Policy_Name || insurance.policy_name || "",
-    insurance_type: insurance.Insurance_Type || insurance.insurance_type || "public_liability",
-    insurance_company: insurance.Insurance_Company || insurance.insurance_company || "",
-    policy_number: insurance.Policy_Number || insurance.policy_number || "",
-    coverage_amount: insurance.Coverage_Amount !== null && insurance.Coverage_Amount !== undefined ? insurance.Coverage_Amount : (insurance.coverage_amount !== null && insurance.coverage_amount !== undefined ? insurance.coverage_amount : 0),
-    annual_premium: insurance.Annual_Premium !== null && insurance.Annual_Premium !== undefined ? insurance.Annual_Premium : (insurance.annual_premium !== null && insurance.annual_premium !== undefined ? insurance.annual_premium : 0),
-    policy_start_date: insurance.Policy_Start_Date || insurance.policy_start_date || "",
-    policy_end_date: insurance.Policy_End_Date || insurance.policy_end_date || "",
-    renewal_date: insurance.Renewal_Date || insurance.renewal_date || "",
-    direct_debit_payment_day: insurance.Direct_Debit_Payment_Day || insurance.direct_debit_payment_day || null,
-    broker_name: insurance.Broker_Name || insurance.broker_name || "",
-    broker_contact: insurance.Broker_Contact || insurance.broker_contact || "",
-    property_id: insurance.Property_Id || insurance.property_id || "",
-    status: insurance.Status || insurance.status || "active",
-    policy_document_url: insurance.Policy_Document_Url || insurance.policy_document_url || "",
-    certificate_url: insurance.Certificate_Url || insurance.certificate_url || "",
-    auto_renewal: insurance.Auto_Renewal !== null && insurance.Auto_Renewal !== undefined ? insurance.Auto_Renewal : (insurance.auto_renewal || false),
-    renewal_reminder_date: insurance.Renewal_Reminder_Date || insurance.renewal_reminder_date || "",
-    renewal_contact_person: insurance.Renewal_Contact_Person || insurance.renewal_contact_person || "",
-    renewal_notes: insurance.Renewal_Notes || insurance.renewal_notes || "",
+    policy_name: insurance["Policy Name"] || insurance.Policy_Name || insurance.policy_name || "",
+    insurance_type: normalizeInsuranceType(insurance["Insurance Type"] || insurance.Insurance_Type || insurance.insurance_type),
+    insurance_company: insurance["Insurance Company"] || insurance.Insurance_Company || insurance.insurance_company || "",
+    policy_number: insurance["Policy Number"] || insurance.Policy_Number || insurance.policy_number || "",
+    coverage_amount: insurance["Coverage Amount"] !== null && insurance["Coverage Amount"] !== undefined
+      ? insurance["Coverage Amount"]
+      : (insurance.Coverage_Amount !== null && insurance.Coverage_Amount !== undefined ? insurance.Coverage_Amount : (insurance.coverage_amount !== null && insurance.coverage_amount !== undefined ? insurance.coverage_amount : 0)),
+    annual_premium: insurance["Annual Premium"] !== null && insurance["Annual Premium"] !== undefined
+      ? insurance["Annual Premium"]
+      : (insurance.Annual_Premium !== null && insurance.Annual_Premium !== undefined ? insurance.Annual_Premium : (insurance.annual_premium !== null && insurance.annual_premium !== undefined ? insurance.annual_premium : 0)),
+    policy_start_date: insurance["Policy Start Date"] || insurance.Policy_Start_Date || insurance.policy_start_date || "",
+    policy_end_date: insurance["Policy End Date"] || insurance.Policy_End_Date || insurance.policy_end_date || "",
+    renewal_date: insurance["Renewal Date"] || insurance.Renewal_Date || insurance.renewal_date || "",
+    direct_debit_payment_day: insurance["Direct Debit Payment Day"] || insurance.Direct_Debit_Payment_Day || insurance.direct_debit_payment_day || null,
+    broker_name: insurance["Broker Name"] || insurance.Broker_Name || insurance.broker_name || "",
+    broker_contact: insurance["Broker Contact"] || insurance.Broker_Contact || insurance.broker_contact || "",
+    property_id: insurance["Property ID"] || insurance.Property_Id || insurance.property_id || "",
+    status: normalizeStatus(insurance.Status || insurance.status),
+    policy_document_url: insurance["Policy Document URL"] || insurance.Policy_Document_Url || insurance.policy_document_url || "",
+    certificate_url: insurance["Certificate URL"] || insurance.Certificate_Url || insurance.certificate_url || "",
+    auto_renewal: insurance["Auto Renewal"] !== null && insurance["Auto Renewal"] !== undefined
+      ? insurance["Auto Renewal"]
+      : (insurance.Auto_Renewal !== null && insurance.Auto_Renewal !== undefined ? insurance.Auto_Renewal : (insurance.auto_renewal || false)),
+    renewal_reminder_date: insurance["Renewal Reminder Date"] || insurance.Renewal_Reminder_Date || insurance.renewal_reminder_date || "",
+    renewal_contact_person: insurance["Renewal Contact Person"] || insurance.Renewal_Contact_Person || insurance.renewal_contact_person || "",
+    renewal_notes: insurance["Renewal Notes"] || insurance.Renewal_Notes || insurance.renewal_notes || "",
     notes: insurance.Notes || insurance.notes || "",
-    logged_by: insurance.Logged_By || insurance.logged_by || currentUser?.full_name || ""
+    logged_by: insurance["Logged By"] || insurance.Logged_By || insurance.logged_by || currentUser?.full_name || ""
   } : {
     policy_name: "",
     insurance_type: "public_liability",
