@@ -914,7 +914,10 @@ useEffect(() => {
         ) : activeTab === "all" ? (
           <>
             {Object.keys(groupedRepairs).length > 0 ? (
-              Object.keys(groupedRepairs).sort().map(status => (
+              Object.keys(groupedRepairs).sort((a, b) => {
+                const order = { 'reported': 1, 'assessed': 2, 'scheduled': 3, 'in_progress': 4, 'completed': 5, 'cancelled': 6 };
+                return (order[a] || 99) - (order[b] || 99);
+              }).map(status => (
                 <div key={status} className="space-y-6">
                   <div className="flex items-center justify-between border-b pb-2">
                     <h3 className="text-2xl font-bold text-slate-900">

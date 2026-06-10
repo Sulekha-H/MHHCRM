@@ -291,12 +291,11 @@ export default function AllocatedResidentsPage() {
   };
 
   const exportCSV = () => {
-    const headers = ["ID", "First Name", "Last Name", "Resident Type", "Property Name", "Unit", "Status", "SW", "Sign Up Pack Link"];
+    const headers = ["ID", "First Name", "Last Name", "Property Name", "Unit", "Status", "SW", "Sign Up Pack Link"];
     const rows = filteredAllocatedResidents.map(r => [
       r.ID || r.id,
       r["First Name"] || r.first_name,
       r["Last Name"] || r.last_name,
-      r["Resident Type"] || r.resident_type,
       r["Property Name"] || r.property_name,
       r["Unit/Room Number"] || r.unit_room_number,
       r.Status || r.status,

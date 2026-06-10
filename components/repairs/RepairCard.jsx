@@ -312,8 +312,36 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
           </div>
         </CardHeader>
         <CardContent className="space-y-3 flex-1">
+          {/* Reported Info - Moved to Top */}
+          <div className="space-y-2 mb-2">
+            {reportedDate && (
+              <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Reported: {formatRepairDate(reportedDate)}</span>
+              </div>
+            )}
+            {reportedBy && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <User className="w-3.5 h-3.5" />
+                <span>
+                  {reportedBy}
+                  {reportedByType && (
+                    <span className="ml-1 text-blue-600 capitalize font-medium">
+                      ({reportedByType.replace('_', ' ')}{loggedVia === "Compliance Check" ? " via Compliance Check" : ""})
+                    </span>
+                  )}
+                  {(!reportedByType && loggedVia === "Compliance Check") && (
+                    <span className="ml-1 text-blue-600 capitalize font-medium">
+                      (via Compliance Check)
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+
           {/* Location Information */}
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2 border-t">
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <span className="text-slate-700 font-medium truncate">
@@ -332,38 +360,36 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
           {/* Description */}
           {description && (
             <div className="pt-2 border-t">
-              <p className="text-sm text-slate-600 line-clamp-2">
+              <p className="text-sm text-slate-600 line-clamp-2 italic">
                 {description}
               </p>
             </div>
           )}
 
-          {/* Timeline Info */}
-          <div className="pt-2 border-t space-y-2">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Calendar className="w-3 h-3" />
-              <span>Reported: {formatRepairDate(reportedDate)}</span>
+          {/* Other Timeline Info */}
+          {(scheduledDate || dateFixed) && (
+            <div className="pt-2 border-t space-y-2">
+              {scheduledDate && (
+                <div className="flex items-center gap-2 text-xs text-blue-600 font-medium">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Scheduled: {formatRepairDateTime(scheduledDate)}</span>
+                </div>
+              )}
+              {dateFixed && (
+                <div className="flex items-center gap-2 text-xs text-green-600 font-bold">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Fixed: {formatRepairDate(dateFixed)}</span>
+                </div>
+              )}
             </div>
-            {scheduledDate && (
-              <div className="flex items-center gap-2 text-xs text-blue-600">
-                <Clock className="w-3 h-3" />
-                <span>Scheduled: {formatRepairDateTime(scheduledDate)}</span>
-              </div>
-            )}
-            {dateFixed && (
-              <div className="flex items-center gap-2 text-xs text-green-600">
-                <CheckCircle className="w-3 h-3" />
-                <span>Fixed: {formatRepairDate(dateFixed)}</span>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Contractor & Cost */}
           {(contractor || estimatedCost > 0 || invoiceAmount > 0) && (
             <div className="pt-2 border-t space-y-2">
               {contractor && (
                 <div className="flex items-center gap-2 text-xs">
-                  <User className="w-3 h-3 text-slate-400" />
+                  <User className="w-3.5 h-3.5 text-slate-400" />
                   <span className="text-slate-700 font-medium">{contractor}</span>
                   {contractorContact && (
                     <span className="text-blue-600">• {contractorContact}</span>
@@ -372,39 +398,17 @@ export default function RepairCard({ repair, onEdit, onViewDetails, onDelete, ge
               )}
               {(estimatedCost > 0 || invoiceAmount > 0) && (
                 <div className="flex items-center gap-2 text-xs">
-                  <Banknote className="w-3 h-3 text-green-500" />
+                  <Banknote className="w-3.5 h-3.5 text-green-500" />
                   <span className="text-slate-700 font-semibold">
                     £{invoiceAmount > 0 ? parseFloat(invoiceAmount).toFixed(2) : parseFloat(estimatedCost).toFixed(2)}
                   </span>
                   {invoicePaymentStatus && invoiceAmount > 0 && (
-                    <Badge className={`${getPaymentStatusColor(invoicePaymentStatus)} text-xs`}>
+                    <Badge className={`${getPaymentStatusColor(invoicePaymentStatus)} text-[10px] h-4`}>
                       {invoicePaymentStatus?.replace('_', ' ')}
                     </Badge>
                   )}
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Reported By */}
-          {reportedBy && (
-            <div className="pt-2 border-t">
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                <User className="w-3 h-3" />
-                <span>
-                  {reportedBy}
-                  {reportedByType && (
-                    <span className="ml-1 text-blue-600 capitalize">
-                      ({reportedByType.replace('_', ' ')}{loggedVia === "Compliance Check" ? " via Compliance Check" : ""})
-                    </span>
-                  )}
-                  {(!reportedByType && loggedVia === "Compliance Check") && (
-                    <span className="ml-1 text-blue-600 capitalize">
-                      (via Compliance Check)
-                    </span>
-                  )}
-                </span>
-              </div>
             </div>
           )}
         </CardContent>

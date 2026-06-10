@@ -96,19 +96,11 @@ export default function RepairDetailModal({
               </div>
             </DialogHeader>
 
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">Repair Details</h3>
+            <h3 className="text-xl font-semibold text-slate-800 mb-4">Reporting Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <DetailItem icon={<MapPin />} label="Location">
-                {getPropertyName(repair.property_id)} - {getAccommodationName(repair)}
-              </DetailItem>
               <DetailItem icon={<Calendar />} label="Reported Date">
                 {repair.reported_date ? format(new Date(repair.reported_date), 'dd MMMM yyyy, HH:mm') : null}
               </DetailItem>
-            </div>
-
-            <Separator className="my-6" />
-            <h3 className="text-xl font-semibold text-slate-800 mb-4">Reporting Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DetailItem icon={<User />} label="Reported By">
                 {repair.reported_by} 
                 {repair.reported_by_type && (
@@ -128,6 +120,14 @@ export default function RepairDetailModal({
                   {loggedVia}
                 </DetailItem>
               )}
+            </div>
+
+            <Separator className="my-6" />
+            <h3 className="text-xl font-semibold text-slate-800 mb-4">Location & Logistics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem icon={<MapPin />} label="Location">
+                {getPropertyName(repair.property_id)} - {getAccommodationName(repair)}
+              </DetailItem>
               <DetailItem icon={<CheckCircle />} label="Reported on Fiixit">
                 {reportedOnFiixit === 'yes' ? (
                   <span className="text-green-600 font-medium">Yes</span>

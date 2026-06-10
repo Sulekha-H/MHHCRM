@@ -11,17 +11,39 @@ import { Badge } from "@/components/ui/badge";
 import { X, Save, Loader2, FilePlus2, Tag, Plus } from "lucide-react";
 
 export default function DocumentForm({ document: initialDocument, residents, currentUser, onSubmit, onCancel }) {
+  const normalizeDocumentType = (val) => {
+    if (!val) return "other";
+    const v = val.toLowerCase();
+    if (v.includes('policy')) return 'policy';
+    if (v.includes('procedure')) return 'procedure';
+    if (v.includes('form')) return 'form';
+    if (v.includes('report')) return 'report';
+    if (v.includes('correspondence')) return 'correspondence';
+    if (v.includes('resident')) return 'resident_file';
+    return 'other';
+  };
+
+  const normalizeConfidentiality = (val) => {
+    if (!val) return "internal";
+    const v = val.toLowerCase();
+    if (v.includes('public')) return 'public';
+    if (v.includes('internal')) return 'internal';
+    if (v.includes('confidential')) return 'confidential';
+    if (v.includes('restricted')) return 'restricted';
+    return 'internal';
+  };
+
   const [formData, setFormData] = useState(initialDocument ? {
     title: initialDocument.Title || initialDocument.title || "",
-    document_type: initialDocument.Document_Type || initialDocument.document_type || "other",
+    document_type: normalizeDocumentType(initialDocument["Document Type"] || initialDocument.Document_Type || initialDocument.document_type),
     category: initialDocument.Category || initialDocument.category || "",
-    resident_id: initialDocument.Resident_Id || initialDocument.resident_id || "",
+    resident_id: initialDocument["Resident ID"] || initialDocument.Resident_Id || initialDocument.resident_id || "",
     description: initialDocument.Description || initialDocument.description || "",
-    confidentiality: initialDocument.Confidentiality || initialDocument.confidentiality || "internal",
-    expiry_date: initialDocument.Expiry_Date || initialDocument.expiry_date || "",
-    file_url: initialDocument.File_Url || initialDocument.file_url || "",
+    confidentiality: normalizeConfidentiality(initialDocument.Confidentiality || initialDocument.confidentiality),
+    expiry_date: initialDocument["Expiry Date"] || initialDocument.Expiry_Date || initialDocument.expiry_date || "",
+    file_url: initialDocument["File URL"] || initialDocument.File_Url || initialDocument.file_url || "",
     tags: initialDocument.Tags || initialDocument.tags || [],
-    logged_by: initialDocument.Logged_By || initialDocument.logged_by || currentUser?.full_name || ""
+    logged_by: initialDocument["Logged By"] || initialDocument.Logged_By || initialDocument.logged_by || currentUser?.full_name || ""
   } : {
     title: "",
     document_type: "other",

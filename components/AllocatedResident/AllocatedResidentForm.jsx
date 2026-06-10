@@ -42,7 +42,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
   const supabase = useClerkSupabaseClient();
   const [formData, setFormData] = useState({
     "First Name": "", "Last Name": "", "Date of Birth": "", "Phone Number": "", "Email Address": "",
-    "Resident Type": "Standard resident", "Accommodation Type": "Shared House", "Property Address": "",
+    "Resident Type": "", "Accommodation Type": "Shared House", "Property Address": "",
     "Property ID": "", "Property Name": "", "Accommodation ID": "", "Unit/Room Number": "",
     "Move-in Date": "", "Move-out Date": "", "Support Worker": "", "Medical Conditions": "",
     "Status": "Active", "Notes": "", "Claim Reference Number": "", "Submission Reference": "",
@@ -66,7 +66,7 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
         "Date of Birth": resident["Date of Birth"] || resident.date_of_birth || resident.Date_Of_Birth || "",
         "Phone Number": resident["Phone Number"] || resident.phone_number || resident.Phone_Number || "",
         "Email Address": resident["Email Address"] || resident.email_address || resident.Email_Address || "",
-        "Resident Type": resident["Resident Type"] || resident.resident_type || resident.Resident_Type || "Standard resident",
+        "Resident Type": "",
         "Accommodation Type": resident["Accommodation Type"] || resident.accommodation_type || resident.Accommodation_Type || "Shared House",
         "Property Address": resident["Property Address"] || resident.property_address || resident.Property_Address || "",
         "Property ID": resident["Property ID"] || resident.property_id || resident.Property_Id || "",
@@ -219,7 +219,6 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
                 <div><Label>Date of Birth</Label><Input type="date" value={formData["Date of Birth"]} onChange={(e) => handleChange("Date of Birth", e.target.value)} /></div>
                 <div><Label>Phone Number</Label><Input value={formData["Phone Number"]} onChange={(e) => handleChange("Phone Number", e.target.value)} /></div>
                 <div><Label>Email Address</Label><Input type="email" value={formData["Email Address"]} onChange={(e) => handleChange("Email Address", e.target.value)} /></div>
-                <div><Label>Resident Type *</Label><Select value={formData["Resident Type"]} onValueChange={(v) => handleChange("Resident Type", v)} required><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Standard resident">Standard Resident</SelectItem><SelectItem value="UASC placement">UASC Placement</SelectItem></SelectContent></Select></div>
                 <div><Label>Claim Reference</Label><Input value={formData["Claim Reference Number"]} onChange={(e) => handleChange("Claim Reference Number", e.target.value)} /></div>
                 <div><Label>Submission Reference</Label><Input value={formData["Submission Reference"]} onChange={(e) => handleChange("Submission Reference", e.target.value)} /></div>
                 <div><Label>NI Number</Label><Input value={formData["National Insurance Number"]} onChange={(e) => handleChange("National Insurance Number", e.target.value)} /></div>
