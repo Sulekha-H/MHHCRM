@@ -261,7 +261,8 @@ useEffect(() => {
           'front_door': 'Front Door',
           'back_door': 'Back Door',
           'front_garden': 'Front Garden',
-          'back_garden': 'Back Garden'
+          'back_garden': 'Back Garden',
+          'lounge': 'Lounge'
         };
         return map[val] || val;
       };
@@ -654,6 +655,7 @@ useEffect(() => {
       "Back Door": "Back Door",
       "Front Garden": "Front Garden",
       "Back Garden": "Back Garden",
+      "Lounge": "Lounge",
       "General Property": "General Property",
       "communal_kitchen": "Communal Kitchen",
       "communal_bathroom": "Communal Bathroom",
@@ -662,6 +664,7 @@ useEffect(() => {
       "back_door": "Back Door",
       "front_garden": "Front Garden",
       "back_garden": "Back Garden",
+      "lounge": "Lounge",
       "general_property": "General Property"
     };
     

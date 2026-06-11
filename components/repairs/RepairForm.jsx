@@ -397,6 +397,7 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
                       <SelectItem value="back_door">Back Door</SelectItem>
                       <SelectItem value="front_garden">Front Garden</SelectItem>
                       <SelectItem value="back_garden">Back Garden</SelectItem>
+                      <SelectItem value="lounge">Lounge</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

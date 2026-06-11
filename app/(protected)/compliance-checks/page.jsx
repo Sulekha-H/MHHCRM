@@ -90,7 +90,8 @@ export default function ComplianceChecksPage() {
             "Living room": "General Property",
             "Kitchen": "Communal Kitchen",
             "Communal bathroom": "Communal Bathroom",
-            "Garden": "Back Garden"
+            "Garden": "Back Garden",
+            "Lounge": "Lounge"
           };
 
           const commonArea = (!check.is_room && !check.is_ensuite)
