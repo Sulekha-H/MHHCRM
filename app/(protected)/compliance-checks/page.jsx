@@ -91,7 +91,9 @@ export default function ComplianceChecksPage() {
             "Kitchen": "Communal Kitchen",
             "Communal bathroom": "Communal Bathroom",
             "Garden": "Back Garden",
-            "Lounge": "Lounge"
+            "Lounge": "Lounge",
+            "Decorative Issues": "General Property",
+            "Hygiene & Cleanliness Levels": "General Property"
           };
 
           const commonArea = (!check.is_room && !check.is_ensuite)
@@ -105,7 +107,7 @@ export default function ComplianceChecksPage() {
             "Common Area": commonArea,
             "Repair Type": "Other",
             Priority: check.priority || "Medium",
-            Status: check.date_fixed ? "Completed" : "Reported",
+            Status: check.rectified ? "Completed" : "Reported",
             Description: check.issue_details,
             "Reported By": supabaseData["Logged By"],
             "Reported By Type": "Staff",
@@ -195,9 +197,21 @@ export default function ComplianceChecksPage() {
 
     const checks = log["Checks"] || [];
     const hasIssues = checks.some(c => !c.no_issues);
+    const hasUnresolved = checks.some(c => {
+      if (c.no_issues) return false;
+      // If rectified is explicitly false, it's unresolved
+      if (c.rectified === false) return true;
+      // If rectified is undefined (legacy), it's unresolved ONLY if date_fixed is also missing
+      if (c.rectified === undefined && !c.date_fixed) return true;
+      return false;
+    });
+
+    if (hasUnresolved) {
+      return <Badge className="bg-red-100 text-red-800 border-red-200 font-bold">Unresolved Issues</Badge>;
+    }
 
     if (hasIssues) {
-      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Issues Identified</Badge>;
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Issues Resolved</Badge>;
     }
     return <Badge className="bg-green-100 text-green-800 border-green-200">All Clear</Badge>;
   };
@@ -311,9 +325,9 @@ export default function ComplianceChecksPage() {
                 {filteredLogs.map((log) => (
                   <Card
                     key={log.ID}
-                    className={`group hover:shadow-lg transition-all duration-300 border-slate-200 overflow-hidden ${log["Weekly Check Not Completed"] ? 'bg-red-50/50 border-red-200' : 'bg-white'}`}
+                    className={`group hover:shadow-lg transition-all duration-300 border-slate-200 overflow-hidden ${log["Weekly Check Not Completed"] || log["Checks"]?.some(c => !c.no_issues && (c.rectified === false || (c.rectified === undefined && !c.date_fixed))) ? 'bg-red-50/50 border-red-200' : 'bg-white'}`}
                   >
-                    <div className={`h-1.5 w-full ${log["Weekly Check Not Completed"] ? 'bg-red-500' : log["Checks"]?.some(c => !c.no_issues) ? 'bg-amber-400' : 'bg-green-400'}`} />
+                    <div className={`h-1.5 w-full ${log["Weekly Check Not Completed"] || log["Checks"]?.some(c => !c.no_issues && (c.rectified === false || (c.rectified === undefined && !c.date_fixed))) ? 'bg-red-500' : 'bg-green-400'}`} />
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start mb-2">
                         {getStatusBadge(log)}

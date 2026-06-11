@@ -19,7 +19,17 @@ const STANDARD_LOCATIONS = [
   "Kitchen",
   "Communal bathroom",
   "Garden",
-  "Lounge"
+  "Lounge",
+  "Decorative Issues",
+  "Hygiene & Cleanliness Levels"
+];
+
+const HYGIENE_RATINGS = [
+  "Excellent",
+  "Good",
+  "Fair",
+  "Poor",
+  "Very Poor"
 ];
 
 export default function ComplianceCheckForm({ log, properties, accommodations, currentUser, onSubmit, onCancel }) {
@@ -30,7 +40,12 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
     logged_by: currentUser?.full_name || log["Logged By"] || log.logged_by || "",
     materials_required: log["Materials Required"] || log.materials_required || "",
     weekly_check_not_completed: log["Weekly Check Not Completed"] || log.weekly_check_not_completed || false,
-    checks: log["Checks"] || log.checks || []
+    checks: (log["Checks"] || log.checks || []).map(check => ({
+      ...check,
+      // Default legacy records with issues to rectified=true if they have a date_fixed
+      rectified: check.rectified !== undefined ? check.rectified : (!!check.date_fixed || check.no_issues),
+      rectification_details: check.rectification_details || ""
+    }))
   } : {
     property_id: "",
     week_ending_date: format(new Date(), 'yyyy-MM-dd'),
@@ -65,7 +80,10 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
             issue_details: "",
             reported_on_repairs: false,
             date_fixed: "",
-            priority: "Medium"
+            priority: "Medium",
+            rectified: true,
+            rectification_details: "",
+            rating: loc === "Hygiene & Cleanliness Levels" ? "Good" : ""
           })),
           ...rooms.flatMap(room => {
             const roomChecks = [{
@@ -76,7 +94,9 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
               date_fixed: "",
               is_room: true,
               room_id: room.ID || room.id,
-              priority: "Medium"
+              priority: "Medium",
+              rectified: true,
+              rectification_details: ""
             }];
 
             const amenities = room.Amenities || room.amenities || [];
@@ -93,7 +113,9 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                 date_fixed: "",
                 is_ensuite: true,
                 room_id: room.ID || room.id,
-                priority: "Medium"
+                priority: "Medium",
+                rectified: true,
+                rectification_details: ""
               });
             }
             return roomChecks;
@@ -119,6 +141,19 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
       newChecks[index].issue_details = "";
       newChecks[index].reported_on_repairs = false;
       newChecks[index].priority = "Medium";
+      newChecks[index].rectified = true;
+      newChecks[index].rectification_details = "";
+    }
+
+    // If "No Issues" is unchecked, default rectified to false
+    if (field === "no_issues" && value === false) {
+      newChecks[index].rectified = false;
+    }
+
+    // Hygiene Rating trigger
+    if (field === "rating" && (value === "Poor" || value === "Very Poor")) {
+      newChecks[index].no_issues = false;
+      newChecks[index].rectified = false;
     }
 
     setFormData(prev => ({ ...prev, checks: newChecks }));
@@ -231,18 +266,36 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                 <table className="w-full text-sm text-left">
                   <thead className="bg-slate-50 text-slate-700 uppercase text-xs font-bold">
                     <tr>
-                      <th className="px-4 py-3 min-w-[200px]">Location</th>
+                      <th className="px-4 py-3 min-w-[180px]">Location</th>
                       <th className="px-4 py-3 text-center w-[100px]">No Issues</th>
-                      <th className="px-4 py-3 min-w-[250px]">Repair Details</th>
-                      <th className="px-4 py-3 w-[140px]">Priority</th>
+                      <th className="px-4 py-3 text-center w-[100px]">Rectified</th>
+                      <th className="px-4 py-3 min-w-[280px]">Repair & Rectification Details</th>
+                      <th className="px-4 py-3 w-[130px]">Priority</th>
                       <th className="px-4 py-3 w-[150px]">Date Fixed</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {formData.checks.map((check, index) => (
-                      <tr key={index} className={`transition-colors ${check.no_issues ? 'hover:bg-green-50/30' : 'bg-red-50/30 hover:bg-red-50/50'}`}>
-                        <td className="px-4 py-4 font-medium text-slate-900">
-                          {check.location}
+                      <tr key={index} className={`transition-colors ${check.no_issues ? 'hover:bg-green-50/30' : (check.rectified ? 'bg-amber-50/30 hover:bg-amber-50/50' : 'bg-red-50/30 hover:bg-red-50/50')}`}>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium text-slate-900">{check.location}</span>
+                            {check.location === "Hygiene & Cleanliness Levels" && (
+                              <Select
+                                value={check.rating || "Good"}
+                                onValueChange={(v) => handleCheckChange(index, "rating", v)}
+                              >
+                                <SelectTrigger className="h-7 text-[10px] w-full">
+                                  <SelectValue placeholder="Select rating" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {HYGIENE_RATINGS.map(r => (
+                                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-center">
                           <Checkbox
@@ -251,17 +304,40 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                             className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                           />
                         </td>
+                        <td className="px-4 py-4 text-center">
+                          {!check.no_issues && (
+                            <Checkbox
+                              checked={check.rectified}
+                              onCheckedChange={(checked) => handleCheckChange(index, "rectified", checked)}
+                              className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-4">
                           {!check.no_issues ? (
-                            <div className="space-y-1">
-                              <Textarea
-                                value={check.issue_details}
-                                onChange={(e) => handleCheckChange(index, "issue_details", e.target.value)}
-                                placeholder="Mandatory: Describe the repair..."
-                                className="min-h-[80px] border-red-200 focus-visible:ring-red-500 text-xs"
-                                required
-                              />
-                              <p className="text-[9px] text-red-500 font-medium italic">* Mandatory</p>
+                            <div className="space-y-3">
+                              <div className="space-y-1">
+                                <Label className="text-[10px] font-bold text-slate-400 uppercase">Issue Details</Label>
+                                <Textarea
+                                  value={check.issue_details}
+                                  onChange={(e) => handleCheckChange(index, "issue_details", e.target.value)}
+                                  placeholder="Mandatory: Describe the repair..."
+                                  className="min-h-[60px] border-red-200 focus-visible:ring-red-500 text-xs"
+                                  required
+                                />
+                              </div>
+
+                              {check.rectified && (
+                                <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
+                                  <Label className="text-[10px] font-bold text-emerald-600 uppercase">Rectification Details</Label>
+                                  <Textarea
+                                    value={check.rectification_details}
+                                    onChange={(e) => handleCheckChange(index, "rectification_details", e.target.value)}
+                                    placeholder="Explain how it was rectified..."
+                                    className="min-h-[60px] border-emerald-200 focus-visible:ring-emerald-500 text-xs bg-emerald-50/30"
+                                  />
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <span className="text-slate-400 italic text-xs">No issues reported</span>
@@ -292,6 +368,7 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
                             value={check.date_fixed || ""}
                             onChange={(e) => handleCheckChange(index, "date_fixed", e.target.value)}
                             className="text-xs"
+                            disabled={!check.rectified && !check.no_issues}
                           />
                         </td>
                       </tr>
