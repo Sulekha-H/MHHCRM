@@ -2,4 +2,30 @@
 > housing-dashboard@0.1.0 dev
 > next dev
 
-sh: 1: next: not found
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 613ms
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+○ Compiling /documents ...
+
+[35m
+[Clerk]:[0m You are running in keyless mode.
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=y3ohcvhbcwvwsycbjpsbboe4rdjcvtx3bbcj3vfq&return_url=http%3A%2F%2Flocalhost%3A3000%2F
+
+ GET /documents 200 in 12.7s (next.js: 10.6s, proxy.ts: 191ms, application-code: 1940ms)
+ POST /documents 200 in 55ms (next.js: 9ms, proxy.ts: 17ms, application-code: 28ms)
+  └─ ƒ detectKeylessEnvDriftAction() in 2ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview (https://harmless-civet-63.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js:19:7048)
+ GET /documents 404 in 2.2s (next.js: 1998ms, proxy.ts: 43ms, application-code: 150ms)
+ POST /documents 303 in 2.3s (next.js: 13ms, proxy.ts: 20ms, application-code: 2.3s)
+  └─ ƒ syncKeylessConfigAction({"apiKeysUrl":"https://dashboard.clerk.com/apps/app_3EzFJLRSNppvRbQUZl59JU39NNO/instances/ins_3EzFJLwWoNwiazbx79Hmqx7EFcM/api-keys","claimUrl":"https://dashboard.clerk.com/apps/claim?token=y3ohcvhbcwvwsycbjpsbboe4rdjcvtx3bbcj3vfq","...":"3 items not stringified"}) in 10ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+ GET /sign-in 200 in 2.6s (next.js: 2.5s, proxy.ts: 13ms, application-code: 59ms)
+[browser] Failed to fetch RSC payload for http://localhost:3000/clerk-sync-keyless?returnUrl=http://localhost:3000/documents. Falling back to browser navigation. TypeError: Failed to fetch
+ GET /sign-in 200 in 155ms (next.js: 33ms, proxy.ts: 23ms, application-code: 99ms)
