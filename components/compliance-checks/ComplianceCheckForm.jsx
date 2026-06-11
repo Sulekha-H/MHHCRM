@@ -18,7 +18,8 @@ const STANDARD_LOCATIONS = [
   "Living room",
   "Kitchen",
   "Communal bathroom",
-  "Garden"
+  "Garden",
+  "Lounge"
 ];
 
 export default function ComplianceCheckForm({ log, properties, accommodations, currentUser, onSubmit, onCancel }) {
