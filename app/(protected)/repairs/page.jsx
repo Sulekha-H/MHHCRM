@@ -914,7 +914,10 @@ useEffect(() => {
         ) : activeTab === "all" ? (
           <>
             {Object.keys(groupedRepairs).length > 0 ? (
-              Object.keys(groupedRepairs).sort().map(status => (
+              ['reported', 'assessed', 'scheduled', 'in_progress', 'completed', 'cancelled']
+                .filter(status => groupedRepairs[status])
+                .concat(Object.keys(groupedRepairs).filter(status => !['reported', 'assessed', 'scheduled', 'in_progress', 'completed', 'cancelled'].includes(status)))
+                .map(status => (
                 <div key={status} className="space-y-6">
                   <div className="flex items-center justify-between border-b pb-2">
                     <h3 className="text-2xl font-bold text-slate-900">
