@@ -10,6 +10,8 @@ import { PlusCircle, CheckCircle, AlertTriangle, FileStack, XCircle, Download, R
 import { format, isSameWeek } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import WeeklySWDocLogForm_Supabase from "@/components/weekly-sw-docs/WeeklySWDocLogForm";
 import WeeklySWDocLogDetailModal from "@/components/weekly-sw-docs/WeeklySWDocLogDetailModal";
 
@@ -488,20 +490,47 @@ useEffect(() => {
                 </div>
             </div>
 
-            {showForm && (
-                <WeeklySWDocLogForm_Supabase
-                    log={editingLog}
-                    documentName={formContext.documentName}
-                    weekDate={formContext.weekDate}
-                    onSubmit={handleSubmit}
-                    onCancel={() => { 
-                        setShowForm(false); 
-                        setEditingLog(null); 
-                        setViewingLog(null);
-                    }}
-                    currentUser={currentUser}
-                />
-            )}
+            <Dialog open={showForm} onOpenChange={(open) => {
+                if (!open) {
+                    setShowForm(false);
+                    setEditingLog(null);
+                    setViewingLog(null);
+                }
+            }}>
+                <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                    <DialogHeader className="p-6 pb-0">
+                        <div className="flex items-center gap-3">
+                            <FileStack className="w-6 h-6 text-cyan-600" />
+                            <div>
+                                <DialogTitle className="text-xl font-bold">
+                                    {(editingLog?.id || editingLog?.Id) ? "Edit" : "Log"} Weekly Document Check
+                                </DialogTitle>
+                                <p className="text-sm font-normal text-slate-500 mt-1">
+                                    {formContext.documentName} - W/C {formContext.weekDate ? format(new Date(formContext.weekDate), 'dd/MM/yy') : ''}
+                                </p>
+                            </div>
+                        </div>
+                        <DialogDescription className="sr-only">
+                            Form to {editingLog?.id ? "edit" : "create"} a weekly support worker document log.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[90vh] p-6">
+                        <WeeklySWDocLogForm_Supabase
+                            log={editingLog}
+                            documentName={formContext.documentName}
+                            weekDate={formContext.weekDate}
+                            onSubmit={handleSubmit}
+                            onCancel={() => {
+                                setShowForm(false);
+                                setEditingLog(null);
+                                setViewingLog(null);
+                            }}
+                            currentUser={currentUser}
+                            hideCard={true}
+                        />
+                    </ScrollArea>
+                </DialogContent>
+            </Dialog>
 
             {viewingLog && (
                 <WeeklySWDocLogDetailModal

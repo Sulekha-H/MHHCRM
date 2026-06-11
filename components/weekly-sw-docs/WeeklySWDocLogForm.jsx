@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, AlertTriangle, Check, FileStack, XCircle } from "lucide-react";
 import { format } from "date-fns";
 
-export default function WeeklySWDocLogForm({ log, documentName, weekDate, onSubmit, onCancel, currentUser }) {
+export default function WeeklySWDocLogForm({ log, documentName, weekDate, onSubmit, onCancel, currentUser, hideCard = false }) {
   const [formData, setFormData] = useState(log ? {
     status: log.Status || log.status || "incomplete",
     notes: log.Notes || log.notes || "",
@@ -46,6 +46,91 @@ export default function WeeklySWDocLogForm({ log, documentName, weekDate, onSubm
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Label htmlFor="status">Status *</Label>
+          <Select value={formData.status} onValueChange={v => handleChange("status", v)} required>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="completed">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Completed
+                </div>
+              </SelectItem>
+              <SelectItem value="issue_raised">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-500" /> Issue Raised
+                </div>
+              </SelectItem>
+              <SelectItem value="incomplete">
+                <div className="flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-slate-500" /> Incomplete
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+            <Label htmlFor="staff_member">Staff Member *</Label>
+            <input
+                id="staff_member"
+                value={formData.staff_member}
+                onChange={e => handleChange("staff_member", e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                required
+            />
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="file_url">Supporting Document URL</Label>
+        <Input
+          id="file_url"
+          type="url"
+          value={formData.file_url}
+          onChange={(e) => handleChange("file_url", e.target.value)}
+          placeholder="https://gdrive.com/document.pdf"
+        />
+        <p className="text-xs text-slate-500 mt-1">
+          Optional. Please enter a valid URL (must start with http:// or https://)
+        </p>
+      </div>
+
+      <div>
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={e => handleChange("notes", e.target.value)}
+          rows={4}
+          placeholder={formData.status === 'issue_raised' ? "Describe the issue found..." : "Add any relevant notes..."}
+          required={formData.status === 'issue_raised'}
+        />
+         {formData.status === 'issue_raised' && (
+            <p className="text-xs text-red-600 mt-1">Notes are required when an issue is raised.</p>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700">
+          <Save className="w-4 h-4 mr-2" />
+          {log?.Id || log?.id ? "Update Entry" : "Save Entry"}
+        </Button>
+      </div>
+    </form>
+  );
+
+  if (hideCard) {
+    return formContent;
+  }
+
   return (
     <Card className="mb-6 shadow-md border-t-4 border-t-cyan-600">
       <CardHeader className="pb-4">
@@ -60,84 +145,7 @@ export default function WeeklySWDocLogForm({ log, documentName, weekDate, onSubm
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="status">Status *</Label>
-              <Select value={formData.status} onValueChange={v => handleChange("status", v)} required>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="completed">
-                    <div className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-green-500" /> Completed
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="issue_raised">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-orange-500" /> Issue Raised
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="incomplete">
-                    <div className="flex items-center gap-2">
-                      <XCircle className="w-4 h-4 text-slate-500" /> Incomplete
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-                <Label htmlFor="staff_member">Staff Member *</Label>
-                <input
-                    id="staff_member"
-                    value={formData.staff_member}
-                    onChange={e => handleChange("staff_member", e.target.value)}
-                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                />
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="file_url">Supporting Document URL</Label>
-            <Input
-              id="file_url"
-              type="url"
-              value={formData.file_url}
-              onChange={(e) => handleChange("file_url", e.target.value)}
-              placeholder="https://gdrive.com/document.pdf"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Optional. Please enter a valid URL (must start with http:// or https://)
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={e => handleChange("notes", e.target.value)}
-              rows={4}
-              placeholder={formData.status === 'issue_raised' ? "Describe the issue found..." : "Add any relevant notes..."}
-              required={formData.status === 'issue_raised'}
-            />
-             {formData.status === 'issue_raised' && (
-                <p className="text-xs text-red-600 mt-1">Notes are required when an issue is raised.</p>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700">
-              <Save className="w-4 h-4 mr-2" />
-              {log?.Id || log?.id ? "Update Entry" : "Save Entry"}
-            </Button>
-          </div>
-        </form>
+        {formContent}
       </CardContent>
     </Card>
   );
