@@ -77,51 +77,7 @@ export default function DocumentsSupabase() {
     return null;
   }, [users]);
 
-  // Initial data load
-  useEffect(() => {
-    if (supabase && user) {
-      loadData();
-    }
-  }, [supabase, user]);
-
-  useEffect(() => {
-    let filtered = documents;
-
-    if (residentFilter !== "all") {
-      filtered = filtered.filter(doc => {
-        const residentId = doc.resident_id || doc["Resident ID"];
-        return residentId === residentFilter;
-      });
-    }
-
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(doc => {
-        const docTags = doc.tags || doc.Tags || [];
-        return selectedTags.every(selectedTag => docTags.includes(selectedTag));
-      });
-    }
-
-    if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(doc => {
-        const title = doc.title || doc.Title || '';
-        const description = doc.description || doc.Description || '';
-        const documentType = doc.document_type || doc["Document Type"] || '';
-        const docTags = doc.tags || doc.Tags || [];
-        
-        const titleMatch = title.toLowerCase().includes(lowercasedTerm);
-        const descMatch = description.toLowerCase().includes(lowercasedTerm);
-        const typeMatch = documentType.toLowerCase().includes(lowercasedTerm);
-        const tagsMatch = docTags.some(tag => tag.toLowerCase().includes(lowercasedTerm));
-        const loggedByMatch = (getLoggedByName(doc) || '').toLowerCase().includes(lowercasedTerm);
-        return titleMatch || descMatch || typeMatch || tagsMatch || loggedByMatch;
-      });
-    }
-
-    setFilteredDocuments(filtered);
-  }, [documents, searchTerm, residentFilter, selectedTags, getLoggedByName]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     console.log('🔄 Starting to load Documents & Assets data...');
     try {
@@ -219,7 +175,51 @@ export default function DocumentsSupabase() {
       setLoading(false);
       console.log('✅ Loading complete');
     }
-  };
+  }, [supabase, user]);
+
+  // Initial data load
+  useEffect(() => {
+    if (supabase && user) {
+      loadData();
+    }
+  }, [supabase, user, loadData]);
+
+  useEffect(() => {
+    let filtered = documents;
+
+    if (residentFilter !== "all") {
+      filtered = filtered.filter(doc => {
+        const residentId = doc.resident_id || doc["Resident ID"];
+        return residentId === residentFilter;
+      });
+    }
+
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(doc => {
+        const docTags = doc.tags || doc.Tags || [];
+        return selectedTags.every(selectedTag => docTags.includes(selectedTag));
+      });
+    }
+
+    if (searchTerm) {
+      const lowercasedTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(doc => {
+        const title = doc.title || doc.Title || '';
+        const description = doc.description || doc.Description || '';
+        const documentType = doc.document_type || doc["Document Type"] || '';
+        const docTags = doc.tags || doc.Tags || [];
+
+        const titleMatch = title.toLowerCase().includes(lowercasedTerm);
+        const descMatch = description.toLowerCase().includes(lowercasedTerm);
+        const typeMatch = documentType.toLowerCase().includes(lowercasedTerm);
+        const tagsMatch = docTags.some(tag => tag.toLowerCase().includes(lowercasedTerm));
+        const loggedByMatch = (getLoggedByName(doc) || '').toLowerCase().includes(lowercasedTerm);
+        return titleMatch || descMatch || typeMatch || tagsMatch || loggedByMatch;
+      });
+    }
+
+    setFilteredDocuments(filtered);
+  }, [documents, searchTerm, residentFilter, selectedTags, getLoggedByName]);
 
   const handleSubmit = async (recordData) => {
     console.log(`📝 Submitting ${activeTab}:`, recordData);

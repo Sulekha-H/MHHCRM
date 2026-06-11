@@ -60,15 +60,15 @@ export default function DocumentForm({ document: initialDocument, residents, cur
   const [uploading, setUploading] = useState(false);
   const [tagInput, setTagInput] = useState("");
 
-  // Update logged_by when currentUser becomes available, only for new documents
+  // Update logged_by when currentUser becomes available
   useEffect(() => {
-    if (!initialDocument && currentUser?.full_name && formData.logged_by === "") {
+    if (currentUser?.full_name) {
       setFormData(prev => ({
         ...prev,
         logged_by: currentUser.full_name
       }));
     }
-  }, [currentUser, initialDocument, formData.logged_by]);
+  }, [currentUser]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -322,11 +322,12 @@ export default function DocumentForm({ document: initialDocument, residents, cur
             <Input
               id="logged_by"
               value={formData.logged_by}
-              onChange={(e) => handleChange("logged_by", e.target.value)}
               placeholder="Staff member name"
+              readOnly
+              className="bg-slate-50"
             />
             <p className="text-xs text-slate-500 mt-1">
-              The name of the staff member who logged this document
+              Automatically set to current user
             </p>
           </div>
 

@@ -105,15 +105,15 @@ export default function WarrantyForm({ warranty, properties, accommodations, cur
     logged_by: currentUser?.full_name || ""
   });
 
-  // Update logged_by when currentUser becomes available, only for new warranties
+  // Update logged_by when currentUser becomes available
   useEffect(() => {
-    if (!warranty && currentUser?.full_name && formData.logged_by === "") {
+    if (currentUser?.full_name) {
       setFormData(prev => ({
         ...prev,
         logged_by: currentUser.full_name
       }));
     }
-  }, [currentUser, warranty, formData.logged_by]);
+  }, [currentUser]);
 
   const formatEnumForSupabase = (value, enumType) => {
     if (!value) return null;
@@ -610,9 +610,13 @@ export default function WarrantyForm({ warranty, properties, accommodations, cur
                 <Input
                   id="logged_by"
                   value={formData.logged_by}
-                  onChange={(e) => handleChange("logged_by", e.target.value)}
                   placeholder="Staff member who logged this entry"
+                  readOnly
+                  className="bg-slate-50"
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  Automatically set to current user
+                </p>
               </div>
             </div>
           </div>
