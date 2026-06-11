@@ -40,6 +40,7 @@ export default function DocumentsSupabase() {
   const [residents, setResidents] = useState([]);
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
+  const [users, setUsers] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -50,66 +51,38 @@ export default function DocumentsSupabase() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const getLoggedByName = useCallback((record) => {
-  // Use the 'logged_by' field if present
-  if (record.logged_by || record["Logged By"]) {
-    return record.logged_by || record["Logged By"];
-  }
-
-  // Otherwise, fall back to 'created_by'
-  const createdBy = record.created_by || record["Created By"];
-  if (createdBy) {
-    // If you have a list of users in 'user' state, match by email
-    if (user && user.length > 0) {
-      const matchedUser = user.find(u => u.email === createdBy);
-      if (matchedUser?.full_name) return matchedUser.full_name;
+    // Use the 'logged_by' field if present
+    if (record.logged_by || record["Logged By"]) {
+      return record.logged_by || record["Logged By"];
     }
 
-    // Otherwise, just return the email name before '@'
-    return createdBy.split('@')[0];
-  }
+    // Otherwise, fall back to 'created_by'
+    const createdBy = record.created_by || record["Created By"];
+    if (createdBy) {
+      // If you have a list of users, match by email
+      if (users && users.length > 0) {
+        const matchedUser = users.find(u =>
+          (u.email && u.email.toLowerCase() === createdBy.toLowerCase()) ||
+          (u.Email && u.Email.toLowerCase() === createdBy.toLowerCase())
+        );
+        if (matchedUser) {
+          return matchedUser.full_name || matchedUser["Full Name"] || matchedUser.Name || matchedUser.name || createdBy.split('@')[0];
+        }
+      }
 
-  return null;
-}, [user]);
+      // Otherwise, just return the email name before '@'
+      return createdBy.split('@')[0];
+    }
 
-useEffect(() => {
-  if (!supabase) return;
+    return null;
+  }, [users]);
 
-  async function loadAllTables() {
-    setLoading(true);
-
-    // Documents
-    const { data: documentsData, error: documentsError } = await supabase
-      .from("documents")
-      .select("*");
-    if (documentsError) return setError(documentsError.message);
-    setDocuments(documentsData || []);
-
-    // Warranties
-    const { data: warrantiesData, error: warrantiesError } = await supabase
-      .from("warranties")
-      .select("*");
-    if (warrantiesError) return setError(warrantiesError.message);
-    setWarranties(warrantiesData || []);
-
-    // Insurances
-    const { data: insurancesData, error: insurancesError } = await supabase
-      .from("insurances")
-      .select("*");
-    if (insurancesError) return setError(insurancesError.message);
-    setInsurances(insurancesData || []);
-
-    // Appliances
-    const { data: appliancesData, error: appliancesError } = await supabase
-      .from("appliances")
-      .select("*");
-    if (appliancesError) return setError(appliancesError.message);
-    setAppliances(appliancesData || []);
-
-    setLoading(false);
-  }
-
-  loadAllTables();
-}, [supabase]);
+  // Initial data load
+  useEffect(() => {
+    if (supabase && user) {
+      loadData();
+    }
+  }, [supabase, user]);
 
   useEffect(() => {
     let filtered = documents;
@@ -155,11 +128,16 @@ useEffect(() => {
       const userEmail = user?.primaryEmailAddress?.emailAddress;
       console.log('👤 Current user email:', userEmail);
       
-      let userData = null;
       if (userEmail) {
         const { data } = await supabase.from('users').select('*').eq('Email', userEmail).single();
-        userData = data;
-        setCurrentUser(userData);
+        if (data) {
+          const userData = {
+            ...data,
+            email: data.Email || data.email,
+            full_name: data["Full Name"] || data.full_name || data.Name || data.name
+          };
+          setCurrentUser(userData);
+        }
       }
 
       const [
@@ -247,16 +225,16 @@ useEffect(() => {
     console.log(`📝 Submitting ${activeTab}:`, recordData);
     
     try {
-      if (!recordData.logged_by && !recordData["Logged By"] && currentUser?.full_name) {
-        recordData.logged_by = currentUser.full_name;
+      // Ensure "Logged By" is set from currentUser if not provided
+      if (!recordData["Logged By"] && currentUser?.full_name) {
         recordData["Logged By"] = currentUser.full_name;
       }
 
       let error;
       if (activeTab === "documents") {
         if (editingRecord) {
-          const recordId = editingRecord.id || editingRecord.ID;
-          ({ error } = await supabase.from('documents').update(recordData).eq('id', recordId));
+          const recordId = editingRecord.ID || editingRecord.id;
+          ({ error } = await supabase.from('documents').update(recordData).eq('"ID"', recordId));
           console.log(`✅ Updated document ${recordId}`);
         } else {
           ({ error } = await supabase.from('documents').insert([recordData]));
@@ -264,8 +242,8 @@ useEffect(() => {
         }
       } else if (activeTab === "warranties") {
         if (editingRecord) {
-          const recordId = editingRecord.id || editingRecord.ID;
-          ({ error } = await supabase.from('warranties').update(recordData).eq('id', recordId));
+          const recordId = editingRecord.ID || editingRecord.id;
+          ({ error } = await supabase.from('warranties').update(recordData).eq('"ID"', recordId));
           console.log(`✅ Updated warranty ${recordId}`);
         } else {
           ({ error } = await supabase.from('warranties').insert([recordData]));
@@ -273,8 +251,8 @@ useEffect(() => {
         }
       } else if (activeTab === "insurances") {
         if (editingRecord) {
-          const recordId = editingRecord.id || editingRecord.ID;
-          ({ error } = await supabase.from('insurances').update(recordData).eq('id', recordId));
+          const recordId = editingRecord.ID || editingRecord.id;
+          ({ error } = await supabase.from('insurances').update(recordData).eq('"ID"', recordId));
           console.log(`✅ Updated insurance ${recordId}`);
         } else {
           ({ error } = await supabase.from('insurances').insert([recordData]));
@@ -282,8 +260,8 @@ useEffect(() => {
         }
       } else if (activeTab === "appliances") {
         if (editingRecord) {
-          const recordId = editingRecord.id || editingRecord.ID;
-          ({ error } = await supabase.from('appliances').update(recordData).eq('id', recordId));
+          const recordId = editingRecord.ID || editingRecord.id;
+          ({ error } = await supabase.from('appliances').update(recordData).eq('"ID"', recordId));
           console.log(`✅ Updated appliance ${recordId}`);
         } else {
           ({ error } = await supabase.from('appliances').insert([recordData]));
