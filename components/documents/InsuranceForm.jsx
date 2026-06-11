@@ -87,15 +87,15 @@ export default function InsuranceForm({ insurance, properties, currentUser, onSu
     logged_by: currentUser?.full_name || ""
   });
 
-  // Update logged_by when currentUser becomes available, only for new insurance
+  // Update logged_by when currentUser becomes available
   useEffect(() => {
-    if (!insurance && currentUser?.full_name && formData.logged_by === "") {
+    if (currentUser?.full_name) {
       setFormData(prev => ({
         ...prev,
         logged_by: currentUser.full_name
       }));
     }
-  }, [currentUser, insurance, formData.logged_by]);
+  }, [currentUser]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -464,15 +464,13 @@ export default function InsuranceForm({ insurance, properties, currentUser, onSu
             <Input
               id="logged_by"
               value={formData.logged_by}
-              onChange={(e) => handleChange("logged_by", e.target.value)}
               placeholder="Staff member who logged this policy"
-              readOnly={!!insurance} // Make read-only if editing existing insurance
+              readOnly
+              className="bg-slate-50"
             />
-             {insurance && (
-              <p className="text-xs text-slate-500 mt-1">
-                This field is read-only for existing policies.
-              </p>
-            )}
+            <p className="text-xs text-slate-500 mt-1">
+              Automatically set to current user
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
