@@ -96,20 +96,38 @@ export default function ComplianceCheckDetailModal({ log, isOpen, onClose }) {
                       className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:border-indigo-200 transition-colors"
                     >
                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
-                        <div className="flex items-center gap-2 font-semibold text-slate-900">
-                          <MapPin className="w-4 h-4 text-indigo-500" />
-                          {issue.location}
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2 font-semibold text-slate-900">
+                            <MapPin className="w-4 h-4 text-indigo-500" />
+                            {issue.location}
+                          </div>
+                          {issue.rating && (
+                            <div className="text-[10px] text-slate-500 font-medium ml-6">
+                              Rating: <span className="text-indigo-600 uppercase tracking-wider">{issue.rating}</span>
+                            </div>
+                          )}
                         </div>
                         <Badge className={getPriorityColor(issue.priority)}>
                           {issue.priority || 'Medium'} Priority
                         </Badge>
                       </div>
                       <div className="p-4 space-y-4">
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Issue Details</span>
-                          <p className="text-sm text-slate-700 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
-                            {issue.issue_details}
-                          </p>
+                        <div className="space-y-4">
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Issue Details</span>
+                            <p className="text-sm text-slate-700 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                              {issue.issue_details}
+                            </p>
+                          </div>
+
+                          {issue.rectified && issue.rectification_details && (
+                            <div className="space-y-1.5">
+                              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Rectification Details</span>
+                              <p className="text-sm text-emerald-800 bg-emerald-50/50 p-3 rounded-lg border border-emerald-100 italic">
+                                {issue.rectification_details}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 pt-2">
@@ -129,17 +147,17 @@ export default function ComplianceCheckDetailModal({ log, isOpen, onClose }) {
                             </div>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Date Fixed</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status / Date Fixed</span>
                             <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                              {issue.date_fixed ? (
+                              {issue.rectified === true || (issue.rectified === undefined && !!issue.date_fixed) ? (
                                 <>
                                   <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                                  {format(parseISO(issue.date_fixed), 'MMM d, yyyy')}
+                                  {issue.date_fixed ? format(parseISO(issue.date_fixed), 'MMM d, yyyy') : 'Rectified'}
                                 </>
                               ) : (
                                 <>
-                                  <Clock className="w-3.5 h-3.5 text-amber-500" />
-                                  Pending
+                                  <Clock className="w-3.5 h-3.5 text-red-500" />
+                                  Unresolved
                                 </>
                               )}
                             </div>
