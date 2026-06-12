@@ -175,52 +175,11 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
       submitData.invoice_file_url = "";
     }
     
-    // Convert to PascalCase for Supabase
-    const supabaseData = {
-      Title: submitData.title,
-      Property_Id: submitData.property_id,
-      Accommodation_Id: submitData.accommodation_id || null,
-      Common_Area: submitData.common_area || null,
-      Repair_Type: submitData.repair_type,
-      Priority: submitData.priority,
-      Status: submitData.status,
-      Description: submitData.description || null,
-      Reported_By: submitData.reported_by,
-      Reported_By_Type: submitData.reported_by_type,
-      Logged_By: submitData.logged_by || null,
-      Reported_On_Fiixit: submitData.reported_on_fiixit,
-      Fiixit_Updated: submitData.fiixit_updated,
-      Reported_Date: submitData.reported_date,
-      Assessed_Date: submitData.assessed_date || null,
-      Scheduled_Date: submitData.scheduled_date || null,
-      In_Progress_Date: submitData.in_progress_date || null,
-      Completed_Date: submitData.completed_date || null,
-      Date_Fixed: submitData.date_fixed || null,
-      Is_Cancelled: submitData.is_cancelled,
-      Cancellation_Reason: submitData.cancellation_reason || null,
-      Cancelled_Date: submitData.cancelled_date || null,
-      Contractor: submitData.contractor || null,
-      Contractor_Contact: submitData.contractor_contact || null,
-      Estimated_Cost: submitData.estimated_cost,
-      Invoice_Not_Applicable: submitData.invoice_not_applicable,
-      Invoice_Received_Date: submitData.invoice_received_date || null,
-      Invoice_Received_From: submitData.invoice_received_from || null,
-      Invoice_Amount: submitData.invoice_amount,
-      Payment_Due_Date: submitData.payment_due_date || null,
-      Date_Invoice_Paid: submitData.date_invoice_paid || null,
-      Invoice_Number: submitData.invoice_number || null,
-      Invoice_Payment_Status: submitData.invoice_payment_status,
-      Invoice_File_Url: submitData.invoice_file_url || null,
-      Notes: submitData.notes || null,
-      Images: submitData.images || [],
-      Updated_Date: new Date().toISOString()
-    };
+    // Set updated date
+    submitData.updated_date = new Date().toISOString();
 
-    if (!repair) {
-      supabaseData.Created_Date = new Date().toISOString();
-    }
-    
-    onSubmit(supabaseData);
+    // Send data to parent handler
+    onSubmit(submitData);
   };
 
   const handleChange = (field, value) => {
