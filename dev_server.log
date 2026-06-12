@@ -5,20 +5,15 @@
 ▲ Next.js 16.2.9 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 530ms
-Attention: Next.js now collects completely anonymous telemetry regarding usage.
-This information is used to shape Next.js' roadmap and prioritize features.
-You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-https://nextjs.org/telemetry
-
+✓ Ready in 508ms
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
 
 ○ Compiling /repairs ...
 ⨯ Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
     at ignore-listed frames {
-  digest: '1893586879'
+  digest: '1511538702'
 }
- GET /repairs 500 in 13.3s (next.js: 11.8s, proxy.ts: 268ms, application-code: 1223ms)
+ GET /repairs 500 in 10.0s (next.js: 8.5s, proxy.ts: 189ms, application-code: 1268ms)
 [browser] Uncaught Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
     at RootLayout (app/layout.jsx:61:9)
   59 |     <html lang="en" className="h-full">
