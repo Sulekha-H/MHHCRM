@@ -9,6 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Download, Wrench, AlertCircle, Filter, List, RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { format, startOfYear, endOfYear, eachMonthOfInterval } from "date-fns";
 import RepairFormSupabase from "@/components/repairs/RepairForm";
 import RepairCard from "@/components/repairs/RepairCard";
@@ -33,6 +41,7 @@ export default function Repairs() { // Component name changed
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [isMigrating, setIsMigrating] = useState(false);
+  const [groupBy, setGroupBy] = useState("status");
 
 const fetchAllData = useCallback(async () => {
   if (!supabase) return;
@@ -710,6 +719,16 @@ useEffect(() => {
     return acc;
   }, {});
 
+  // Group repairs by property
+  const groupedByProperty = filteredRepairs.reduce((acc, repair) => {
+    const propertyId = repair["Property ID"] || repair.property_id || "unknown";
+    if (!acc[propertyId]) {
+      acc[propertyId] = [];
+    }
+    acc[propertyId].push(repair);
+    return acc;
+  }, {});
+
   const statusLabels = {
     reported: "Reported",
     assessed: "Assessed",
@@ -837,6 +856,24 @@ useEffect(() => {
             >
               <RefreshCw className={`w-4 h-4 ${isMigrating ? 'animate-spin' : ''}`} />
             </Button>
+            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg">
+              <Button
+                variant={groupBy === "status" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setGroupBy("status")}
+                className={groupBy === "status" ? "bg-white shadow-sm" : ""}
+              >
+                By Status
+              </Button>
+              <Button
+                variant={groupBy === "property" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setGroupBy("property")}
+                className={groupBy === "property" ? "bg-white shadow-sm" : ""}
+              >
+                By Property
+              </Button>
+            </div>
             <Button variant="outline" size="icon">
               <List className="w-4 h-4" />
             </Button>
@@ -908,7 +945,7 @@ useEffect(() => {
         />
       )}
 
-      {/* Repairs Section - Grouped by Status */}
+      {/* Repairs Section - Grouped by Status or Property */}
       <div className="space-y-12">
         {loading ? (
           <div className="text-center py-12">
@@ -916,39 +953,117 @@ useEffect(() => {
           </div>
         ) : activeTab === "all" ? (
           <>
-            {Object.keys(groupedRepairs).length > 0 ? (
-              ['reported', 'assessed', 'scheduled', 'in_progress', 'completed', 'cancelled']
-                .filter(status => groupedRepairs[status])
-                .concat(Object.keys(groupedRepairs).filter(status => !['reported', 'assessed', 'scheduled', 'in_progress', 'completed', 'cancelled'].includes(status)))
-                .map(status => (
-                <div key={status} className="space-y-6">
-                  <div className="flex items-center justify-between border-b pb-2">
-                    <h3 className="text-2xl font-bold text-slate-900">
-                      {statusLabels[status] || status.replace(/_/g, ' ')}
-                      <span className="ml-3 text-lg font-normal text-slate-500">
-                        ({groupedRepairs[status].length})
-                      </span>
-                    </h3>
-                  </div>
+            {groupBy === "property" && filteredRepairs.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Repairs Summary by Property</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Property</TableHead>
+                        <TableHead className="text-center">Total</TableHead>
+                        <TableHead className="text-center">Reported</TableHead>
+                        <TableHead className="text-center">Assessed</TableHead>
+                        <TableHead className="text-center">Scheduled</TableHead>
+                        <TableHead className="text-center">In Progress</TableHead>
+                        <TableHead className="text-center">Completed</TableHead>
+                        <TableHead className="text-center">Cancelled</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.keys(groupedByProperty).map(propertyId => {
+                        const propertyRepairs = groupedByProperty[propertyId];
+                        const counts = propertyRepairs.reduce((c, r) => {
+                          const s = (r["Status"] || r.status || "").toLowerCase().replace(/ /g, '_');
+                          c[s] = (c[s] || 0) + 1;
+                          return c;
+                        }, {});
+                        return (
+                          <TableRow key={propertyId}>
+                            <TableCell className="font-medium">{getPropertyName(propertyId)}</TableCell>
+                            <TableCell className="text-center font-bold">{propertyRepairs.length}</TableCell>
+                            <TableCell className="text-center text-yellow-600">{counts.reported || 0}</TableCell>
+                            <TableCell className="text-center text-blue-600">{counts.assessed || 0}</TableCell>
+                            <TableCell className="text-center text-indigo-600">{counts.scheduled || 0}</TableCell>
+                            <TableCell className="text-center text-orange-600">{counts.in_progress || 0}</TableCell>
+                            <TableCell className="text-center text-green-600">{counts.completed || 0}</TableCell>
+                            <TableCell className="text-center text-gray-500">{counts.cancelled || 0}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
 
-                  <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
-                    {groupedRepairs[status].map((repair) => (
-                      <div key={repair["ID"] || repair.id} className="flex-none w-full md:w-[450px] snap-start">
-                        <RepairCard
-                          repair={repair}
-                          onEdit={handleEdit}
-                          onViewDetails={handleViewDetails}
-                          onDelete={handleDelete}
-                          getPriorityColor={getPriorityColor}
-                          getStatusColor={getStatusColor}
-                          getPropertyName={getPropertyName}
-                          getAccommodationName={() => getAccommodationName(repair)}
-                        />
-                      </div>
-                    ))}
+            {Object.keys(groupBy === "status" ? groupedRepairs : groupedByProperty).length > 0 ? (
+              groupBy === "status" ? (
+                ['reported', 'assessed', 'scheduled', 'in_progress', 'completed', 'cancelled']
+                  .filter(status => groupedRepairs[status])
+                  .concat(Object.keys(groupedRepairs).filter(status => !['reported', 'assessed', 'scheduled', 'in_progress', 'completed', 'cancelled'].includes(status)))
+                  .map(status => (
+                  <div key={status} className="space-y-6">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <h3 className="text-2xl font-bold text-slate-900">
+                        {statusLabels[status] || status.replace(/_/g, ' ')}
+                        <span className="ml-3 text-lg font-normal text-slate-500">
+                          ({groupedRepairs[status].length})
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
+                      {groupedRepairs[status].map((repair) => (
+                        <div key={repair["ID"] || repair.id} className="flex-none w-full md:w-[450px] snap-start">
+                          <RepairCard
+                            repair={repair}
+                            onEdit={handleEdit}
+                            onViewDetails={handleViewDetails}
+                            onDelete={handleDelete}
+                            getPriorityColor={getPriorityColor}
+                            getStatusColor={getStatusColor}
+                            getPropertyName={getPropertyName}
+                            getAccommodationName={() => getAccommodationName(repair)}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))
+              ) : (
+                Object.keys(groupedByProperty).map(propertyId => (
+                  <div key={propertyId} className="space-y-6">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <h3 className="text-2xl font-bold text-slate-900">
+                        {getPropertyName(propertyId)}
+                        <span className="ml-3 text-lg font-normal text-slate-500">
+                          ({groupedByProperty[propertyId].length})
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="flex flex-nowrap overflow-x-auto pb-6 gap-6 snap-x snap-mandatory">
+                      {groupedByProperty[propertyId].map((repair) => (
+                        <div key={repair["ID"] || repair.id} className="flex-none w-full md:w-[450px] snap-start">
+                          <RepairCard
+                            repair={repair}
+                            onEdit={handleEdit}
+                            onViewDetails={handleViewDetails}
+                            onDelete={handleDelete}
+                            getPriorityColor={getPriorityColor}
+                            getStatusColor={getStatusColor}
+                            getPropertyName={getPropertyName}
+                            getAccommodationName={() => getAccommodationName(repair)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )
             ) : (
               <Card className="shadow-sm">
                 <CardContent className="p-12 text-center space-y-4">
