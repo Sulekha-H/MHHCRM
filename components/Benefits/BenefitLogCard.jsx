@@ -56,27 +56,27 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
 
   return (
     <Card 
-        className="hover:shadow-md transition-shadow duration-200 flex flex-col cursor-pointer"
+        className="hover:shadow-md transition-shadow duration-200 flex flex-col cursor-pointer h-full"
         onClick={() => onViewDetails(log)}
     >
-      <CardHeader className="pb-4">
+      <CardHeader className="p-3 pb-2">
         <div className="flex items-start justify-between">
-          <div className="flex-1">
-             <div className="flex items-center gap-2 mb-2">
-                <HandCoins className="w-5 h-5 text-sky-500" />
-                <h3 className="font-semibold text-slate-900 text-lg line-clamp-1">
+          <div className="flex-1 min-w-0">
+             <div className="flex items-center gap-1.5 mb-1.5">
+                <HandCoins className="w-4 h-4 text-sky-500 shrink-0" />
+                <h3 className="font-semibold text-slate-900 text-sm line-clamp-1">
                   {title}
                 </h3>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Badge variant="outline" className={getLogTypeColor(logType)}>
+            <div className="flex gap-1.5 flex-wrap">
+              <Badge variant="outline" className={`text-[10px] py-0 h-5 ${getLogTypeColor(logType)}`}>
                 {logType?.replace(/_/g, ' ')}
               </Badge>
-              <Badge className={getStatusColor(status)}>
+              <Badge className={`text-[10px] py-0 h-5 ${getStatusColor(status)}`}>
                 {status?.replace('_', ' ')}
               </Badge>
               {sanctions && (
-                <Badge className="bg-red-100 text-red-800">
+                <Badge className="bg-red-100 text-red-800 text-[10px] py-0 h-5">
                   Sanctions
                 </Badge>
               )}
@@ -89,82 +89,82 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
               e.stopPropagation(); // Prevent card's onViewDetails from being triggered
               onDelete(log);
             }}
-            className="text-slate-400 hover:text-red-600 flex-shrink-0"
+            className="text-slate-400 hover:text-red-600 flex-shrink-0 h-7 w-7"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 flex-grow">
+      <CardContent className="p-3 pt-0 space-y-2 flex-grow">
         {/* Date, Resident, and Logged By - Made Prominent */}
-        <div className="space-y-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
+        <div className="space-y-1 bg-slate-50 rounded-md p-2 border border-slate-100">
             {residentId && getResidentName && (
-                <div className="flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4 text-slate-400" />
-                    <span className="font-medium text-slate-800">{getResidentName(residentId)}</span>
+                <div className="flex items-center gap-2 text-xs">
+                    <User className="w-3 h-3 text-slate-400" />
+                    <span className="font-medium text-slate-800 truncate">{getResidentName(residentId)}</span>
                 </div>
             )}
-            <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                <span className="text-slate-600">
-                    {logDate ? format(new Date(logDate), 'PPp') : 'N/A'}
+            <div className="flex items-center gap-2 text-xs">
+                <Calendar className="w-3 h-3 text-slate-400" />
+                <span className="text-slate-500">
+                    {logDate ? format(new Date(logDate), 'PP') : 'N/A'}
                 </span>
             </div>
             {loggedBy && (
-                <div className="flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4 text-sky-500" />
-                    <span className="font-medium text-slate-900">
-                        Logged by: <span className="text-sky-700">{loggedBy}</span>
+                <div className="flex items-center gap-2 text-[11px]">
+                    <User className="w-3 h-3 text-sky-500" />
+                    <span className="font-medium text-slate-700 truncate">
+                        By: <span className="text-sky-700">{loggedBy}</span>
                     </span>
                 </div>
             )}
         </div>
 
         {description && (
-          <div className="pt-3 border-t">
-            <p className="text-sm text-slate-700 line-clamp-3">
+          <div className="pt-2 border-t border-slate-100">
+            <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
               {description}
             </p>
           </div>
         )}
         
         {applicationDate && (
-            <div className="pt-3 border-t">
-                <div className="flex items-center gap-2 text-sm">
-                    <FileText className="w-4 h-4 text-teal-500" />
-                    <span className="text-slate-600">
-                        Application Date: {format(new Date(applicationDate), 'PPP')}
+            <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-[11px]">
+                    <FileText className="w-3 h-3 text-teal-500" />
+                    <span className="text-slate-500">
+                        App: {format(new Date(applicationDate), 'PP')}
                     </span>
                 </div>
             </div>
         )}
 
         {deadlineDate && (
-            <div className="pt-3 border-t">
-                <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-red-500" />
+            <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-[11px]">
+                    <Calendar className="w-3 h-3 text-red-500" />
                     <span className="text-slate-600 font-medium">
-                        Deadline: {format(new Date(deadlineDate), 'PPP')}
+                        Due: {format(new Date(deadlineDate), 'PP')}
                     </span>
                 </div>
             </div>
         )}
         
         {amount > 0 && (
-            <div className="pt-3 border-t">
-                <div className="flex items-center gap-2 text-sm">
-                    <Banknote className="w-4 h-4 text-green-600" />
+            <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-[11px]">
+                    <Banknote className="w-3 h-3 text-green-600" />
                     <span className="text-slate-600 font-medium">
-                        {log["Award Amount"] || log.award_amount ? "Award Amount:" : "Amount:"} £{amount.toFixed(2)}
+                        £{amount.toFixed(2)}
                     </span>
                 </div>
             </div>
         )}
         
         {(status?.toLowerCase() === 'issue_raised' || status?.toLowerCase() === 'issue raised') && (
-            <div className="pt-3 border-t">
-                <div className="flex items-center gap-2 text-sm">
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
+            <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-[11px]">
+                    <AlertTriangle className="w-3 h-3 text-red-600" />
                     <span className="text-red-700 font-medium">
                         Requires attention
                     </span>
