@@ -119,6 +119,13 @@ export default function AllocatedResidentsPage() {
   }, [supabase]);
 
   useEffect(() => {
+    if (properties.length > 0) {
+      const propIds = properties.map(p => p.ID || p.id).filter(Boolean);
+      setExpandedProperties(new Set([...propIds, 'unassigned']));
+    }
+  }, [activeTab, properties]);
+
+  useEffect(() => {
     let filtered = allocatedResidents;
     if (activeTab.toLowerCase() !== "all") {
       filtered = filtered.filter(r => {
@@ -317,6 +324,14 @@ export default function AllocatedResidentsPage() {
     acc[pid].push(r); return acc;
   }, {});
 
+  const getActiveAllocatedCount = (propertyId) => {
+    return allocatedResidents.filter(r => {
+      const pid = r["Property ID"] || r.property_id || 'unassigned';
+      const status = (r.Status || r.status || '').toLowerCase();
+      return pid === propertyId && status === 'active';
+    }).length;
+  };
+
   if (error) return <div className="p-6"><Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert><Button onClick={loadData} className="mt-4"><RefreshCw className="w-4 h-4 mr-2" />Retry</Button></div>;
 
   return (
@@ -363,15 +378,16 @@ export default function AllocatedResidentsPage() {
             )}
           </Card>
         </div>
-      ) : activeTab === 'all' ? (
+      ) : (
         <div className="space-y-6 px-6">
           {properties.map(p => {
             const pId = p.ID || p.id;
             const res = grouped[pId] || []; if (res.length === 0) return null;
+            const activeCount = getActiveAllocatedCount(pId);
             return (
               <Card key={pId} className="overflow-hidden border-slate-200">
                 <Collapsible open={expandedProperties.has(pId)} onOpenChange={() => setExpandedProperties(prev => { const s = new Set(prev); if (s.has(pId)) s.delete(pId); else s.add(pId); return s; })}>
-                  <CollapsibleTrigger className="w-full text-left"><CardHeader className="flex flex-row items-center justify-between hover:bg-slate-50 py-4"><div className="flex items-center gap-4"><div className="p-2 bg-blue-50 rounded-lg"><Building2 className="w-6 h-6 text-blue-600" /></div><div><CardTitle className="text-lg">{p.Name || p.name}</CardTitle><div className="flex items-center gap-2 text-sm text-slate-500"><MapPin className="w-4 h-4" />{p.Address || p.address}</div></div></div><div className="flex items-center gap-4"><span className="text-sm font-medium text-slate-500">{res.length} Resident{res.length !== 1 ? 's' : ''}</span>{expandedProperties.has(pId) ? <ChevronDown className="text-slate-400" /> : <ChevronRight className="text-slate-400" />}</div></CardHeader></CollapsibleTrigger>
+                  <CollapsibleTrigger className="w-full text-left"><CardHeader className="flex flex-row items-center justify-between hover:bg-slate-50 py-4"><div className="flex items-center gap-4"><div className="p-2 bg-blue-50 rounded-lg"><Building2 className="w-6 h-6 text-blue-600" /></div><div><CardTitle className="text-lg">{p.Name || p.name}</CardTitle><div className="flex items-center gap-2 text-sm text-slate-500"><MapPin className="w-4 h-4" />{p.Address || p.address}</div></div></div><div className="flex items-center gap-4"><span className="text-sm font-medium text-slate-500">{activeCount} Active Resident{activeCount !== 1 ? 's' : ''}</span>{expandedProperties.has(pId) ? <ChevronDown className="text-slate-400" /> : <ChevronRight className="text-slate-400" />}</div></CardHeader></CollapsibleTrigger>
                   <CollapsibleContent className="p-6 pt-0"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">{res.map(r => (<AllocatedResidentCard key={r.ID || r.id} resident={r} accommodations={accommodations} onEdit={(res) => { setEditingResident(res); setShowForm(true); }} onViewDetails={setViewingResident} onDelete={handleDelete} getStatusColor={s => (s === 'Active' || s === 'active') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} />))}</div></CollapsibleContent>
                 </Collapsible>
               </Card>
@@ -380,14 +396,12 @@ export default function AllocatedResidentsPage() {
           {grouped['unassigned']?.length > 0 && (
             <Card className="overflow-hidden border-slate-200">
               <Collapsible open={expandedProperties.has('unassigned')} onOpenChange={() => setExpandedProperties(prev => { const s = new Set(prev); if (s.has('unassigned')) s.delete('unassigned'); else s.add('unassigned'); return s; })}>
-                <CollapsibleTrigger className="w-full text-left"><CardHeader className="flex flex-row items-center justify-between hover:bg-slate-50 py-4"><div className="flex items-center gap-4"><div className="p-2 bg-slate-100 rounded-lg"><UserX className="w-6 h-6 text-slate-600" /></div><div><CardTitle className="text-lg">Unassigned Residents</CardTitle><div className="text-sm text-slate-500">Residents not assigned to a property.</div></div></div><div className="flex items-center gap-4"><span className="text-sm font-medium text-slate-500">{grouped['unassigned'].length} Resident{grouped['unassigned'].length !== 1 ? 's' : ''}</span>{expandedProperties.has('unassigned') ? <ChevronDown className="text-slate-400" /> : <ChevronRight className="text-slate-400" />}</div></CardHeader></CollapsibleTrigger>
+                <CollapsibleTrigger className="w-full text-left"><CardHeader className="flex flex-row items-center justify-between hover:bg-slate-50 py-4"><div className="flex items-center gap-4"><div className="p-2 bg-slate-100 rounded-lg"><UserX className="w-6 h-6 text-slate-600" /></div><div><CardTitle className="text-lg">Unassigned Residents</CardTitle><div className="text-sm text-slate-500">Residents not assigned to a property.</div></div></div><div className="flex items-center gap-4"><span className="text-sm font-medium text-slate-500">{getActiveAllocatedCount('unassigned')} Active Resident{getActiveAllocatedCount('unassigned') !== 1 ? 's' : ''}</span>{expandedProperties.has('unassigned') ? <ChevronDown className="text-slate-400" /> : <ChevronRight className="text-slate-400" />}</div></CardHeader></CollapsibleTrigger>
                 <CollapsibleContent className="p-6 pt-0"><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">{grouped['unassigned'].map(r => (<AllocatedResidentCard key={r.ID || r.id} resident={r} accommodations={accommodations} onEdit={(res) => { setEditingResident(res); setShowForm(true); }} onViewDetails={setViewingResident} onDelete={handleDelete} getStatusColor={s => (s === 'Active' || s === 'active') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} />))}</div></CollapsibleContent>
               </Collapsible>
             </Card>
           )}
         </div>
-      ) : (
-        <div className="px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{filteredAllocatedResidents.map(r => (<AllocatedResidentCard key={r.ID || r.id} resident={r} accommodations={accommodations} onEdit={(res) => { setEditingResident(res); setShowForm(true); }} onViewDetails={setViewingResident} onDelete={handleDelete} getStatusColor={s => (s === 'Active' || s === 'active') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} />))}</div>
       )}
     </div>
   );
