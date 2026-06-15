@@ -1419,7 +1419,7 @@ useEffect(() => {
                                 {review.support_worker_name || '-'}
                               </TableCell>
                               <TableCell>
-                                {review.created_by}
+                                {review.key_worker || review.created_by || '-'}
                               </TableCell>
                               <TableCell>
                                 <Badge className={`${getStatusColor(displayStatus)} capitalize`}>

@@ -86,7 +86,7 @@ export default function SupportPlanDetailModal({
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Entry Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DetailItem icon={<User />} label="Resident">{getResidentName(plan.resident_id)}</DetailItem>
-              <DetailItem icon={<User />} label="Logged By">{plan.key_worker}</DetailItem>
+              <DetailItem icon={<User />} label="Logged By">{plan.key_worker || plan.created_by || '-'}</DetailItem>
               <DetailItem icon={<Clock />} label={isQuarterlyReview ? "Date & Time Logged" : "Date & Time"}>
                 {plan.log_date ? format(new Date(plan.log_date), 'dd MMMM yyyy, HH:mm') : null}
               </DetailItem>
