@@ -556,20 +556,41 @@ function QuarterlyReviewHistory({ residentId, isAllocated }) {
 
       try {
         setLoading(true);
-        const tableName = isAllocated ? 'allocated_quarterly_reviews' : 'support_notes';
-        let query = supabase
-          .from(tableName)
-          .select('*')
-          .eq('"Resident ID"', residentId);
 
-        if (!isAllocated) {
-          query = query.eq('"Plan Type"', 'quarterly_reviews');
+        let allReviews = [];
+
+        if (isAllocated) {
+          // For allocated residents, reviews are in allocated_quarterly_reviews
+          const { data, error } = await supabase
+            .from('allocated_quarterly_reviews')
+            .select('*')
+            .eq('"Resident ID"', residentId)
+            .eq('"Deleted"', false)
+            .order('"Log Date"', { ascending: false });
+
+          if (error) throw error;
+          allReviews = data || [];
+        } else {
+          // For standard residents, reviews could be in quarterly_reviews OR legacy support_notes
+          const [qrResult, snResult] = await Promise.all([
+            supabase.from('quarterly_reviews').select('*').eq('"Resident ID"', residentId).eq('"Deleted"', false),
+            supabase.from('support_notes').select('*').eq('"Resident ID"', residentId).eq('"Plan Type"', 'quarterly_reviews').eq('"Deleted"', false)
+          ]);
+
+          if (qrResult.error) throw qrResult.error;
+          if (snResult.error) throw snResult.error;
+
+          allReviews = [...(qrResult.data || []), ...(snResult.data || [])];
+
+          // Sort by Log Date descending
+          allReviews.sort((a, b) => {
+            const dateA = new Date(a['Log Date'] || a.Log_Date || 0);
+            const dateB = new Date(b['Log Date'] || b.Log_Date || 0);
+            return dateB - dateA;
+          });
         }
 
-        const { data, error } = await query.order('"Log Date"', { ascending: false });
-
-        if (error) throw error;
-        setReviewHistory(data || []);
+        setReviewHistory(allReviews);
       } catch (error) {
         console.error("Error loading review history:", error);
         setReviewHistory([]);
@@ -603,49 +624,49 @@ function QuarterlyReviewHistory({ residentId, isAllocated }) {
         {reviewHistory.map((review, index) => (
           <div key={review.Id || index} className="bg-white rounded-lg border p-3 text-sm">
             <div className="flex justify-between items-start mb-2">
-              <h4 className="font-medium text-slate-900">{review.Title}</h4>
+              <h4 className="font-medium text-slate-900">{review.Title || review['Title']}</h4>
               <span className="text-xs text-slate-500">
-                {review.Log_Date ? format(new Date(review.Log_Date), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                {(review.Log_Date || review['Log Date']) ? format(new Date(review.Log_Date || review['Log Date']), 'dd/MM/yyyy HH:mm') : 'N/A'}
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
-              {review.Review_Completed_Date && (
+              {(review.Review_Completed_Date || review['Review Completed Date']) && (
                 <div>
-                  <span className="font-medium">Review Completed:</span> {format(new Date(review.Review_Completed_Date), 'dd/MM/yyyy')}
+                  <span className="font-medium">Review Completed:</span> {format(new Date(review.Review_Completed_Date || review['Review Completed Date']), 'dd/MM/yyyy')}
                 </div>
               )}
-              {review.Support_Worker_Name && (
+              {(review.Support_Worker_Name || review['Support Worker Name']) && (
                 <div>
-                  <span className="font-medium">Support Worker:</span> {review.Support_Worker_Name}
+                  <span className="font-medium">Support Worker:</span> {review.Support_Worker_Name || review['Support Worker Name']}
                 </div>
               )}
-              {review.Key_Worker && (
+              {(review.Key_Worker || review['Key Worker'] || review.Created_By || review['Created By']) && (
                 <div>
-                  <span className="font-medium">Logged By:</span> {review.Key_Worker}
+                  <span className="font-medium">Logged By:</span> {review.Key_Worker || review['Key Worker'] || review.Created_By || review['Created By'] || '-'}
                 </div>
               )}
-              {review.Next_Review_Date && (
+              {(review.Next_Review_Date || review['Next Review Date']) && (
                 <div>
-                  <span className="font-medium">Next Review Due:</span> {format(new Date(review.Next_Review_Date), 'dd/MM/yyyy')}
+                  <span className="font-medium">Next Review Due:</span> {format(new Date(review.Next_Review_Date || review['Next Review Date']), 'dd/MM/yyyy')}
                 </div>
               )}
               <div>
-                <span className="font-medium">Status:</span> {review.Status?.replace(/_/g, ' ')}
+                <span className="font-medium">Status:</span> {(review.Status || review['Status'])?.replace(/_/g, ' ')}
               </div>
             </div>
 
-            {review.Description && (
+            {(review.Description || review['Description']) && (
               <div className="mt-2 pt-2 border-t">
                 <span className="font-medium text-slate-700">Description:</span>
-                <p className="text-slate-600 mt-1">{review.Description}</p>
+                <p className="text-slate-600 mt-1">{review.Description || review['Description']}</p>
               </div>
             )}
 
-            {review.File_Url && (
+            {(review.File_Url || review['File URL']) && (
               <div className="mt-2">
                 <a
-                  href={review.File_Url}
+                  href={review.File_Url || review['File URL']}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
