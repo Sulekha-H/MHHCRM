@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, HandCoins, Edit, Building2, Users, Download, Calendar, User as UserIcon, FileText, Banknote } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
 import BenefitLogCard from "@/components/Benefits/BenefitLogCard";
@@ -142,12 +144,12 @@ useEffect(() => {
     try {
       console.log("🔍 RAW logData from form:", logData);
 
-      if (!logData["Logged By"] && !logData.logged_by && currentUser) {
-        const { data: userRecordData, error: userError } = await supabase.from('users').select('full_name').eq('email', currentUser.email).single();
-        if (userError && userError.code !== 'PGRST116') {
-          console.warn('Could not fetch full_name for current user:', userError.message);
-        }
-        logData["Logged By"] = userRecordData?.full_name || currentUser.email;
+      // Always update "Logged By" to current user
+      if (currentUser) {
+        const userEmail = currentUser.primaryEmailAddress?.emailAddress || currentUser.email;
+        const { data: userRecordData } = await supabase.from('users').select('full_name').eq('email', userEmail).single();
+        const loggedBy = userRecordData?.full_name || currentUser.fullName || userEmail;
+        logData["Logged By"] = loggedBy;
       }
 
       // Determine benefit type and table
@@ -1083,22 +1085,33 @@ useEffect(() => {
           <TabsTrigger value="wca">WCA</TabsTrigger>
         </TabsList>
 
-        {showForm && (
-          <div className="mt-6">
-            <BenefitLogForm_Supabase
-              log={editingLog}
-              residents={residents}
-              currentUser={currentUser}
-              activeBenefitType={activeTab}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingLog(null);
-                setViewingLog(null);
-              }}
-            />
-          </div>
-        )}
+        <Dialog open={showForm} onOpenChange={(open) => { if (!open) { setShowForm(false); setEditingLog(null); } }}>
+          <DialogContent className="max-w-4xl p-0 overflow-hidden">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle>{editingLog && (editingLog.id || editingLog.ID) ? 'Edit Benefit Log' : 'Add New Benefit Log'}</DialogTitle>
+              <DialogDescription>
+                Enter the details for the benefit log below.
+              </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[90vh]">
+              <div className="p-6">
+                <BenefitLogForm_Supabase
+                  log={editingLog}
+                  residents={residents}
+                  currentUser={currentUser}
+                  activeBenefitType={activeTab}
+                  onSubmit={handleSubmit}
+                  onCancel={() => {
+                    setShowForm(false);
+                    setEditingLog(null);
+                    setViewingLog(null);
+                  }}
+                  hideCard={true}
+                />
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
         {viewingLog && (
           <BenefitLogDetailModal

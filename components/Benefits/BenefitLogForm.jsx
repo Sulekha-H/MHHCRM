@@ -204,14 +204,16 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
 
   // Update logged_by when currentUser becomes available
   useEffect(() => {
-    if (!log && currentUser && formData.logged_by === "") {
-      const userName = currentUser["Full Name"] || currentUser.full_name || "";
-      setFormData(prev => ({
-        ...prev,
-        logged_by: userName
-      }));
+    if (currentUser) {
+      const userName = currentUser["Full Name"] || currentUser.full_name || currentUser.fullName || "";
+      if (userName && formData.logged_by !== userName) {
+        setFormData(prev => ({
+          ...prev,
+          logged_by: userName
+        }));
+      }
     }
-  }, [currentUser, log, formData.logged_by]);
+  }, [currentUser, formData.logged_by]);
 
   // Update benefit_type when activeBenefitType changes
   useEffect(() => {
