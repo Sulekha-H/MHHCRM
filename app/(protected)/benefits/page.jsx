@@ -413,138 +413,35 @@ useEffect(() => {
       hbLeavers: hbLeavers.length
     });
 
+    const renderScrollableSection = (title, logs) => (
+      <section>
+        <h2 className="text-xl font-semibold text-slate-800 mb-4">{title}</h2>
+        {logs.length > 0 ? (
+          <div className="flex gap-4 pb-4 scrollbar-visible">
+            {logs.map(log => (
+              <div key={log.id} className="min-w-[280px] max-w-[280px] flex-shrink-0">
+                <BenefitLogCard log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm">No {title} for Housing Benefit found.</p>
+        )}
+      </section>
+    );
+
     return (
-      <div className="space-y-8">
-        {/* Application Logs Section */}
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Application Logs</h2>
-          {applicationLogs.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {applicationLogs.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No application logs for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Requested Support Notes</h2>
-          {requestedSupportNotes.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {requestedSupportNotes.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No requested support notes for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Requested Documents</h2>
-          {requestedDocuments.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {requestedDocuments.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No requested documents for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Suspended Claims</h2>
-          {suspendedClaims.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {suspendedClaims.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No suspended claims for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Awaiting Activation</h2>
-          {awaitingActivation.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {awaitingActivation.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No awaiting activation entries for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="2xl font-semibold text-slate-800 mb-4">Missing Payments</h2>
-          {missingPayments.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {missingPayments.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No missing payments for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Change of Addresses to Complete</h2>
-          {changeOfAddresses.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {changeOfAddresses.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No change of addresses for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">Room Transfers to Update HB</h2>
-          {roomTransfers.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {roomTransfers.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No room transfers for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">HB Calls</h2>
-          {hbCalls.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {hbCalls.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No HB calls for Housing Benefit found.</p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-slate-800 mb-4">HB Leavers</h2>
-          {hbLeavers.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {hbLeavers.map(log => (
-                <BenefitLogCard key={log.id} log={log} onViewDetails={handleViewDetails} onDelete={handleDelete} getResidentName={getResidentName} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-slate-500">No HB leavers for Housing Benefit found.</p>
-          )}
-        </section>
+      <div className="space-y-10">
+        {renderScrollableSection("Application Logs", applicationLogs)}
+        {renderScrollableSection("Requested Support Notes", requestedSupportNotes)}
+        {renderScrollableSection("Requested Documents", requestedDocuments)}
+        {renderScrollableSection("Suspended Claims", suspendedClaims)}
+        {renderScrollableSection("Awaiting Activation", awaitingActivation)}
+        {renderScrollableSection("Missing Payments", missingPayments)}
+        {renderScrollableSection("Change of Addresses to Complete", changeOfAddresses)}
+        {renderScrollableSection("Room Transfers to Update HB", roomTransfers)}
+        {renderScrollableSection("HB Calls", hbCalls)}
+        {renderScrollableSection("HB Leavers", hbLeavers)}
 
         {filteredLogs.length === 0 && !loading && (
           <Card>
