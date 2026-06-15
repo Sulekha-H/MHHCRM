@@ -44,6 +44,13 @@ useEffect(() => {
   }
 }, [supabase]); // Now loadData will run when supabase is ready
 
+  useEffect(() => {
+    if (properties.length > 0) {
+      const propIds = properties.map(p => p.ID).concat('unassigned');
+      setExpandedProperties(new Set(propIds));
+    }
+  }, [activeTab, properties]);
+
 useEffect(() => {
   if (!residents || residents.length === 0) return;
 
@@ -841,8 +848,11 @@ useEffect(() => {
   }, {});
 
   const getActiveResidentCount = (propertyId) => {
-    const propertyResidents = residentsByProperty[propertyId] || [];
-    return propertyResidents.filter(r => r.Status === 'Active').length;
+    // We want the total active count for the property regardless of which tab we are on
+    return residents.filter(r =>
+      (getResidentPropertyId(r) === propertyId || (propertyId === 'unassigned' && !getResidentPropertyId(r))) &&
+      r.Status === 'Active'
+    ).length;
   };
 
   const unassignedResidents = residentsByProperty['unassigned'] || [];
@@ -972,7 +982,7 @@ useEffect(() => {
             ))}
           </div>
         </div>
-      ) : activeTab === 'all' ? (
+      ) : (
         <div className="space-y-6 px-6">
           {properties.map((property) => {
             const propertyResidents = residentsByProperty[property.ID] || [];
@@ -1063,7 +1073,7 @@ useEffect(() => {
                            <div className="flex items-center gap-4">
                                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
                                   <Users className="w-4 h-4" />
-                                  <span>{unassignedResidents.filter(r => r.Status === 'Active').length} Active Resident{unassignedResidents.filter(r => r.Status === 'Active').length !== 1 ? 's' : ''}</span>
+                                  <span>{getActiveResidentCount('unassigned')} Active Resident{getActiveResidentCount('unassigned') !== 1 ? 's' : ''}</span>
                                </div>
                               {expandedProperties.has('unassigned') ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
                            </div>
@@ -1099,23 +1109,6 @@ useEffect(() => {
                  </Collapsible>
               </Card>
           )}
-
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
-          {filteredResidents.map((resident) => (
-            <ResidentCard
-              key={resident.ID}
-              resident={resident}
-              accommodations={accommodations}
-              onEdit={handleEdit}
-              onViewDetails={handleViewDetails}
-              onDelete={handleDelete}
-              getSupportLevelColor={getSupportLevelColor}
-              getStatusColor={getStatusColor}
-              isAdmin={true}
-            />
-          ))}
         </div>
       )}
 
