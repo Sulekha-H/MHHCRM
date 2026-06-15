@@ -109,6 +109,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     decision_date: log["Decision Date"] || log.decision_date || "",
     award_amount: log["Award Amount"] || log.award_amount || 0,
     next_review_date: log["Next Review Date"] || log.next_review_date || "",
+    gd_pdf_link: log["GD PDF Link"] || log.gd_pdf_link || "",
   } : {
     id: "",
     resident_id: "",
@@ -198,6 +199,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     decision_date: "",
     award_amount: 0,
     next_review_date: "",
+    gd_pdf_link: "",
   });
 
   // Update logged_by when currentUser becomes available
@@ -336,6 +338,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
 
     if (formData.benefit_type === 'housing_benefit') {
       supabaseData["Date Application Started"] = formData.date_application_started || null;
+      supabaseData["GD PDF Link"] = formData.gd_pdf_link || null;
       supabaseData["Application Saved Date"] = formData.application_saved_date || null;
       supabaseData["Completed Application Submitted Date"] = formData.completed_application_submitted_date || null;
       supabaseData["Claim Submission Reference"] = formData.claim_submission_reference || null;
@@ -1435,6 +1438,17 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
                     />
                     <p className="text-xs text-slate-500 mt-1">Status will auto-change to "Application Saved (Not Yet Submitted)" when this date is entered</p>
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="gd_pdf_link">GD PDF LINK *</Label>
+                  <Input
+                    id="gd_pdf_link"
+                    value={formData.gd_pdf_link}
+                    onChange={(e) => handleChange("gd_pdf_link", e.target.value)}
+                    placeholder="Enter Google Drive PDF link"
+                    required={formData.benefit_type === 'housing_benefit' && formData.log_type === 'application_log'}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

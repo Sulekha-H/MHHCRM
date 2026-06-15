@@ -90,6 +90,7 @@ export default function BenefitLogDetailModal({
   const sanctionAmount = log["Sanction Amount"] || log.sanction_amount;
   const dateResolved = log["Date Resolved"] || log.date_resolved;
   const notes = log.Notes || log.notes;
+  const gdPdfLink = log["GD PDF Link"] || log.gd_pdf_link;
 
   const residentName = residentId ? getResidentName(residentId) : 'N/A';
   const benefitTypeLabel = benefit_type?.toLowerCase().replace(/ /g, '_') === 'housing_benefit' ? 'Housing Benefit' :
@@ -173,6 +174,15 @@ export default function BenefitLogDetailModal({
                     <DetailItem icon={<FileText />} label="Claim Submission Reference">
                       {log.claim_submission_reference}
                     </DetailItem>
+                  )}
+                  {gdPdfLink && (
+                    <div className="col-span-full">
+                      <DetailItem icon={<LinkIcon />} label="GD PDF LINK">
+                        <a href={gdPdfLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                          {gdPdfLink}
+                        </a>
+                      </DetailItem>
+                    </div>
                   )}
                 </div>
 
