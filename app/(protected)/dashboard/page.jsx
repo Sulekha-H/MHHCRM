@@ -79,6 +79,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [loadingReminders, setLoadingReminders] = useState(true);
   const [properties, setProperties] = useState([]);
+  const [residents, setResidents] = useState([]);
 
   const delay = useCallback((ms) => new Promise(resolve => setTimeout(resolve, ms)), []);
 
@@ -126,26 +127,28 @@ export default function Dashboard() {
           serviceChargesResult,
           repairsResult,
           benefitLogsResult,
-          referralsResult,
+          orgReferralsResult,
+          selfReferralsResult,
           propertiesResult
         ] = await Promise.all([
-          retryApiCall(() => supabase.from('residents').select('*').eq('"Deleted"', false).order('"Created Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('incidents').select('*').eq('"Deleted"', false).order('"Incident Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('office_logs').select('*').order('"Date/Time"', { ascending: false })),
-          retryApiCall(() => supabase.from('tasks').select('*').eq('"Deleted"', false).order('"Due Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('compliance_logs').select('*').eq('"Deleted"', false)),
-          retryApiCall(() => supabase.from('accommodations').select('*').eq('"Deleted"', false)),
-          retryApiCall(() => supabase.from('quarterly_reviews').select('*').eq('"Deleted"', false)),
-          retryApiCall(() => supabase.from('service_charges').select('*').eq('"Deleted"', false)),
-          retryApiCall(() => supabase.from('repairs').select('*').order('"Reported Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('housing_benefit_logs').select('*').eq('"Deleted"', false).order('"Log Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('referrals').select('*').order('"Referral Date"', { ascending: false })),
-          retryApiCall(() => supabase.from('properties').select('*').eq('"Deleted"', false))
+          retryApiCall(() => supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false })),
+          retryApiCall(() => supabase.from('incidents').select('*').or('Deleted.is.null,Deleted.eq.false').order('Incident Date', { ascending: false })),
+          retryApiCall(() => supabase.from('office_logs').select('*').order('Date Time', { ascending: false })),
+          retryApiCall(() => supabase.from('tasks').select('*').or('Deleted.is.null,Deleted.eq.false').order('Due Date', { ascending: false })),
+          retryApiCall(() => supabase.from('compliance_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('accommodations').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('quarterly_reviews').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('service_charges').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('repairs').select('*').order('Reported Date', { ascending: false })),
+          retryApiCall(() => supabase.from('housing_benefit_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('Log Date', { ascending: false })),
+          retryApiCall(() => supabase.from('organisation_referrals').select('*').or('Deleted.is.null,Deleted.eq.false').order('Referral Date', { ascending: false })),
+          retryApiCall(() => supabase.from('self_referrals').select('*').or('Deleted.is.null,Deleted.eq.false').order('Referral Date', { ascending: false })),
+          retryApiCall(() => supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'))
         ]);
 
         console.log("[Dashboard] ✅ All data loaded successfully from Supabase");
 
-        const residents = residentsResult.data || [];
+        const residentsData = residentsResult.data || [];
         const allIncidents = incidentsResult.data || [];
         const officeLogs = officeLogsResult.data || [];
         const tasks = tasksResult.data || [];
@@ -155,13 +158,14 @@ export default function Dashboard() {
         const serviceCharges = serviceChargesResult.data || [];
         const repairs = repairsResult.data || [];
         const benefitLogs = benefitLogsResult.data || [];
-        const allReferrals = referralsResult.data || [];
+        const allReferrals = [...(orgReferralsResult.data || []), ...(selfReferralsResult.data || [])];
         const allProperties = propertiesResult.data || [];
 
         setProperties(allProperties);
+        setResidents(residentsData);
 
         // Calculate stats
-        const activeResidents = residents.filter(r => {
+        const activeResidents = residentsData.filter(r => {
           const status = (r.Status || '').toLowerCase();
           return status === 'active';
         });
@@ -174,7 +178,9 @@ export default function Dashboard() {
         const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
         const todayLogs = officeLogs.filter(log => {
-          const logDate = new Date(log["Date/Time"]);
+          const logDateStr = log["Date Time"] || log.date_time || log["Date/Time"];
+          if (!logDateStr) return false;
+          const logDate = new Date(logDateStr);
           return logDate >= todayStart && logDate < todayEnd;
         });
 
@@ -192,7 +198,9 @@ export default function Dashboard() {
         weekEnd.setHours(23, 59, 59, 999);
 
         const thisWeekLogs = officeLogs.filter(log => {
-          const logDate = new Date(log["Date/Time"]);
+          const logDateStr = log["Date Time"] || log.date_time || log["Date/Time"];
+          if (!logDateStr) return false;
+          const logDate = new Date(logDateStr);
           return logDate >= weekStart && logDate <= weekEnd;
         });
 
@@ -202,7 +210,9 @@ export default function Dashboard() {
         fourWeeksAgo.setHours(0, 0, 0, 0);
 
         const recentIncidents = allIncidents.filter(incident => {
-          const incidentDate = new Date(incident["Incident Date"]);
+          const incidentDateStr = incident["Incident Date"] || incident.incident_date;
+          if (!incidentDateStr) return false;
+          const incidentDate = new Date(incidentDateStr);
           return incidentDate >= fourWeeksAgo && incidentDate <= currentDate;
         });
 
@@ -222,24 +232,26 @@ export default function Dashboard() {
         const threeDaysFromNow = addDays(now, 3);
         const overdueTasks = tasks.filter(t => {
           const status = (t.Status || '').toLowerCase().replace(/ /g, '_');
-          return status !== 'completed' && new Date(t["Due Date"]) < now;
+          const dueDateStr = t["Due Date"] || t.due_date;
+          return status !== 'completed' && dueDateStr && new Date(dueDateStr) < now;
         });
         const dueSoonTasks = tasks.filter(t => {
           const status = (t.Status || '').toLowerCase().replace(/ /g, '_');
-          const dueDate = new Date(t["Due Date"]);
-          return status !== 'completed' && dueDate >= now && dueDate <= threeDaysFromNow;
+          const dueDateStr = t["Due Date"] || t.due_date;
+          const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+          return status !== 'completed' && dueDate && dueDate >= now && dueDate <= threeDaysFromNow;
         });
 
         // Find current user's name from Clerk
         const currentUserName = user?.fullName?.trim().toLowerCase();
         
         const myOverdueTasks = overdueTasks.filter(t => {
-          const assignedTo = t["Assigned to (User ID)"]?.trim().toLowerCase();
+          const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id)?.trim().toLowerCase();
           return assignedTo && currentUserName && assignedTo === currentUserName;
         });
         
         const myDueSoonTasks = dueSoonTasks.filter(t => {
-          const assignedTo = t["Assigned to (User ID)"]?.trim().toLowerCase();
+          const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id)?.trim().toLowerCase();
           return assignedTo && currentUserName && assignedTo === currentUserName;
         });
 
@@ -255,12 +267,16 @@ export default function Dashboard() {
 
         // Compliance Summary
         const thirtyDaysFromNow = addDays(now, 30);
-        const overdueCompliance = complianceLogs.filter(c => new Date(c["Expiry Date"]) < now && !c.Actioned);
-        const expiringSoonCompliance = complianceLogs.filter(c => 
-          new Date(c["Expiry Date"]) >= now && 
-          new Date(c["Expiry Date"]) <= thirtyDaysFromNow &&
-          !c.Actioned
-        );
+        const overdueCompliance = complianceLogs.filter(c => {
+          const expiryDateStr = c["Expiry Date"] || c.expiry_date;
+          return expiryDateStr && new Date(expiryDateStr) < now && !c.Actioned;
+        });
+        const expiringSoonCompliance = complianceLogs.filter(c => {
+          const expiryDateStr = c["Expiry Date"] || c.expiry_date;
+          if (!expiryDateStr) return false;
+          const expiryDate = new Date(expiryDateStr);
+          return expiryDate >= now && expiryDate <= thirtyDaysFromNow && !c.Actioned;
+        });
 
         setComplianceSummary({
           overdue: overdueCompliance.length,
@@ -1245,10 +1261,10 @@ export default function Dashboard() {
                     <div key={incident.ID} className="border-l-4 border-red-400 pl-3 py-2">
                       <div className="flex items-center justify-between mb-1">
                         <Badge className="bg-red-100 text-red-800 text-xs">
-                          {incident["Incident Type"]?.replace(/_/g, ' ')}
+                              {(incident["Incident Type"] || incident.incident_type)?.replace(/_/g, ' ')}
                         </Badge>
                         <span className="text-xs text-gray-500">
-                          {format(new Date(incident["Incident Date"]), 'MMM d')}
+                              {format(new Date(incident["Incident Date"] || incident.incident_date), 'MMM d')}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 font-medium">{incident.Description?.slice(0, 60)}...</p>
@@ -1282,10 +1298,10 @@ export default function Dashboard() {
                     <div key={log.ID} className="border-l-4 border-blue-400 pl-3 py-2">
                       <div className="flex items-center justify-between mb-1">
                         <Badge className="bg-blue-100 text-blue-800 text-xs capitalize">
-                          {log["Log Type"]?.replace(/_/g, ' ')}
+                              {(log["Log Type"] || log.log_type)?.replace(/_/g, ' ')}
                         </Badge>
                         <span className="text-xs text-gray-500">
-                          {format(new Date(log["Date/Time"]), 'MMM d')}
+                              {format(new Date(log["Date Time"] || log.date_time || log["Date/Time"]), 'MMM d')}
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 font-medium">
