@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Calendar, User, HandCoins, FileText, Banknote, AlertTriangle, Trash2 } from "lucide-react";
+import { Edit, Calendar, User, HandCoins, FileText, Banknote, AlertTriangle, Trash2, Link } from "lucide-react";
 import { format } from "date-fns";
 
 export default function BenefitLogCard({ log, onViewDetails, onDelete, getResidentName }) {
@@ -53,6 +53,7 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
   const amount = log.Amount || log.amount || log["Award Amount"] || log.award_amount;
   const applicationDate = log["Application Date"] || log.application_date || log["Date Sent Off"] || log.date_sent_off;
   const deadlineDate = log["Deadline Date"] || log.deadline_date;
+  const gdPdfLink = log["GD PDF Link"] || log.gd_pdf_link;
 
   return (
     <Card 
@@ -135,6 +136,23 @@ export default function BenefitLogCard({ log, onViewDetails, onDelete, getReside
                     <span className="text-slate-500">
                         App: {format(new Date(applicationDate), 'PP')}
                     </span>
+                </div>
+            </div>
+        )}
+
+        {gdPdfLink && (
+            <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-[11px]">
+                    <Link className="w-3 h-3 text-blue-500" />
+                    <a
+                      href={gdPdfLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      GD PDF Link
+                    </a>
                 </div>
             </div>
         )}
