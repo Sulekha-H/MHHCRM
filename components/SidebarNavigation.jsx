@@ -33,7 +33,8 @@ import {
   FileStack,
   Trash2,
   Zap,
-  ClipboardCheck
+  ClipboardCheck,
+  ShoppingCart
 } from "lucide-react";
 
 export default function SidebarNavigation() {
@@ -74,6 +75,7 @@ export default function SidebarNavigation() {
     { name: "Incidents", href: "/incidents", icon: AlertTriangle, current: pathname === "/incidents" },
     { name: "Office Logs", href: "/officelogs", icon: FileText, current: pathname === "/officelogs" },
     { name: "Repairs", href: "/repairs", icon: Wrench, current: pathname === "/repairs" },
+    { name: "Property Purchases", href: "/property-purchases", icon: ShoppingCart, current: pathname === "/property-purchases" },
   ];
 
   const supportNav = [
