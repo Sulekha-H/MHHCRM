@@ -5,19 +5,21 @@
 ▲ Next.js 16.2.9 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-✓ Ready in 830ms
-Attention: Next.js now collects completely anonymous telemetry regarding usage.
-This information is used to shape Next.js' roadmap and prioritize features.
-You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
-https://nextjs.org/telemetry
-
+✓ Ready in 528ms
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
 
-○ Compiling / ...
+○ Compiling /room-breakdown ...
 
 [35m
 [Clerk]:[0m You are running in keyless mode.
-You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=dhnacy00v2ddkvh7tjgjr3gii9ni4bfvmp9e9smb&return_url=http%3A%2F%2Flocalhost%3A3000%2F
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=ol1rxc194czykg90zxsrl1c6qxmpczpzx378uq74&return_url=http%3A%2F%2Flocalhost%3A3000%2F
 
- HEAD / 200 in 9.3s (next.js: 7.7s, proxy.ts: 162ms, application-code: 1467ms)
- GET /dashboard 200 in 1762ms (next.js: 1518ms, proxy.ts: 22ms, application-code: 222ms)
+ GET /room-breakdown 200 in 8.9s (next.js: 7.1s, proxy.ts: 179ms, application-code: 1571ms)
+ POST /room-breakdown 200 in 45ms (next.js: 8ms, proxy.ts: 17ms, application-code: 21ms)
+  └─ ƒ detectKeylessEnvDriftAction() in 1ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview (https://thorough-swift-22.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js:19:7048)
+ GET /room-breakdown 404 in 1888ms (next.js: 1707ms, proxy.ts: 29ms, application-code: 152ms)
+ POST /room-breakdown 303 in 1955ms (next.js: 5ms, proxy.ts: 8ms, application-code: 1942ms)
+  └─ ƒ syncKeylessConfigAction({"apiKeysUrl":"https://dashboard.clerk.com/apps/app_3FDtXTVYgB1WJbWh2dEIC2swdi4/instances/ins_3FDtXOuJKL7oPgaxmzvBoa3yaAv/api-keys","claimUrl":"https://dashboard.clerk.com/apps/claim?token=ol1rxc194czykg90zxsrl1c6qxmpczpzx378uq74","...":"3 items not stringified"}) in 9ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+[browser] Failed to fetch RSC payload for http://localhost:3000/clerk-sync-keyless?returnUrl=http://localhost:3000/room-breakdown. Falling back to browser navigation. TypeError: Failed to fetch
+[?25h

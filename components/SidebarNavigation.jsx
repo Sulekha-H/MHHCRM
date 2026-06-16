@@ -65,6 +65,7 @@ export default function SidebarNavigation() {
     { name: "Dashboard", href: "/", icon: Home, current: pathname === "/" },
     { name: "Staff Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
     { name: "Standard Residents", href: "/residents", icon: Users, current: pathname === "/residents" },
+    { name: "Room Breakdown", href: "/room-breakdown", icon: Bed, current: pathname === "/room-breakdown" },
     { name: "Properties", href: "/properties", icon: Building, current: pathname === "/properties" },
     { name: "Accommodations", href: "/accommodations", icon: Bed, current: pathname === "/accommodations" },
   ];
