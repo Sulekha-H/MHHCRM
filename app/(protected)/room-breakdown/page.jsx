@@ -50,15 +50,25 @@ export default function RoomBreakdownPage() {
     try {
       // 1. Load Residents (Standard & Allocated)
       const [resResult, allocResResult, assignResult, userResult] = await Promise.all([
-        supabase.from('residents').select('id, first_name, last_name').eq('status', 'active'),
-        supabase.from('allocated_residents').select('id, first_name, last_name'),
+        supabase.from('residents').select('"ID", "First Name", "Last Name", "Status"').eq('Status', 'Active'),
+        supabase.from('allocated_residents').select('"ID", "First Name", "Last Name"'),
         supabase.from('room_assignments').select('*').eq('Deleted', false).order('Created Date', { ascending: false }),
         user?.primaryEmailAddress?.emailAddress ? supabase.from('users').select('*').eq('Email', user.primaryEmailAddress.emailAddress).single() : Promise.resolve({ data: null })
       ]);
 
       const allResidents = [
-        ...(resResult.data || []).map(r => ({ ...r, is_allocated: false })),
-        ...(allocResResult.data || []).map(r => ({ ...r, is_allocated: true }))
+        ...(resResult.data || []).map(r => ({
+          id: r.ID,
+          first_name: r["First Name"],
+          last_name: r["Last Name"],
+          is_allocated: false
+        })),
+        ...(allocResResult.data || []).map(r => ({
+          id: r.ID || r.id,
+          first_name: r["First Name"] || r.first_name,
+          last_name: r["Last Name"] || r.last_name,
+          is_allocated: true
+        }))
       ];
       setResidents(allResidents);
       setAssignments(assignResult.data || []);
