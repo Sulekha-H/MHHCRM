@@ -15,6 +15,56 @@ import {
 import { createPageUrl } from "@/lib/utils";
 import { format, addDays } from "date-fns";
 
+const calculateTimeLeft = (deadline) => {
+  const now = new Date();
+  const target = new Date(deadline);
+  // Set target to end of the day (23:59:59) for deadline dates
+  target.setHours(23, 59, 59, 999);
+
+  const diff = target - now;
+
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, isOverdue: true, totalMinutesOverdue: Math.floor(Math.abs(diff) / (1000 * 60)) };
+  }
+
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((diff / 1000 / 60) % 60),
+    isOverdue: false
+  };
+};
+
+const CountdownDisplay = ({ deadline }) => {
+  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(deadline));
+
+  useEffect(() => {
+    setTimeLeft(calculateTimeLeft(deadline));
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft(deadline));
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, [deadline]);
+
+  if (timeLeft.isOverdue) {
+    const days = Math.floor(timeLeft.totalMinutesOverdue / (60 * 24));
+    const hours = Math.floor((timeLeft.totalMinutesOverdue / 60) % 24);
+    const minutes = Math.floor(timeLeft.totalMinutesOverdue % 60);
+
+    if (days > 0) return <span>{days}d {hours}h {minutes}m overdue</span>;
+    if (hours > 0) return <span>{hours}h {minutes}m overdue</span>;
+    return <span>{minutes}m overdue</span>;
+  }
+
+  const parts = [];
+  if (timeLeft.days > 0) parts.push(`${timeLeft.days}d`);
+  if (timeLeft.hours > 0 || timeLeft.days > 0) parts.push(`${timeLeft.hours}h`);
+  parts.push(`${timeLeft.minutes}m`);
+
+  return <span>{parts.join(" ")} remaining</span>;
+};
+
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const supabase = useClerkSupabaseClient();
@@ -480,26 +530,26 @@ export default function Dashboard() {
             if (deleted) return false;
             const benefitType = (log["Benefit Type"] || '').toLowerCase().replace(/ /g, '_');
             const logType = (log["Log Type"] || '').toLowerCase().replace(/ /g, '_');
-            const supportNotesSent = log["Support Notes Sent"] || log.support_notes_sent || false;
             const deadlineDate = log["Deadline Date"] || log.deadline_date;
 
             return benefitType === 'housing_benefit' &&
                    logType === 'requested_support_notes' &&
-                   !supportNotesSent &&
                    deadlineDate;
           })
           .map(log => {
             const deadlineDate = new Date(log["Deadline Date"] || log.deadline_date);
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            deadlineDate.setHours(0, 0, 0, 0);
 
-            const diffTime = deadlineDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            // For initial sorting, use the difference including time
+            const target = new Date(deadlineDate);
+            target.setHours(23, 59, 59, 999);
+            const diffTime = target - today;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
             return {
               ...log,
-              daysRemaining: diffDays
+              daysRemaining: diffDays,
+              exactDeadline: target.toISOString()
             };
           })
           .sort((a, b) => a.daysRemaining - b.daysRemaining);
@@ -1114,26 +1164,35 @@ export default function Dashboard() {
                   <div className="mt-6 border-t border-purple-200 pt-4">
                     <h4 className="text-sm font-semibold text-purple-800 mb-3 flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      Pending Support Note Requests
+                      Support Note Request Deadlines
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {housingBenefitSummary.pendingSupportNoteRequests.map(request => {
                         const resident = residents.find(r => r.ID === request["Resident ID"]);
                         const isOverdue = request.daysRemaining < 0;
                         const isDueSoon = request.daysRemaining >= 0 && request.daysRemaining <= 3;
+                        const isSent = request["Support Notes Sent"] || request.support_notes_sent || false;
 
                         return (
                           <div
                             key={request.ID}
                             className={`p-3 rounded-lg border flex flex-col justify-between ${
+                              isSent ? 'bg-green-50 border-green-200' :
                               isOverdue ? 'bg-red-50 border-red-200' :
                               isDueSoon ? 'bg-orange-50 border-orange-200' :
                               'bg-white border-purple-100'
                             }`}
                           >
                             <div>
-                              <div className="font-medium text-slate-900 truncate">
-                                {resident ? `${resident["First Name"]} ${resident["Last Name"]}` : request.Title}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="font-medium text-slate-900 truncate flex-1">
+                                  {resident ? `${resident["First Name"]} ${resident["Last Name"]}` : request.Title}
+                                </div>
+                                {isSent && (
+                                  <Badge className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4 px-1 shadow-none">
+                                    Sent
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-xs text-slate-600 mt-1 truncate">
                                 {request.Title}
@@ -1141,15 +1200,12 @@ export default function Dashboard() {
                             </div>
                             <div className="flex items-center justify-between mt-3">
                               <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                isSent ? 'bg-green-100 text-green-700' :
                                 isOverdue ? 'bg-red-100 text-red-700' :
                                 isDueSoon ? 'bg-orange-100 text-orange-700' :
                                 'bg-purple-100 text-purple-700'
                               }`}>
-                                {isOverdue ? (
-                                  `${Math.abs(request.daysRemaining)} ${Math.abs(request.daysRemaining) === 1 ? 'day' : 'days'} overdue`
-                                ) : (
-                                  `${request.daysRemaining} ${request.daysRemaining === 1 ? 'day' : 'days'} remaining`
-                                )}
+                                <CountdownDisplay deadline={request.exactDeadline || request["Deadline Date"] || request.deadline_date} />
                               </div>
                               <div className="text-[10px] text-slate-500">
                                 Due: {format(new Date(request["Deadline Date"] || request.deadline_date), 'MMM d')}
