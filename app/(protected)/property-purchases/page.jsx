@@ -156,6 +156,7 @@ export default function PropertyPurchases() {
           .eq('"ID"', editingPurchase["ID"] || editingPurchase.id);
         if (error) throw error;
       } else {
+        supabaseData.ID = crypto.randomUUID();
         supabaseData["Created Date"] = new Date().toISOString();
         const { error } = await supabase
           .from('property_purchases')

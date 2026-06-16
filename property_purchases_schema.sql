@@ -10,6 +10,7 @@ CREATE TABLE property_purchases (
     "Category" TEXT,
     "Status" TEXT DEFAULT 'Ordered', -- Suggested: Ordered, Pending, Delivered, Cancelled
     "Receipt Link" TEXT,
+    "Notes" TEXT,
     "Logged By" TEXT,
     "Created Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     "Updated Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
