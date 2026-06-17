@@ -86,7 +86,7 @@ export default function RoomAssignmentHistory({
                       {format(new Date(item['Created Date']), 'dd/MM/yyyy HH:mm')}
                     </TableCell>
                     <TableCell className={`font-medium ${item['Is Allocated'] ? 'text-blue-600' : ''}`}>
-                      {getResidentName(item['Resident ID'])}
+                      {getResidentName(item['Is Allocated'] ? item['Resident ID AR'] : item['Resident ID'])}
                     </TableCell>
                     <TableCell className="capitalize">{item.Status || "-"}</TableCell>
                     <TableCell className="text-xs">

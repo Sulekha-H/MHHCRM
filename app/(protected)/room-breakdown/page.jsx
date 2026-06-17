@@ -95,13 +95,17 @@ export default function RoomBreakdownPage() {
   const handleQuickStatusChange = async (propertyName, roomName, slot, newStatus) => {
     const existing = getLatestAssignment(propertyName, roomName, slot);
 
+    const isAllocated = existing?.['Is Allocated'] || false;
+    const residentId = existing?.['Resident ID'] || existing?.['Resident ID AR'] || null;
+
     const newAssignment = {
       "ID": crypto.randomUUID(),
       "Property Name": propertyName,
       "Room Name": roomName,
       "Slot": slot,
-      "Resident ID": existing?.['Resident ID'] || null,
-      "Is Allocated": existing?.['Is Allocated'] || false,
+      "Resident ID": isAllocated ? null : residentId,
+      "Resident ID AR": isAllocated ? residentId : null,
+      "Is Allocated": isAllocated,
       "Status": newStatus,
       "Start Date": existing?.['Start Date'] || null,
       "End Date": existing?.['End Date'] || null,
@@ -118,13 +122,17 @@ export default function RoomBreakdownPage() {
   };
 
   const handleFormSubmit = async (formData) => {
+    const isAllocated = formData.is_allocated;
+    const residentId = formData.resident_id === "none" ? null : formData.resident_id;
+
     const newAssignment = {
       "ID": crypto.randomUUID(),
       "Property Name": activeSlot.propertyName,
       "Room Name": activeSlot.roomName,
       "Slot": activeSlot.slot,
-      "Resident ID": formData.resident_id === "none" ? null : formData.resident_id,
-      "Is Allocated": formData.is_allocated,
+      "Resident ID": isAllocated ? null : residentId,
+      "Resident ID AR": isAllocated ? residentId : null,
+      "Is Allocated": isAllocated,
       "Status": formData.status,
       "Start Date": formData.start_date || null,
       "End Date": formData.end_date || null,
@@ -144,7 +152,8 @@ export default function RoomBreakdownPage() {
 
   const renderCell = (propertyName, roomName, slot) => {
     const assignment = getLatestAssignment(propertyName, roomName, slot);
-    const resident = assignment?.['Resident ID'] ? residents.find(r => (r.id || r.Id) === assignment['Resident ID']) : null;
+    const residentId = assignment?.['Is Allocated'] ? assignment?.['Resident ID AR'] : assignment?.['Resident ID'];
+    const resident = residentId ? residents.find(r => (r.id || r.Id) === residentId) : null;
     const keycode = KEYCODES.find(k => k.value === assignment?.Status);
 
     return (
@@ -292,16 +301,20 @@ export default function RoomBreakdownPage() {
           isOpen={showForm}
           onClose={() => setShowForm(false)}
           onSubmit={handleFormSubmit}
-          initialData={activeSlot ? {
-            ...getLatestAssignment(activeSlot.propertyName, activeSlot.roomName, activeSlot.slot),
-            propertyName: activeSlot.propertyName,
-            roomName: activeSlot.roomName,
-            slot: activeSlot.slot,
-            resident_id: getLatestAssignment(activeSlot.propertyName, activeSlot.roomName, activeSlot.slot)?.['Resident ID'] || "",
-            status: getLatestAssignment(activeSlot.propertyName, activeSlot.roomName, activeSlot.slot)?.Status || "",
-            start_date: getLatestAssignment(activeSlot.propertyName, activeSlot.roomName, activeSlot.slot)?.['Start Date'] || "",
-            end_date: getLatestAssignment(activeSlot.propertyName, activeSlot.roomName, activeSlot.slot)?.['End Date'] || "",
-          } : null}
+          initialData={activeSlot ? (() => {
+            const assignment = getLatestAssignment(activeSlot.propertyName, activeSlot.roomName, activeSlot.slot);
+            return {
+              ...assignment,
+              propertyName: activeSlot.propertyName,
+              roomName: activeSlot.roomName,
+              slot: activeSlot.slot,
+              resident_id: (assignment?.['Is Allocated'] ? assignment?.['Resident ID AR'] : assignment?.['Resident ID']) || "",
+              is_allocated: assignment?.['Is Allocated'] || false,
+              status: assignment?.Status || "",
+              start_date: assignment?.['Start Date'] || "",
+              end_date: assignment?.['End Date'] || "",
+            };
+          })() : null}
           residents={residents}
           currentUser={currentUser}
         />
