@@ -46,6 +46,10 @@ export default function NotificationCenter() {
   }, [loadCurrentUser]);
 
   const checkDurationExceeded = useCallback(async () => {
+    // Note: Duration-based alerts are disabled because Target Duration and Actual Start Time
+    // columns are not present in the current database schema.
+    return;
+
     if (!supabase || !currentUser) return;
 
     const { data: tasks, error } = await supabase
