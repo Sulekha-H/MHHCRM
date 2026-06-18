@@ -18,8 +18,7 @@ export default function TaskForm({ task, users, residents, properties, onSubmit,
     Priority: "Medium",
     "Assigned To User ID": "",
     "Related Entity": "None",
-    "Related Entity ID": "",
-    "Target Duration": ""
+    "Related Entity ID": ""
   });
 
   const handleSubmit = (e) => {
@@ -190,20 +189,6 @@ export default function TaskForm({ task, users, residents, properties, onSubmit,
                     <SelectItem value="Overdue">Overdue</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="target_duration" className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-cyan-600" />
-                  Speculate Duration (Minutes)
-                </Label>
-                <Input
-                  id="target_duration"
-                  type="number"
-                  value={formData["Target Duration"]}
-                  onChange={(e) => handleChange("Target Duration", e.target.value)}
-                  placeholder="How long might this take? e.g. 30"
-                  className="border-cyan-100 focus:border-cyan-300 focus:ring-cyan-100"
-                />
               </div>
             </div>
           </div>

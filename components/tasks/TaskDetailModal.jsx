@@ -127,22 +127,6 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                             )}
                         </div>
 
-                        <Separator className="my-6" />
-                        <h3 className="text-xl font-semibold text-slate-800 mb-4">Timing & Duration</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <DetailItem icon={<Clock />} label="Target Duration">
-                                {targetDuration ? `${targetDuration} minutes` : 'Not set'}
-                            </DetailItem>
-                            <DetailItem icon={<Clock />} label="Actual Duration">
-                                {durationTaken ? `${durationTaken} minutes` : (status === 'Completed' ? 'N/A' : 'Pending')}
-                            </DetailItem>
-                            <DetailItem icon={<Play />} label="Start Time">
-                                {actualStartTime ? format(new Date(actualStartTime), 'dd MMM, HH:mm') : 'Not started'}
-                            </DetailItem>
-                            <DetailItem icon={<CheckCircle2 />} label="End Time">
-                                {actualEndTime ? format(new Date(actualEndTime), 'dd MMM, HH:mm') : 'Not ended'}
-                            </DetailItem>
-                        </div>
 
                         <DialogFooter className="mt-8 flex flex-wrap gap-2">
                             {((assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()) && (

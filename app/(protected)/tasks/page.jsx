@@ -158,17 +158,14 @@ export default function TasksPage() {
   };
 
   const handleStartTask = async (task) => {
-    await supabase.from('tasks').update({ Status: "In Progress", "Actual Start Time": new Date().toISOString() }).eq('ID', task.ID);
+    // Note: Actual Start Time column doesn't exist in the database, only updating Status
+    await supabase.from('tasks').update({ Status: "In Progress" }).eq('ID', task.ID);
     loadTasks();
   };
 
   const handleCompleteTask = async (task) => {
-    const startTime = task["Actual Start Time"];
-    let durationTaken = null;
-    if (startTime) {
-      durationTaken = Math.round((new Date() - new Date(startTime)) / (1000 * 60));
-    }
-    await supabase.from('tasks').update({ Status: "Completed", "Actual End Time": new Date().toISOString(), "Duration Taken": durationTaken }).eq('ID', task.ID);
+    // Note: Actual End Time and Duration Taken columns don't exist in the database, only updating Status
+    await supabase.from('tasks').update({ Status: "Completed" }).eq('ID', task.ID);
     loadTasks();
   };
 

@@ -27,8 +27,9 @@ export default function TaskCard({
   const priority = task.Priority || task.priority;
   const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id || task.assigned_to;
   const loggedBy = task["Logged By"] || task.logged_by;
-  const targetDuration = task["Target Duration"] || task.target_duration;
-  const actualStartTime = task["Actual Start Time"] || task.actual_start_time;
+  // These columns don't exist in the user's database
+  const targetDuration = null;
+  const actualStartTime = null;
 
   useEffect(() => {
     let interval;
@@ -112,11 +113,6 @@ export default function TaskCard({
           <h3 className={`text-sm font-medium truncate ${isCompleted ? 'line-through text-slate-400' : 'text-slate-900'}`}>
             {title}
           </h3>
-          {targetDuration && (
-            <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap">
-              ({targetDuration}m)
-            </span>
-          )}
           {isUpNext && (
             <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-none text-[10px] h-4 px-1.5 font-bold uppercase tracking-tight">
               Up Next
