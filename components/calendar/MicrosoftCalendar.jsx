@@ -106,15 +106,21 @@ export default function MicrosoftCalendar() {
 
       const res = await fetch(`/api/microsoft-calendar/events?start=${start.toISOString()}&end=${end.toISOString()}`);
       const data = await res.json();
-      if (Array.isArray(data)) {
+
+      if (res.ok && Array.isArray(data)) {
         setEvents(data);
       } else {
-          console.error("Data is not an array:", data);
+          const errorMsg = data.message || data.error || "Failed to load events";
+          console.error("Error fetching events:", data);
+          toast.error(errorMsg, {
+            description: "Please check your Microsoft 365 integration settings.",
+            duration: 5000
+          });
           setEvents([]);
       }
     } catch (error) {
       console.error("Error fetching events:", error);
-      toast.error("Failed to load calendar events");
+      toast.error("Network error: Could not reach the calendar service.");
     } finally {
       setLoading(false);
     }
@@ -209,7 +215,10 @@ export default function MicrosoftCalendar() {
         setIsEventModalOpen(false);
         fetchEvents();
       } else {
-        toast.error("Failed to save event");
+        const errorData = await res.json();
+        toast.error(errorData.message || "Failed to save event", {
+            description: errorData.error || "Please check your connection and try again."
+        });
       }
     } catch (error) {
       console.error("Error saving event:", error);

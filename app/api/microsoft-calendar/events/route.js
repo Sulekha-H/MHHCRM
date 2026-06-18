@@ -24,6 +24,9 @@ async function getAccessToken() {
   });
 
   const data = await response.json();
+  if (!response.ok) {
+    throw new Error(`Microsoft Auth Error: ${data.error_description || data.error || response.statusText}`);
+  }
   return data.access_token;
 }
 
@@ -31,19 +34,29 @@ export async function GET(request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized', message: 'You must be logged in to access the calendar.' }, { status: 401 });
+    }
+
+    if (!CLIENT_ID || !TENANT_ID || !CLIENT_SECRET || !SHARED_MAILBOX) {
+      return NextResponse.json({ error: 'Configuration Error', message: 'Microsoft 365 credentials are not fully configured on the server.' }, { status: 500 });
     }
 
     const { searchParams } = new URL(request.url);
     const start = searchParams.get('start');
     const end = searchParams.get('end');
 
-    const token = await getAccessToken();
+    let token;
+    try {
+      token = await getAccessToken();
+    } catch (authError) {
+      console.error('[API] Microsoft Token Error:', authError.message);
+      return NextResponse.json({ error: 'Authentication Failed', message: authError.message }, { status: 401 });
+    }
+
     let url = `https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events`;
 
     if (start && end) {
-        // Use calendarView for a expanded view of recurring events
-        url = `https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/calendarView?startDateTime=${start}&endDateTime=${end}`;
+      url = `https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/calendarView?startDateTime=${start}&endDateTime=${end}`;
     }
 
     const response = await fetch(url, {
@@ -54,15 +67,19 @@ export async function GET(request) {
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        return NextResponse.json(errorData, { status: response.status });
+      const errorData = await response.json();
+      console.error('[API] Microsoft Graph API Error (GET):', errorData);
+      return NextResponse.json({
+        error: 'Microsoft API Error',
+        message: errorData.error?.message || 'Failed to fetch events from Microsoft.'
+      }, { status: response.status });
     }
 
     const data = await response.json();
     return NextResponse.json(data.value || []);
   } catch (error) {
-    console.error('Error fetching Microsoft Calendar events:', error);
-    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 });
+    console.error('Unexpected error in GET /api/microsoft-calendar/events:', error);
+    return NextResponse.json({ error: 'Server Error', message: error.message }, { status: 500 });
   }
 }
 
@@ -70,11 +87,17 @@ export async function POST(request) {
   try {
     const { userId } = await auth();
     if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized', message: 'You must be logged in to access the calendar.' }, { status: 401 });
     }
 
     const eventData = await request.json();
-    const token = await getAccessToken();
+
+    let token;
+    try {
+      token = await getAccessToken();
+    } catch (authError) {
+      return NextResponse.json({ error: 'Authentication Failed', message: authError.message }, { status: 401 });
+    }
 
     const response = await fetch(`https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events`, {
       method: 'POST',
@@ -87,71 +110,95 @@ export async function POST(request) {
 
     const data = await response.json();
     if (!response.ok) {
-        return NextResponse.json(data, { status: response.status });
+      console.error('[API] Microsoft Graph API Error (POST):', data);
+      return NextResponse.json({
+        error: 'Microsoft API Error',
+        message: data.error?.message || 'Failed to create event in Microsoft.'
+      }, { status: response.status });
     }
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error creating Microsoft Calendar event:', error);
-    return NextResponse.json({ error: 'Failed to create event' }, { status: 500 });
+    console.error('Unexpected error in POST /api/microsoft-calendar/events:', error);
+    return NextResponse.json({ error: 'Server Error', message: error.message }, { status: 500 });
   }
 }
 
 export async function PATCH(request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized', message: 'You must be logged in.' }, { status: 401 });
+    }
+
+    const { id, ...eventData } = await request.json();
+
+    let token;
     try {
-      const { userId } = await auth();
-      if (!userId) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+      token = await getAccessToken();
+    } catch (authError) {
+      return NextResponse.json({ error: 'Authentication Failed', message: authError.message }, { status: 401 });
+    }
 
-      const { id, ...eventData } = await request.json();
-      const token = await getAccessToken();
+    const response = await fetch(`https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events/${id}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
 
-      const response = await fetch(`https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events/${id}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(eventData),
-      });
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('[API] Microsoft Graph API Error (PATCH):', data);
+      return NextResponse.json({
+        error: 'Microsoft API Error',
+        message: data.error?.message || 'Failed to update event in Microsoft.'
+      }, { status: response.status });
+    }
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Unexpected error in PATCH /api/microsoft-calendar/events:', error);
+    return NextResponse.json({ error: 'Server Error', message: error.message }, { status: 500 });
+  }
+}
 
+export async function DELETE(request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    let token;
+    try {
+      token = await getAccessToken();
+    } catch (authError) {
+      return NextResponse.json({ error: 'Authentication Failed', message: authError.message }, { status: 401 });
+    }
+
+    const response = await fetch(`https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return NextResponse.json({ success: true });
+    } else {
       const data = await response.json();
-      if (!response.ok) {
-          return NextResponse.json(data, { status: response.status });
-      }
-      return NextResponse.json(data);
-    } catch (error) {
-      console.error('Error updating Microsoft Calendar event:', error);
-      return NextResponse.json({ error: 'Failed to update event' }, { status: 500 });
+      console.error('[API] Microsoft Graph API Error (DELETE):', data);
+      return NextResponse.json({
+        error: 'Microsoft API Error',
+        message: data.error?.message || 'Failed to delete event in Microsoft.'
+      }, { status: response.status });
     }
+  } catch (error) {
+    console.error('Unexpected error in DELETE /api/microsoft-calendar/events:', error);
+    return NextResponse.json({ error: 'Server Error', message: error.message }, { status: 500 });
   }
-
-  export async function DELETE(request) {
-    try {
-      const { userId } = await auth();
-      if (!userId) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
-      const { searchParams } = new URL(request.url);
-      const id = searchParams.get('id');
-      const token = await getAccessToken();
-
-      const response = await fetch(`https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 204) {
-        return NextResponse.json({ success: true });
-      } else {
-          const data = await response.json();
-          return NextResponse.json(data, { status: response.status });
-      }
-    } catch (error) {
-      console.error('Error deleting Microsoft Calendar event:', error);
-      return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
-    }
-  }
+}
