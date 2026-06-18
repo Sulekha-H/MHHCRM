@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, subDays, isSameDay } from "date-fns";
 import { injectRoutineTasks } from "@/lib/taskUtils";
+import { generateUUID } from "@/lib/utils";
 import { ROUTINE_TITLES, WEEKLY_ROUTINES } from "@/lib/constants/routines";
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
@@ -141,7 +142,7 @@ export default function TasksPage() {
       } else {
         const { error } = await supabase.from('tasks').insert([{
           ...taskData,
-          ID: crypto.randomUUID(),
+          ID: generateUUID(),
           "Created Date": new Date().toISOString(),
           "Updated Date": new Date().toISOString(),
           "Created By": currentUser?.Email || "Unknown"
