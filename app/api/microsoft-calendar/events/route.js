@@ -33,12 +33,27 @@ async function getAccessToken() {
 export async function GET(request) {
   try {
     const { userId } = await auth();
+    console.log('[API] GET - Clerk UserID:', userId);
+
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized', message: 'You must be logged in to access the calendar.' }, { status: 401 });
+      return NextResponse.json({
+        error: 'Unauthorized',
+        message: 'No Clerk session found. Please try refreshing the page or logging in again.'
+      }, { status: 401 });
     }
 
-    if (!CLIENT_ID || !TENANT_ID || !CLIENT_SECRET || !SHARED_MAILBOX) {
-      return NextResponse.json({ error: 'Configuration Error', message: 'Microsoft 365 credentials are not fully configured on the server.' }, { status: 500 });
+    const missingVars = [];
+    if (!CLIENT_ID) missingVars.push('MS_CLIENT_ID');
+    if (!TENANT_ID) missingVars.push('MS_TENANT_ID');
+    if (!CLIENT_SECRET) missingVars.push('MS_CLIENT_SECRET');
+    if (!SHARED_MAILBOX) missingVars.push('MS_SHARED_MAILBOX');
+
+    if (missingVars.length > 0) {
+      console.error('[API] Missing env vars:', missingVars);
+      return NextResponse.json({
+        error: 'Configuration Error',
+        message: `The following environment variables are missing on the server: ${missingVars.join(', ')}`
+      }, { status: 500 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -86,8 +101,26 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const { userId } = await auth();
+    console.log('[API] POST - Clerk UserID:', userId);
+
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized', message: 'You must be logged in to access the calendar.' }, { status: 401 });
+      return NextResponse.json({
+        error: 'Unauthorized',
+        message: 'No Clerk session found. Please try refreshing the page or logging in again.'
+      }, { status: 401 });
+    }
+
+    const missingVars = [];
+    if (!CLIENT_ID) missingVars.push('MS_CLIENT_ID');
+    if (!TENANT_ID) missingVars.push('MS_TENANT_ID');
+    if (!CLIENT_SECRET) missingVars.push('MS_CLIENT_SECRET');
+    if (!SHARED_MAILBOX) missingVars.push('MS_SHARED_MAILBOX');
+
+    if (missingVars.length > 0) {
+      return NextResponse.json({
+        error: 'Configuration Error',
+        message: `Missing environment variables: ${missingVars.join(', ')}`
+      }, { status: 500 });
     }
 
     const eventData = await request.json();
@@ -96,7 +129,11 @@ export async function POST(request) {
     try {
       token = await getAccessToken();
     } catch (authError) {
-      return NextResponse.json({ error: 'Authentication Failed', message: authError.message }, { status: 401 });
+      console.error('[API] POST - Microsoft Auth Error:', authError.message);
+      return NextResponse.json({
+        error: 'Microsoft Authentication Failed',
+        message: authError.message
+      }, { status: 401 });
     }
 
     const response = await fetch(`https://graph.microsoft.com/v1.0/users/${SHARED_MAILBOX}/calendar/events`, {
@@ -128,6 +165,19 @@ export async function PATCH(request) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized', message: 'You must be logged in.' }, { status: 401 });
+    }
+
+    const missingVars = [];
+    if (!CLIENT_ID) missingVars.push('MS_CLIENT_ID');
+    if (!TENANT_ID) missingVars.push('MS_TENANT_ID');
+    if (!CLIENT_SECRET) missingVars.push('MS_CLIENT_SECRET');
+    if (!SHARED_MAILBOX) missingVars.push('MS_SHARED_MAILBOX');
+
+    if (missingVars.length > 0) {
+      return NextResponse.json({
+        error: 'Configuration Error',
+        message: `Missing environment variables: ${missingVars.join(', ')}`
+      }, { status: 500 });
     }
 
     const { id, ...eventData } = await request.json();
@@ -170,6 +220,19 @@ export async function DELETE(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const missingVars = [];
+    if (!CLIENT_ID) missingVars.push('MS_CLIENT_ID');
+    if (!TENANT_ID) missingVars.push('MS_TENANT_ID');
+    if (!CLIENT_SECRET) missingVars.push('MS_CLIENT_SECRET');
+    if (!SHARED_MAILBOX) missingVars.push('MS_SHARED_MAILBOX');
+
+    if (missingVars.length > 0) {
+      return NextResponse.json({
+        error: 'Configuration Error',
+        message: `Missing environment variables: ${missingVars.join(', ')}`
+      }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -190,11 +253,20 @@ export async function DELETE(request) {
     if (response.status === 204) {
       return NextResponse.json({ success: true });
     } else {
-      const data = await response.json();
-      console.error('[API] Microsoft Graph API Error (DELETE):', data);
+      let message = 'Failed to delete event in Microsoft.';
+      try {
+        const data = await response.json();
+        message = data.error?.message || message;
+        console.error('[API] Microsoft Graph API Error (DELETE):', data);
+      } catch (e) {
+        // Fallback if not JSON or empty
+        const text = await response.text();
+        console.error('[API] Microsoft Graph API Error (DELETE) - Non-JSON response:', text);
+      }
+
       return NextResponse.json({
         error: 'Microsoft API Error',
-        message: data.error?.message || 'Failed to delete event in Microsoft.'
+        message: message
       }, { status: response.status });
     }
   } catch (error) {
