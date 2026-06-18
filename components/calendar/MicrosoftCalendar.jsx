@@ -142,10 +142,23 @@ export default function MicrosoftCalendar() {
     setCurrentDate(new Date());
   };
 
-  const openAddModal = (date = new Date()) => {
+  const openAddModal = (date) => {
     setSelectedEvent(null);
-    const start = new Date(date);
-    start.setHours(new Date().getHours() + 1, 0, 0, 0);
+    let start;
+
+    if (date) {
+      start = new Date(date);
+      // If the time is exactly midnight (common for month view clicks),
+      // default to the next upcoming hour on that day for better UX.
+      if (start.getHours() === 0 && start.getMinutes() === 0 && start.getSeconds() === 0) {
+        const now = new Date();
+        start.setHours(now.getHours() + 1, 0, 0, 0);
+      }
+    } else {
+      start = new Date();
+      start.setHours(start.getHours() + 1, 0, 0, 0);
+    }
+
     const end = new Date(start);
     end.setHours(start.getHours() + 1);
 
@@ -175,15 +188,18 @@ export default function MicrosoftCalendar() {
     e.preventDefault();
     setLoading(true);
 
+    // Get the browser's timezone (e.g., "Europe/London")
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
     const eventPayload = {
       subject: formData.subject,
       start: {
         dateTime: formData.start,
-        timeZone: "UTC"
+        timeZone: userTimeZone
       },
       end: {
         dateTime: formData.end,
-        timeZone: "UTC"
+        timeZone: userTimeZone
       },
       location: {
         displayName: formData.location
@@ -240,7 +256,10 @@ export default function MicrosoftCalendar() {
         setIsEventModalOpen(false);
         fetchEvents();
       } else {
-        toast.error("Failed to delete event");
+        const errorData = await res.json();
+        toast.error(errorData.error || "Failed to delete event", {
+          description: errorData.message || "Please check your connection and try again."
+        });
       }
     } catch (error) {
       console.error("Error deleting event:", error);

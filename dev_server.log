@@ -1,0 +1,26 @@
+
+> housing-dashboard@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+- Environments: .env.local
+✓ Ready in 1322ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+○ Compiling /microsoft-calendar ...
+
+[35m
+[Clerk]:[0m You are running in keyless mode.
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=nsrmll7vlk13cni8h1umh45sdl6o7a2d8pl401kd&return_url=http%3A%2F%2Flocalhost%3A3000%2F
+
+ GET /microsoft-calendar 200 in 10.0s (next.js: 5.6s, proxy.ts: 346ms, application-code: 4.0s)
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview (https://certain-ram-56.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js:19:7048)
+ POST /microsoft-calendar 200 in 118ms (next.js: 42ms, proxy.ts: 30ms, application-code: 46ms)
+  └─ ƒ detectKeylessEnvDriftAction() in 1ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+ GET /microsoft-calendar 404 in 283ms (next.js: 80ms, proxy.ts: 43ms, application-code: 161ms)
+ POST /microsoft-calendar 303 in 403ms (next.js: 9ms, proxy.ts: 17ms, application-code: 377ms)
+  └─ ƒ syncKeylessConfigAction({"apiKeysUrl":"https://dashboard.clerk.com/apps/app_3FJha8JZA8UtU3NiNQHAYESpltO/instances/ins_3FJha7MWcjKYB3AGsqcmmcpjbnB/api-keys","claimUrl":"https://dashboard.clerk.com/apps/claim?token=nsrmll7vlk13cni8h1umh45sdl6o7a2d8pl401kd","...":"3 items not stringified"}) in 17ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+[browser] Failed to fetch RSC payload for http://localhost:3000/clerk-sync-keyless?returnUrl=http://localhost:3000/microsoft-calendar. Falling back to browser navigation. TypeError: Failed to fetch
+○ Compiling /sign-in ...
