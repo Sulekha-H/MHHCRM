@@ -5,22 +5,40 @@
 ▲ Next.js 16.2.9 (Turbopack)
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.2:3000
-- Environments: .env.local
-✓ Ready in 1322ms
+✓ Ready in 533ms
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
 
-○ Compiling /microsoft-calendar ...
-
-[35m
-[Clerk]:[0m You are running in keyless mode.
-You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=nsrmll7vlk13cni8h1umh45sdl6o7a2d8pl401kd&return_url=http%3A%2F%2Flocalhost%3A3000%2F
-
- GET /microsoft-calendar 200 in 10.0s (next.js: 5.6s, proxy.ts: 346ms, application-code: 4.0s)
-[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview (https://certain-ram-56.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js:19:7048)
- POST /microsoft-calendar 200 in 118ms (next.js: 42ms, proxy.ts: 30ms, application-code: 46ms)
-  └─ ƒ detectKeylessEnvDriftAction() in 1ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
- GET /microsoft-calendar 404 in 283ms (next.js: 80ms, proxy.ts: 43ms, application-code: 161ms)
- POST /microsoft-calendar 303 in 403ms (next.js: 9ms, proxy.ts: 17ms, application-code: 377ms)
-  └─ ƒ syncKeylessConfigAction({"apiKeysUrl":"https://dashboard.clerk.com/apps/app_3FJha8JZA8UtU3NiNQHAYESpltO/instances/ins_3FJha7MWcjKYB3AGsqcmmcpjbnB/api-keys","claimUrl":"https://dashboard.clerk.com/apps/claim?token=nsrmll7vlk13cni8h1umh45sdl6o7a2d8pl401kd","...":"3 items not stringified"}) in 17ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
-[browser] Failed to fetch RSC payload for http://localhost:3000/clerk-sync-keyless?returnUrl=http://localhost:3000/microsoft-calendar. Falling back to browser navigation. TypeError: Failed to fetch
-○ Compiling /sign-in ...
+○ Compiling /dashboard ...
+⨯ Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
+    at ignore-listed frames {
+  digest: '236165197'
+}
+ GET /dashboard 500 in 11.6s (next.js: 9.8s, proxy.ts: 272ms, application-code: 1542ms)
+[browser] Uncaught Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
+    at RootLayout (app/layout.jsx:61:9)
+  59 |     <html lang="en" className="h-full">
+  60 |       <body className={`${inter.className} h-full antialiased bg-slate-50`}>
+> 61 |         <ClerkProvider
+     |         ^
+  62 |           signInUrl="/sign-in"
+  63 |           signUpUrl="/sign-up"
+  64 |         >
+⨯ Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
+    at ignore-listed frames {
+  digest: '236165197'
+}
+ GET /tasks 500 in 3.0s (next.js: 2.8s, proxy.ts: 29ms, application-code: 237ms)
+[browser] Uncaught Error: @clerk/clerk-react: Missing publishableKey. You can get your key at https://dashboard.clerk.com/last-active?path=api-keys.
+    at RootLayout (app/layout.jsx:61:9)
+  59 |     <html lang="en" className="h-full">
+  60 |       <body className={`${inter.className} h-full antialiased bg-slate-50`}>
+> 61 |         <ClerkProvider
+     |         ^
+  62 |           signInUrl="/sign-in"
+  63 |           signUpUrl="/sign-up"
+  64 |         >

@@ -704,11 +704,11 @@ export default function Dashboard() {
             </Card>
           </a>
 
-          <a href={createPageUrl("Tasks")}>
+          <a href={createPageUrl("tasks")}>
             <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
               <CardContent className="p-4 text-center text-white">
                 <CheckSquare className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Add Task</p>
+                <p className="font-medium text-sm">Tasks</p>
               </CardContent>
             </Card>
           </a>
