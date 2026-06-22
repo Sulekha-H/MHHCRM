@@ -252,9 +252,6 @@ export default function TasksPage() {
             <Button onClick={exportToCSV} variant="outline" size="sm" className="hidden md:flex gap-2">
               <Download className="w-4 h-4" /> Export
             </Button>
-            <Button onClick={() => setShowForm(true)} className="bg-cyan-600 hover:bg-cyan-700 gap-2">
-              <Plus className="w-4 h-4 mr-1" /> New Task
-            </Button>
           </div>
         </div>
 
