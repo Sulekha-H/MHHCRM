@@ -157,26 +157,6 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                                     )}
                                 </>
                             )}
-                            {onDelete && (
-                                <Button 
-                                    variant="outline" 
-                                    onClick={() => {
-                                        onClose();
-                                        onDelete(task);
-                                    }} 
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete Task
-                                </Button>
-                            )}
-                            <Button onClick={() => {
-                                onClose();
-                                onEdit(task);
-                            }} className="bg-cyan-600 hover:bg-cyan-700">
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Task
-                            </Button>
                         </DialogFooter>
                     </div>
                 </ScrollArea>

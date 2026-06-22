@@ -86,12 +86,17 @@ export default function TaskCard({
   const isCompleted = status === 'completed' || status === 'Completed';
   const isInProgress = status === 'in_progress' || status === 'In Progress';
   const isOverdue = !isCompleted && dueDate && new Date(dueDate) < new Date();
-  const isHeader = task.isHeader;
+  // Robust header detection
+  const headerTitles = [
+    "MONDAY", "Opening the office", "10am-11am", "11.00-12pm",
+    "12pm - 3pm", "3pm onwards", "4pm onwards", "Closing down the office:"
+  ];
+  const isHeader = task.isHeader || headerTitles.some(ht => title?.trim() === ht);
 
   if (isHeader) {
     return (
-      <div className="bg-slate-100/80 px-4 py-2 border-y border-slate-200">
-        <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+      <div className="bg-slate-50 px-4 py-3 border-y border-slate-200 mt-4 first:mt-0">
+        <h3 className="text-xs font-bold text-slate-600 uppercase tracking-widest">
           {title}
         </h3>
       </div>
