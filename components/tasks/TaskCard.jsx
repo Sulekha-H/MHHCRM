@@ -86,6 +86,17 @@ export default function TaskCard({
   const isCompleted = status === 'completed' || status === 'Completed';
   const isInProgress = status === 'in_progress' || status === 'In Progress';
   const isOverdue = !isCompleted && dueDate && new Date(dueDate) < new Date();
+  const isHeader = task.isHeader;
+
+  if (isHeader) {
+    return (
+      <div className="bg-slate-100/80 px-4 py-2 border-y border-slate-200">
+        <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          {title}
+        </h3>
+      </div>
+    );
+  }
 
   return (
     <div
