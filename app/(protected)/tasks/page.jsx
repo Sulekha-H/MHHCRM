@@ -164,8 +164,11 @@ export default function TasksPage() {
   };
 
   const handleCompleteTask = async (task) => {
-    // Note: Actual End Time and Duration Taken columns don't exist in the database, only updating Status
-    await supabase.from('tasks').update({ Status: "Completed" }).eq('ID', task.ID);
+    // Toggle Status between Completed and To Do
+    const currentStatus = (task.Status || "").toLowerCase();
+    const newStatus = currentStatus === "completed" ? "To Do" : "Completed";
+
+    await supabase.from('tasks').update({ Status: newStatus }).eq('ID', task.ID);
     loadTasks();
   };
 

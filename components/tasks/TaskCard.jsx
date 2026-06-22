@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Calendar, User, Clock, AlertTriangle, Trash2, Play, CheckCircle2, Circle } from "lucide-react";
+import { Calendar, User, Clock, AlertTriangle, Play, CheckCircle2, Circle } from "lucide-react";
 import { format, differenceInSeconds } from "date-fns";
 
 export default function TaskCard({
@@ -97,7 +97,7 @@ export default function TaskCard({
         className="flex-shrink-0"
         onClick={(e) => {
           e.stopPropagation();
-          if (!isCompleted) onCompleteTask(task);
+          onCompleteTask(task);
         }}
       >
         {isCompleted ? (
@@ -166,28 +166,6 @@ export default function TaskCard({
             <Play className="w-4 h-4" />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(task);
-          }}
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(task);
-          }}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );
