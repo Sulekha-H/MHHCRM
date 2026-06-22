@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Clock, AlertTriangle, Play, CheckCircle2, Circle } from "lucide-react";
 import { format, differenceInSeconds } from "date-fns";
+import { parseTaskMetadata } from "@/lib/utils";
+import { WEEKLY_ROUTINES } from "@/lib/constants/routines";
 
 export default function TaskCard({
   task,
@@ -27,26 +29,33 @@ export default function TaskCard({
   const priority = task.Priority || task.priority;
   const assignedToUserId = task["Assigned To User ID"] || task.assigned_to_user_id || task.assigned_to;
   const loggedBy = task["Logged By"] || task.logged_by;
-  // These columns don't exist in the user's database
-  const targetDuration = null;
-  const actualStartTime = null;
+
+  // Use metadata from Description field
+  const metadata = parseTaskMetadata(description);
+  const targetDuration = metadata?.targetDuration;
+  const actualStartTime = metadata?.actualStartTime;
+  const durationTaken = metadata?.durationTaken;
 
   useEffect(() => {
     let interval;
-    if (status === "In Progress" && actualStartTime && targetDuration) {
+    if (status === "In Progress" && actualStartTime) {
       const updateTimer = () => {
         const start = new Date(actualStartTime);
         const now = new Date();
         const secondsElapsed = differenceInSeconds(now, start);
-        const targetSeconds = parseInt(targetDuration) * 60;
-        const remaining = targetSeconds - secondsElapsed;
 
-        setTimeLeft(remaining);
-
-        if (remaining <= 0 && !isOverDuration) {
-          setIsOverDuration(true);
-        } else if (remaining > 0) {
-          setIsOverDuration(false);
+        if (targetDuration) {
+          const targetSeconds = parseInt(targetDuration) * 60;
+          const remaining = targetSeconds - secondsElapsed;
+          setTimeLeft(remaining);
+          if (remaining <= 0 && !isOverDuration) {
+            setIsOverDuration(true);
+          } else if (remaining > 0) {
+            setIsOverDuration(false);
+          }
+        } else {
+          // If no target, just show elapsed time
+          setTimeLeft(secondsElapsed);
         }
       };
 
@@ -61,12 +70,17 @@ export default function TaskCard({
   }, [status, actualStartTime, targetDuration, isOverDuration]);
 
   const formatTimeLeft = (seconds) => {
+    const isNegative = seconds < 0;
     const absSeconds = Math.abs(seconds);
     const h = Math.floor(absSeconds / 3600);
     const m = Math.floor((absSeconds % 3600) / 60);
     const s = absSeconds % 60;
     const timeStr = `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    return seconds < 0 ? `-${timeStr}` : timeStr;
+
+    if (targetDuration) {
+      return isNegative ? `-${timeStr}` : timeStr;
+    }
+    return timeStr; // Elapsed time
   };
 
   const getPriorityColor = (priority) => {
@@ -86,12 +100,16 @@ export default function TaskCard({
   const isCompleted = status === 'completed' || status === 'Completed';
   const isInProgress = status === 'in_progress' || status === 'In Progress';
   const isOverdue = !isCompleted && dueDate && new Date(dueDate) < new Date();
-  // Robust header detection
-  const headerTitles = [
-    "MONDAY", "Opening the office", "10am-11am", "11.00-12pm",
-    "12pm - 3pm", "3pm onwards", "4pm onwards", "Closing down the office:"
-  ];
-  const isHeader = task.isHeader || headerTitles.some(ht => title?.trim() === ht);
+
+  // Robust header detection using titles from WEEKLY_ROUTINES
+  const allHeaders = React.useMemo(() => {
+    return Object.values(WEEKLY_ROUTINES)
+      .flat()
+      .filter(r => r.isHeader)
+      .map(r => r.title.trim().toLowerCase());
+  }, []);
+
+  const isHeader = task.isHeader || allHeaders.includes(title?.trim().toLowerCase());
 
   if (isHeader) {
     return (
@@ -162,6 +180,12 @@ export default function TaskCard({
             <span className={`flex items-center gap-1 font-mono ${isOverDuration ? 'text-red-500 font-bold' : 'text-indigo-600'}`}>
               <Clock className="w-3 h-3" />
               {timeLeft !== null ? formatTimeLeft(timeLeft) : 'In Progress'}
+            </span>
+          )}
+          {isCompleted && durationTaken && (
+            <span className="flex items-center gap-1 font-mono text-slate-400">
+              <Clock className="w-3 h-3" />
+              Took {formatTimeLeft(durationTaken)}
             </span>
           )}
         </div>

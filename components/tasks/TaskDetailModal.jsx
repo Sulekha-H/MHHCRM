@@ -14,6 +14,7 @@ import {
     CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2, Play, CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { parseTaskMetadata } from '@/lib/utils';
 
 const DetailItem = ({ icon, label, children }) => (
   <div className="flex items-start gap-4">
@@ -41,10 +42,13 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
     const relatedEntityId = task["Related Entity ID"] || task.related_entity_id;
     const loggedBy = task["Logged By"] || task.logged_by;
     const createdDate = task["Created Date"] || task.created_date;
-    const targetDuration = task["Target Duration"] || task.target_duration;
-    const actualStartTime = task["Actual Start Time"] || task.actual_start_time;
-    const actualEndTime = task["Actual End Time"] || task.actual_end_time;
-    const durationTaken = task["Duration Taken"] || task.duration_taken;
+
+    // Parse metadata from description
+    const metadata = parseTaskMetadata(description);
+    const targetDuration = metadata?.targetDuration;
+    const actualStartTime = metadata?.actualStartTime;
+    const actualEndTime = metadata?.actualEndTime;
+    const durationTaken = metadata?.durationTaken;
 
     const getPriorityColor = (priority) => {
         const colors = { 
@@ -77,6 +81,16 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
     const isOverdue = new Date(dueDate) < new Date() && status !== 'completed' && status !== 'Completed';
     const finalAssignedUserName = assignedToUserId || "Unassigned";
 
+    const formatDuration = (seconds) => {
+        if (!seconds) return null;
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h > 0 ? h + 'h ' : ''}${m > 0 ? m + 'm ' : ''}${s}s`;
+    };
+
+    const cleanDescription = description?.replace(/---METADATA---\n[\s\S]*?\n---END METADATA---\n?/, '') || '';
+
     return (
         <Dialog open={true} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl w-full p-0">
@@ -95,10 +109,10 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                             </div>
                         </DialogHeader>
 
-                        {description && (
+                        {cleanDescription && (
                             <>
                                 <h3 className="text-xl font-semibold text-slate-800 mb-4">Description</h3>
-                                <p className="text-slate-700 whitespace-pre-wrap mb-6">{description}</p>
+                                <p className="text-slate-700 whitespace-pre-wrap mb-6">{cleanDescription}</p>
                                 <Separator className="my-6" />
                             </>
                         )}
@@ -123,6 +137,26 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                                 <DetailItem icon={<Info />} label="Related To">
                                     <span className="capitalize">{relatedEntity.replace(/_/g, ' ')}</span>
                                     {relatedEntityId && <span className="text-xs text-slate-500 ml-2">(ID: {relatedEntityId})</span>}
+                                </DetailItem>
+                            )}
+                            {targetDuration && (
+                                <DetailItem icon={<Clock />} label="Target Duration">
+                                    {targetDuration} minutes
+                                </DetailItem>
+                            )}
+                            {actualStartTime && (
+                                <DetailItem icon={<Clock />} label="Started At">
+                                    {format(new Date(actualStartTime), 'HH:mm:ss')}
+                                </DetailItem>
+                            )}
+                            {actualEndTime && (
+                                <DetailItem icon={<Clock />} label="Completed At">
+                                    {format(new Date(actualEndTime), 'HH:mm:ss')}
+                                </DetailItem>
+                            )}
+                            {durationTaken && (
+                                <DetailItem icon={<Clock />} label="Time Taken">
+                                    {formatDuration(durationTaken)}
                                 </DetailItem>
                             )}
                         </div>
