@@ -191,6 +191,12 @@ export default function TasksPage() {
           durationTaken: durationSeconds
         });
       }
+    } else {
+      // Clear completion metadata when unchecking
+      updateData.Description = updateTaskMetadata(task.Description || task.description, {
+        actualEndTime: null,
+        durationTaken: null
+      });
     }
 
     await supabase.from('tasks').update(updateData).eq('ID', task.ID);
