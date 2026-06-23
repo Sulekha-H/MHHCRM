@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, subDays, isSameDay } from "date-fns";
 import { injectRoutineTasks } from "@/lib/taskUtils";
-import { generateUUID } from "@/lib/utils";
+import { generateUUID, updateTaskMetadata, parseTaskMetadata } from "@/lib/utils";
 import { ROUTINE_TITLES, WEEKLY_ROUTINES } from "@/lib/constants/routines";
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
@@ -158,17 +158,42 @@ export default function TasksPage() {
   };
 
   const handleStartTask = async (task) => {
-    // Note: Actual Start Time column doesn't exist in the database, only updating Status
-    await supabase.from('tasks').update({ Status: "In Progress" }).eq('ID', task.ID);
+    const newDescription = updateTaskMetadata(task.Description || task.description, {
+      actualStartTime: new Date().toISOString()
+    });
+
+    await supabase.from('tasks').update({
+      Status: "In Progress",
+      Description: newDescription,
+      "Updated Date": new Date().toISOString()
+    }).eq('ID', task.ID);
     loadTasks();
   };
 
   const handleCompleteTask = async (task) => {
-    // Toggle Status between Completed and To Do
     const currentStatus = (task.Status || "").toLowerCase();
     const newStatus = currentStatus === "completed" ? "To Do" : "Completed";
 
-    await supabase.from('tasks').update({ Status: newStatus }).eq('ID', task.ID);
+    let updateData = {
+      Status: newStatus,
+      "Updated Date": new Date().toISOString()
+    };
+
+    if (newStatus === "Completed") {
+      const metadata = parseTaskMetadata(task.Description || task.description);
+      if (metadata && metadata.actualStartTime) {
+        const start = new Date(metadata.actualStartTime);
+        const end = new Date();
+        const durationSeconds = Math.floor((end - start) / 1000);
+
+        updateData.Description = updateTaskMetadata(task.Description || task.description, {
+          actualEndTime: end.toISOString(),
+          durationTaken: durationSeconds
+        });
+      }
+    }
+
+    await supabase.from('tasks').update(updateData).eq('ID', task.ID);
     loadTasks();
   };
 
