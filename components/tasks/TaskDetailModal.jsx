@@ -11,9 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2, Play, Pause, CheckCircle2
+    CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2, Play, Pause, CheckCircle2, Lock
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { parseTaskMetadata } from '@/lib/utils';
 import { ROUTINE_TITLES } from '@/lib/constants/routines';
 
@@ -50,6 +50,16 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
     const actualStartTime = metadata?.actualStartTime;
     const actualEndTime = metadata?.actualEndTime;
     const durationTaken = metadata?.durationTaken;
+    const deadlineMetadata = metadata?.deadline;
+
+    const deadlineToUse = deadlineMetadata || dueDate;
+    const isCompleted = status === 'completed' || status === 'Completed';
+    const isInProgress = status === 'in_progress' || status === 'In Progress';
+    const isOverdue = deadlineToUse && isPast(new Date(deadlineToUse)) && !isCompleted;
+
+    const userFullName = (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase();
+    const isAdmin = userFullName === 'leticia' || userFullName === 'admin';
+    const isExpired = isOverdue && !isInProgress && !isAdmin;
 
     const getPriorityColor = (priority) => {
         const colors = { 
@@ -79,7 +89,6 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
         return colors[status] || colors.to_do || colors["To Do"];
     };
 
-    const isOverdue = new Date(dueDate) < new Date() && status !== 'completed' && status !== 'Completed';
     const finalAssignedUserName = assignedToUserId || "Unassigned";
 
     const formatDuration = (seconds) => {
@@ -106,7 +115,12 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                                     <div className="flex items-center gap-2 mt-2">
                                         <Badge className={getStatusColor(status)}>{status?.replace(/_/g, ' ')}</Badge>
                                         <Badge className={getPriorityColor(priority)}>{priority} priority</Badge>
-                                        {isOverdue && <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> Overdue</Badge>}
+                                        {isOverdue && (
+                                            <Badge variant={isExpired ? "secondary" : "destructive"}>
+                                                {isExpired ? <Lock className="w-3 h-3 mr-1" /> : <AlertTriangle className="w-3 h-3 mr-1" />}
+                                                {isExpired ? "Locked" : "Overdue"}
+                                            </Badge>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -122,8 +136,8 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                         
                         <h3 className="text-xl font-semibold text-slate-800 mb-4">Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <DetailItem icon={<Calendar />} label="Due Date">
-                                {dueDate ? format(new Date(dueDate), 'dd MMMM yyyy, HH:mm') : 'No due date'}
+                            <DetailItem icon={<Calendar />} label={deadlineMetadata ? "Deadline" : "Due Date"}>
+                                {deadlineToUse ? format(new Date(deadlineToUse), 'dd MMMM yyyy, HH:mm') : 'No date set'}
                             </DetailItem>
                             <DetailItem icon={<User />} label="Assigned To">
                                 {finalAssignedUserName}
@@ -202,6 +216,7 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                                                     onClose();
                                                 }}
                                                 className="bg-indigo-600 hover:bg-indigo-700"
+                                                disabled={isExpired}
                                             >
                                                 <Play className="w-4 h-4 mr-2" />
                                                 Start Task
