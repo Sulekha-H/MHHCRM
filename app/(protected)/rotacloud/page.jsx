@@ -20,6 +20,25 @@ export default function RotaCloudPage() {
   const [shifts, setShifts] = useState([]);
   const [leave, setLeave] = useState([]);
 
+  const safeFormatDate = (dateValue, formatStr) => {
+    if (!dateValue) return 'N/A';
+    try {
+      let dateObj;
+      if (typeof dateValue === 'number' || !isNaN(Number(dateValue))) {
+        // Handle UNIX timestamp (seconds)
+        dateObj = new Date(Number(dateValue) * 1000);
+      } else {
+        // Handle date string (e.g., YYYY-MM-DD)
+        dateObj = new Date(dateValue);
+      }
+
+      if (isNaN(dateObj.getTime())) return 'Invalid Date';
+      return format(dateObj, formatStr);
+    } catch (e) {
+      return 'Error';
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -152,10 +171,10 @@ export default function RotaCloudPage() {
                               {staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown'}
                             </td>
                             <td className="px-4 py-3 text-slate-600">
-                              {format(new Date(shift.start_time * 1000), 'EEE, do MMM')}
+                              {safeFormatDate(shift.start_time, 'EEE, do MMM')}
                             </td>
                             <td className="px-4 py-3 text-slate-600">
-                              {format(new Date(shift.start_time * 1000), 'HH:mm')} - {format(new Date(shift.end_time * 1000), 'HH:mm')}
+                              {safeFormatDate(shift.start_time, 'HH:mm')} - {safeFormatDate(shift.end_time, 'HH:mm')}
                             </td>
                             <td className="px-4 py-3">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -262,7 +281,7 @@ export default function RotaCloudPage() {
                               {staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : 'Unknown'}
                             </td>
                             <td className="px-4 py-3 text-slate-600">
-                              {format(new Date(item.start_date * 1000), 'do MMM')} - {format(new Date(item.end_date * 1000), 'do MMM yyyy')}
+                              {safeFormatDate(item.start_date, 'do MMM')} - {safeFormatDate(item.end_date, 'do MMM yyyy')}
                             </td>
                             <td className="px-4 py-3 text-slate-600">
                               {item.leave_type_name || 'Annual Leave'}
