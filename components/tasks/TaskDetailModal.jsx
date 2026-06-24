@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
-    CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2, Play, CheckCircle2
+    CheckSquare, Calendar, User, Clock, AlertTriangle, Edit, Info, Trash2, Play, Pause, CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { parseTaskMetadata } from '@/lib/utils';
@@ -29,7 +29,7 @@ const DetailItem = ({ icon, label, children }) => (
   </div>
 );
 
-export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, onDelete, onStartTask, onCompleteTask, currentUser }) {
+export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, onDelete, onStartTask, onPauseTask, onCompleteTask, currentUser }) {
     if (!task) return null;
 
     // Handle both Supabase and base44 field formats
@@ -195,7 +195,7 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                             <div className="flex gap-2">
                                 {((assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()) && (
                                     <>
-                                        {status === "To Do" && (
+                                    {(status === "To Do" || status === "to_do") && (
                                             <Button
                                                 onClick={() => {
                                                     onStartTask(task);
@@ -207,7 +207,18 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                                                 Start Task
                                             </Button>
                                         )}
-                                        {status === "In Progress" && (
+                                    {(status === "In Progress" || status === "in_progress") && (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    onPauseTask(task);
+                                                    onClose();
+                                                }}
+                                                className="bg-amber-600 hover:bg-amber-700"
+                                            >
+                                                <Pause className="w-4 h-4 mr-2" />
+                                                Pause Task
+                                            </Button>
                                             <Button
                                                 onClick={() => {
                                                     onCompleteTask(task);
@@ -218,6 +229,7 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                                                 <CheckCircle2 className="w-4 h-4 mr-2" />
                                                 Complete Task
                                             </Button>
+                                        </>
                                         )}
                                     </>
                                 )}
