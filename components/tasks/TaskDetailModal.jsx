@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { parseTaskMetadata } from '@/lib/utils';
+import { ROUTINE_TITLES } from '@/lib/constants/routines';
 
 const DetailItem = ({ icon, label, children }) => (
   <div className="flex items-start gap-4">
@@ -91,6 +92,8 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
 
     const cleanDescription = description?.replace(/---METADATA---\n[\s\S]*?\n---END METADATA---\n?/, '') || '';
 
+    const isRoutine = ROUTINE_TITLES.some(t => t.trim().toLowerCase() === (title || "").trim().toLowerCase());
+
     return (
         <Dialog open={true} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl w-full p-0">
@@ -162,35 +165,63 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                         </div>
 
 
-                        <DialogFooter className="mt-8 flex flex-wrap gap-2">
-                            {((assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()) && (
-                                <>
-                                    {status === "To Do" && (
+                        <DialogFooter className="mt-8 flex flex-wrap gap-2 justify-between items-center">
+                            <div className="flex gap-2">
+                                {!isRoutine && (
+                                    <>
                                         <Button
+                                            variant="outline"
+                                            onClick={() => onEdit(task)}
+                                            className="text-slate-600 border-slate-200 hover:bg-slate-50"
+                                        >
+                                            <Edit className="w-4 h-4 mr-2" />
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            variant="outline"
                                             onClick={() => {
-                                                onStartTask(task);
+                                                onDelete(task);
                                                 onClose();
                                             }}
-                                            className="bg-indigo-600 hover:bg-indigo-700"
+                                            className="text-red-600 border-red-100 hover:bg-red-50 hover:text-red-700"
                                         >
-                                            <Play className="w-4 h-4 mr-2" />
-                                            Start Task
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete
                                         </Button>
-                                    )}
-                                    {status === "In Progress" && (
-                                        <Button
-                                            onClick={() => {
-                                                onCompleteTask(task);
-                                                onClose();
-                                            }}
-                                            className="bg-green-600 hover:bg-green-700"
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                                            Complete Task
-                                        </Button>
-                                    )}
-                                </>
-                            )}
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="flex gap-2">
+                                {((assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()) && (
+                                    <>
+                                        {status === "To Do" && (
+                                            <Button
+                                                onClick={() => {
+                                                    onStartTask(task);
+                                                    onClose();
+                                                }}
+                                                className="bg-indigo-600 hover:bg-indigo-700"
+                                            >
+                                                <Play className="w-4 h-4 mr-2" />
+                                                Start Task
+                                            </Button>
+                                        )}
+                                        {status === "In Progress" && (
+                                            <Button
+                                                onClick={() => {
+                                                    onCompleteTask(task);
+                                                    onClose();
+                                                }}
+                                                className="bg-green-600 hover:bg-green-700"
+                                            >
+                                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                Complete Task
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </DialogFooter>
                     </div>
                 </ScrollArea>

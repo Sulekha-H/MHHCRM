@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Clock, AlertTriangle, Play, CheckCircle2, Circle } from "lucide-react";
 import { format, differenceInSeconds } from "date-fns";
 import { parseTaskMetadata } from "@/lib/utils";
-import { WEEKLY_ROUTINES } from "@/lib/constants/routines";
+import { WEEKLY_ROUTINES, ROUTINE_TITLES } from "@/lib/constants/routines";
 
 export default function TaskCard({
   task,
@@ -101,6 +101,8 @@ export default function TaskCard({
   const isInProgress = status === 'in_progress' || status === 'In Progress';
   const isOverdue = !isCompleted && dueDate && new Date(dueDate) < new Date();
 
+  const isRoutineInternal = isRoutine || ROUTINE_TITLES.some(t => t.trim().toLowerCase() === (title || "").trim().toLowerCase());
+
   // Robust header detection using titles from WEEKLY_ROUTINES
   const allHeaders = React.useMemo(() => {
     return Object.values(WEEKLY_ROUTINES)
@@ -159,18 +161,18 @@ export default function TaskCard({
         
         {/* Sub-info */}
         <div className="flex items-center gap-3 mt-0.5 text-[11px] text-slate-500">
-          {!isRoutine && priority && (
+          {!isRoutineInternal && priority && (
             <span className={`px-1.5 py-0.5 rounded ${getPriorityColor(priority)}`}>
               {priority}
             </span>
           )}
-          {dueDate && !isRoutine && (
+          {dueDate && !isRoutineInternal && (
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {format(new Date(dueDate), 'MMM d, HH:mm')}
             </span>
           )}
-          {assignedUserName && !isRoutine && (
+          {assignedUserName && !isRoutineInternal && (
             <span className="flex items-center gap-1 truncate max-w-[100px]">
               <User className="w-3 h-3" />
               {assignedUserName}
