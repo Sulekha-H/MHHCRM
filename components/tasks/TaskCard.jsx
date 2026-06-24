@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Clock, AlertTriangle, Play, CheckCircle2, Circle } from "lucide-react";
+import { Calendar, User, Clock, AlertTriangle, Play, Pause, CheckCircle2, Circle } from "lucide-react";
 import { format, differenceInSeconds } from "date-fns";
 import { parseTaskMetadata } from "@/lib/utils";
 import { WEEKLY_ROUTINES, ROUTINE_TITLES } from "@/lib/constants/routines";
@@ -12,6 +12,7 @@ export default function TaskCard({
   onViewDetails,
   onDelete,
   onStartTask,
+  onPauseTask,
   onCompleteTask,
   assignedUser,
   assignedUserName,
@@ -55,7 +56,7 @@ export default function TaskCard({
           }
         } else {
           // If no target, just show elapsed time
-          setTimeLeft(secondsElapsed);
+          setTimeLeft(secondsElapsed + (durationTaken || 0));
         }
       };
 
@@ -69,8 +70,8 @@ export default function TaskCard({
     return () => clearInterval(interval);
   }, [status, actualStartTime, targetDuration, isOverDuration]);
 
-  const formatTimeLeft = (seconds) => {
-    const isNegative = seconds < 0;
+  const formatTimeLeft = (seconds, forcePositive = false) => {
+    const isNegative = !forcePositive && seconds < 0;
     const absSeconds = Math.abs(seconds);
     const h = Math.floor(absSeconds / 3600);
     const m = Math.floor((absSeconds % 3600) / 60);
@@ -178,35 +179,51 @@ export default function TaskCard({
               {assignedUserName}
             </span>
           )}
-          {isInProgress && (
-            <span className={`flex items-center gap-1 font-mono ${isOverDuration ? 'text-red-500 font-bold' : 'text-indigo-600'}`}>
+          {(isInProgress || (durationTaken > 0 && !isCompleted)) && (
+            <span className={`flex items-center gap-1 font-mono ${isInProgress ? (isOverDuration ? 'text-red-500 font-bold' : 'text-indigo-600 font-bold') : 'text-slate-500'}`}>
               <Clock className="w-3 h-3" />
-              {timeLeft !== null ? formatTimeLeft(timeLeft) : 'In Progress'}
+              {isInProgress ? (timeLeft !== null ? formatTimeLeft(timeLeft) : 'In Progress') : formatTimeLeft(durationTaken, true)}
             </span>
           )}
-          {isCompleted && durationTaken && (
+          {isCompleted && durationTaken > 0 && (
             <span className="flex items-center gap-1 font-mono text-slate-400">
               <Clock className="w-3 h-3" />
-              Took {formatTimeLeft(durationTaken)}
+              Took {formatTimeLeft(durationTaken, true)}
             </span>
           )}
         </div>
       </div>
 
-      {/* Action Buttons (Visible on hover or if in progress) */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!isCompleted && !isInProgress && (assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase() && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onStartTask(task);
-            }}
-          >
-            <Play className="w-4 h-4" />
-          </Button>
+      {/* Action Buttons */}
+      <div className="flex items-center gap-1">
+        {!isCompleted && (assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase() && (
+          <>
+            {isInProgress ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPauseTask(task);
+                }}
+              >
+                <Pause className="w-4 h-4 fill-current" />
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartTask(task);
+                }}
+              >
+                <Play className="w-4 h-4 fill-current" />
+              </Button>
+            )}
+          </>
         )}
       </div>
     </div>

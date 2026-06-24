@@ -159,44 +159,99 @@ export default function TasksPage() {
   };
 
   const handleStartTask = async (task) => {
+    const userFullName = currentUser?.["Full Name"] || currentUser?.full_name;
+    const now = new Date().toISOString();
+
+    // 1. Find and pause any currently "In Progress" task for this user
+    const activeTask = tasks.find(t =>
+      (t.Status || "").toLowerCase() === "in progress" &&
+      (t["Assigned To User ID"] || "").trim().toLowerCase() === (userFullName || "").trim().toLowerCase()
+    );
+
+    if (activeTask) {
+      const metadata = parseTaskMetadata(activeTask.Description || activeTask.description);
+      if (metadata && metadata.actualStartTime) {
+        const start = new Date(metadata.actualStartTime);
+        const currentEnd = new Date();
+        const segmentDuration = Math.floor((currentEnd - start) / 1000);
+        const totalDuration = (metadata.durationTaken || 0) + segmentDuration;
+
+        await supabase.from('tasks').update({
+          Status: "To Do",
+          Description: updateTaskMetadata(activeTask.Description || activeTask.description, {
+            actualStartTime: null,
+            durationTaken: totalDuration
+          }),
+          "Updated Date": now
+        }).eq('ID', activeTask.ID);
+      }
+    }
+
+    // 2. Start the new task
     const newDescription = updateTaskMetadata(task.Description || task.description, {
-      actualStartTime: new Date().toISOString()
+      actualStartTime: now
     });
 
     await supabase.from('tasks').update({
       Status: "In Progress",
       Description: newDescription,
-      "Updated Date": new Date().toISOString()
+      "Updated Date": now
     }).eq('ID', task.ID);
+
+    loadTasks();
+  };
+
+  const handlePauseTask = async (task) => {
+    const metadata = parseTaskMetadata(task.Description || task.description);
+    if (!metadata || !metadata.actualStartTime) return;
+
+    const start = new Date(metadata.actualStartTime);
+    const now = new Date();
+    const segmentDuration = Math.floor((now - start) / 1000);
+    const totalDuration = (metadata.durationTaken || 0) + segmentDuration;
+
+    await supabase.from('tasks').update({
+      Status: "To Do",
+      Description: updateTaskMetadata(task.Description || task.description, {
+        actualStartTime: null,
+        durationTaken: totalDuration
+      }),
+      "Updated Date": now.toISOString()
+    }).eq('ID', task.ID);
+
     loadTasks();
   };
 
   const handleCompleteTask = async (task) => {
     const currentStatus = (task.Status || "").toLowerCase();
     const newStatus = currentStatus === "completed" ? "To Do" : "Completed";
+    const now = new Date();
 
     let updateData = {
       Status: newStatus,
-      "Updated Date": new Date().toISOString()
+      "Updated Date": now.toISOString()
     };
 
     if (newStatus === "Completed") {
       const metadata = parseTaskMetadata(task.Description || task.description);
+      let totalDuration = metadata?.durationTaken || 0;
+
       if (metadata && metadata.actualStartTime) {
         const start = new Date(metadata.actualStartTime);
-        const end = new Date();
-        const durationSeconds = Math.floor((end - start) / 1000);
-
-        updateData.Description = updateTaskMetadata(task.Description || task.description, {
-          actualEndTime: end.toISOString(),
-          durationTaken: durationSeconds
-        });
+        const segmentDuration = Math.floor((now - start) / 1000);
+        totalDuration += segmentDuration;
       }
+
+      updateData.Description = updateTaskMetadata(task.Description || task.description, {
+        actualStartTime: null,
+        actualEndTime: now.toISOString(),
+        durationTaken: totalDuration
+      });
     } else {
       // Clear completion metadata when unchecking
       updateData.Description = updateTaskMetadata(task.Description || task.description, {
         actualEndTime: null,
-        durationTaken: null
+        // We keep durationTaken so they can resume from where they left off
       });
     }
 
@@ -377,6 +432,7 @@ export default function TasksPage() {
                   onViewDetails={setViewingTask}
                   onDelete={handleDelete}
                   onStartTask={handleStartTask}
+                  onPauseTask={handlePauseTask}
                   onCompleteTask={handleCompleteTask}
                   currentUser={currentUser}
                   assignedUserName={task["Assigned To User ID"]}
@@ -418,6 +474,7 @@ export default function TasksPage() {
                   onViewDetails={setViewingTask}
                   onDelete={handleDelete}
                   onStartTask={handleStartTask}
+                  onPauseTask={handlePauseTask}
                   onCompleteTask={handleCompleteTask}
                   currentUser={currentUser}
                   assignedUserName={task["Assigned To User ID"]}
@@ -449,6 +506,7 @@ export default function TasksPage() {
           onClose={() => setViewingTask(null)}
           onEdit={(t) => { setViewingTask(null); setEditingTask(t); }}
           onStartTask={handleStartTask}
+          onPauseTask={handlePauseTask}
           onCompleteTask={handleCompleteTask}
           onDelete={handleDelete}
           currentUser={currentUser}
