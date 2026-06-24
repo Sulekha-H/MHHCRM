@@ -30,17 +30,26 @@ export default function RotaCloudPage() {
       const usersData = await usersRes.json();
       setStaff(Array.isArray(usersData) ? usersData : []);
 
+      // RotaCloud API requires UNIX timestamps for dates
+      const now = new Date();
+      const startTimestamp = Math.floor(now.getTime() / 1000);
+      const endTimestamp = Math.floor((now.getTime() + 7 * 24 * 60 * 60 * 1000) / 1000);
+
       // Fetch upcoming shifts (next 7 days)
-      const start = format(new Date(), 'yyyy-MM-dd');
-      const end = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-      const shiftsRes = await fetch(`/api/rotacloud?endpoint=shifts&start=${start}&end=${end}`);
-      if (!shiftsRes.ok) throw new Error('Failed to fetch shift data');
+      const shiftsRes = await fetch(`/api/rotacloud?endpoint=shifts&start=${startTimestamp}&end=${endTimestamp}`);
+      if (!shiftsRes.ok) {
+        const errorData = await shiftsRes.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch shift data');
+      }
       const shiftsData = await shiftsRes.json();
       setShifts(Array.isArray(shiftsData) ? shiftsData : []);
 
-      // Fetch leave
-      const leaveRes = await fetch('/api/rotacloud?endpoint=leave');
-      if (!leaveRes.ok) throw new Error('Failed to fetch leave data');
+      // Fetch leave (use same time range)
+      const leaveRes = await fetch(`/api/rotacloud?endpoint=leave&start=${startTimestamp}&end=${endTimestamp}`);
+      if (!leaveRes.ok) {
+        const errorData = await leaveRes.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch leave data');
+      }
       const leaveData = await leaveRes.json();
       setLeave(Array.isArray(leaveData) ? leaveData : []);
 
