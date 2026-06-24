@@ -29,6 +29,7 @@ export default function TasksPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [viewingTask, setViewingTask] = useState(null);
+  const [newMiscTaskTitle, setNewMiscTaskTitle] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [filters, setFilters] = useState({ assignee: "all", search: "" });
@@ -203,6 +204,36 @@ export default function TasksPage() {
     loadTasks();
   };
 
+  const handleAddMiscTask = async (e) => {
+    if (e) e.preventDefault();
+    if (!newMiscTaskTitle.trim()) return;
+
+    try {
+      const assigneeName = filters.assignee === "all" ? (currentUser?.["Full Name"] || currentUser?.full_name) : filters.assignee;
+
+      const { error } = await supabase.from('tasks').insert([{
+        ID: generateUUID(),
+        Title: newMiscTaskTitle.trim(),
+        Status: "To Do",
+        Priority: "Medium",
+        "Due Date": selectedDate.toISOString(),
+        "Assigned To User ID": assigneeName,
+        "Created Date": new Date().toISOString(),
+        "Updated Date": new Date().toISOString(),
+        "Created By": currentUser?.Email || "Unknown",
+        "Logged By": currentUser?.["Full Name"] || "Unknown",
+        "Related Entity": "None",
+        "Related Entity ID": ""
+      }]);
+
+      if (error) throw error;
+      setNewMiscTaskTitle("");
+      loadTasks();
+    } catch (error) {
+      alert("Error adding task: " + error.message);
+    }
+  };
+
   const handleDelete = async (task) => {
     if (confirm("Delete this task?")) {
       await supabase.from('tasks').update({ Deleted: true, "Deleted Date": new Date().toISOString(), "Deleted By": currentUser?.["Full Name"] }).eq('ID', task.ID);
@@ -263,7 +294,7 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header & Date Navigation */}
         <div className="bg-white rounded-xl shadow-sm border p-6 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -326,60 +357,75 @@ export default function TasksPage() {
           />
         </div>
 
-        {/* Routine Tasks Section */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4" /> Routine Tasks
-            </h2>
-            <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
-              {routineTasks.filter(t => (t.Status || "").toLowerCase() === "completed").length}/{routineTasks.length} Done
-            </Badge>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          {/* Routine Tasks Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="w-4 h-4" /> Routine Tasks
+              </h2>
+              <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
+                {routineTasks.filter(t => (t.Status || "").toLowerCase() === "completed").length}/{routineTasks.length} Done
+              </Badge>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
+              {routineTasks.length > 0 ? routineTasks.map(task => (
+                <TaskCard
+                  key={task.ID}
+                  task={task}
+                  onEdit={setEditingTask}
+                  onViewDetails={setViewingTask}
+                  onDelete={handleDelete}
+                  onStartTask={handleStartTask}
+                  onCompleteTask={handleCompleteTask}
+                  currentUser={currentUser}
+                  assignedUserName={task["Assigned To User ID"]}
+                  isRoutine={true}
+                  isUpNext={task.ID === upNextId}
+                />
+              )) : (
+                <div className="p-8 text-center text-slate-400 italic text-sm">No routines scheduled for this day</div>
+              )}
+            </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
-            {routineTasks.length > 0 ? routineTasks.map(task => (
-              <TaskCard
-                key={task.ID}
-                task={task}
-                onEdit={setEditingTask}
-                onViewDetails={setViewingTask}
-                onDelete={handleDelete}
-                onStartTask={handleStartTask}
-                onCompleteTask={handleCompleteTask}
-                currentUser={currentUser}
-                assignedUserName={task["Assigned To User ID"]}
-                isRoutine={true}
-                isUpNext={task.ID === upNextId}
-              />
-            )) : (
-              <div className="p-8 text-center text-slate-400 italic text-sm">No routines scheduled for this day</div>
-            )}
-          </div>
-        </div>
 
-        {/* Miscellaneous Tasks Section */}
-        <div className="space-y-3 pt-4">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              <ListTodo className="w-4 h-4" /> Miscellaneous Stuff
-            </h2>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
-            {miscTasks.length > 0 ? miscTasks.map(task => (
-              <TaskCard
-                key={task.ID}
-                task={task}
-                onEdit={setEditingTask}
-                onViewDetails={setViewingTask}
-                onDelete={handleDelete}
-                onStartTask={handleStartTask}
-                onCompleteTask={handleCompleteTask}
-                currentUser={currentUser}
-                assignedUserName={task["Assigned To User ID"]}
-              />
-            )) : (
-              <div className="p-8 text-center text-slate-400 italic text-sm">No miscellaneous tasks</div>
-            )}
+          {/* Miscellaneous Tasks Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <ListTodo className="w-4 h-4" /> Miscellaneous Stuff
+              </h2>
+            </div>
+
+            <div className="relative group">
+              <Plus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-500 transition-colors" />
+              <form onSubmit={handleAddMiscTask}>
+                <Input
+                  placeholder="Add a miscellaneous task..."
+                  className="pl-10 bg-white border-slate-200 focus:border-cyan-500 focus:ring-cyan-500 rounded-xl"
+                  value={newMiscTaskTitle}
+                  onChange={(e) => setNewMiscTaskTitle(e.target.value)}
+                />
+              </form>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
+              {miscTasks.length > 0 ? miscTasks.map(task => (
+                <TaskCard
+                  key={task.ID}
+                  task={task}
+                  onEdit={setEditingTask}
+                  onViewDetails={setViewingTask}
+                  onDelete={handleDelete}
+                  onStartTask={handleStartTask}
+                  onCompleteTask={handleCompleteTask}
+                  currentUser={currentUser}
+                  assignedUserName={task["Assigned To User ID"]}
+                />
+              )) : (
+                <div className="p-8 text-center text-slate-400 italic text-sm">No miscellaneous tasks</div>
+              )}
+            </div>
           </div>
         </div>
 
