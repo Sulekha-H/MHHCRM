@@ -4,7 +4,7 @@ import { useSession, useUser } from "@clerk/nextjs";
 import React, { useState, useEffect } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Clock, ListTodo, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, Download, Clock, ListTodo, ChevronLeft, ChevronRight, Search, CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { format, addDays, subDays, isSameDay } from "date-fns";
@@ -340,8 +340,12 @@ export default function TasksPage() {
   };
 
   const routineTitlesLower = ROUTINE_TITLES.map(t => t.trim().toLowerCase());
-  const routineTasks = sortTasks(filteredTasks.filter(t => routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'routine');
-  const miscTasks = sortTasks(filteredTasks.filter(t => !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'misc');
+
+  const activeTasks = filteredTasks.filter(t => (t.Status || "").toLowerCase() !== "completed");
+  const completedTasksList = sortTasks(filteredTasks.filter(t => (t.Status || "").toLowerCase() === "completed"), 'misc');
+
+  const routineTasks = sortTasks(activeTasks.filter(t => routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'routine');
+  const miscTasks = sortTasks(activeTasks.filter(t => !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'misc');
 
   const upNextId = routineTasks.find(t => (t.Status || "").toLowerCase() === "to do")?.ID;
 
@@ -420,7 +424,7 @@ export default function TasksPage() {
                 <Clock className="w-4 h-4" /> Routine Tasks
               </h2>
               <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
-                {routineTasks.filter(t => (t.Status || "").toLowerCase() === "completed").length}/{routineTasks.length} Done
+                {routineTasks.length} Pending
               </Badge>
             </div>
             <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
@@ -440,7 +444,7 @@ export default function TasksPage() {
                   isUpNext={task.ID === upNextId}
                 />
               )) : (
-                <div className="p-8 text-center text-slate-400 italic text-sm">No routines scheduled for this day</div>
+                <div className="p-8 text-center text-slate-400 italic text-sm">No active routines</div>
               )}
             </div>
           </div>
@@ -480,9 +484,39 @@ export default function TasksPage() {
                   assignedUserName={task["Assigned To User ID"]}
                 />
               )) : (
-                <div className="p-8 text-center text-slate-400 italic text-sm">No miscellaneous tasks</div>
+                <div className="p-8 text-center text-slate-400 italic text-sm">No active miscellaneous tasks</div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Completed Tasks Section */}
+        <div className="space-y-3 pt-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Completed Tasks
+            </h2>
+            <Badge variant="secondary" className="bg-green-100 text-green-700 border-none">
+              {completedTasksList.length} Finished
+            </Badge>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
+            {completedTasksList.length > 0 ? completedTasksList.map(task => (
+              <TaskCard
+                key={task.ID}
+                task={task}
+                onEdit={setEditingTask}
+                onViewDetails={setViewingTask}
+                onDelete={handleDelete}
+                onStartTask={handleStartTask}
+                onPauseTask={handlePauseTask}
+                onCompleteTask={handleCompleteTask}
+                currentUser={currentUser}
+                assignedUserName={task["Assigned To User ID"]}
+              />
+            )) : (
+              <div className="p-8 text-center text-slate-400 italic text-sm">No completed tasks for this day</div>
+            )}
           </div>
         </div>
 
