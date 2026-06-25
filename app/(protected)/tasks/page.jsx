@@ -340,14 +340,29 @@ export default function TasksPage() {
   };
 
   const routineTitlesLower = ROUTINE_TITLES.map(t => t.trim().toLowerCase());
-
   const activeTasks = filteredTasks.filter(t => (t.Status || "").toLowerCase() !== "completed");
-  const completedTasksList = sortTasks(filteredTasks.filter(t => (t.Status || "").toLowerCase() === "completed"), 'misc');
 
-  const routineTasks = sortTasks(activeTasks.filter(t => routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'routine');
+  const assigneeName = filters.assignee === "all" ? (currentUser?.["Full Name"] || currentUser?.full_name) : filters.assignee;
+
+  const routineTasks = routineTemplates.filter(template => {
+    if (!assigneeName) return true;
+    const assignedTo = (template.assignedTo || "").trim().toLowerCase();
+    const excludedFrom = (template.excludedFrom || "").trim().toLowerCase();
+    const userLower = assigneeName.trim().toLowerCase();
+    if (excludedFrom === userLower) return false;
+    if (assignedTo && assignedTo !== userLower) return false;
+    return true;
+  }).map(template => {
+    if (template.isHeader) {
+      return { ...template, ID: `header-${template.title}-${dayName}` };
+    }
+    return activeTasks.find(t => (t.Title || "").trim().toLowerCase() === (template.title || "").trim().toLowerCase());
+  }).filter(Boolean);
+
+  const completedTasksList = sortTasks(filteredTasks.filter(t => (t.Status || "").toLowerCase() === "completed"), 'misc');
   const miscTasks = sortTasks(activeTasks.filter(t => !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'misc');
 
-  const upNextId = routineTasks.find(t => (t.Status || "").toLowerCase() === "to do")?.ID;
+  const upNextId = routineTasks.find(t => t && !t.isHeader && (t.Status || "").toLowerCase() === "to do")?.ID;
 
   if (!mounted) return null;
 
@@ -424,7 +439,7 @@ export default function TasksPage() {
                 <Clock className="w-4 h-4" /> Routine Tasks
               </h2>
               <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
-                {routineTasks.length} Pending
+                {routineTasks.filter(t => !t.isHeader).length} Pending
               </Badge>
             </div>
             <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
