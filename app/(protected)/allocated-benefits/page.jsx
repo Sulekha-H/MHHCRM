@@ -183,32 +183,42 @@ useEffect(() => {
           throw error;
         }
         console.log(`✅ Log inserted into ${tableName}`, data);
+      }
 
-        // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is created
-        const currentBenefitType = logData["Benefit Type"] || logData.benefit_type;
-        const currentLogType = logData["Log Type"] || logData.log_type;
+      // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is marked as "Completed Application Submitted"
+      const currentBenefitType = logData["Benefit Type"] || logData.benefit_type;
+      const currentLogType = logData["Log Type"] || logData.log_type;
+      const currentStatus = logData.Status || logData.status;
 
-        if (currentBenefitType === 'Housing Benefit' && currentLogType === 'Application Log') {
-          const resId = logData["Resident ID"] || logData.resident_id;
-          const resident = residents.find(r => r.id === resId);
-          const residentFullName = resident ? `${resident.first_name} ${resident.last_name}` : 'Resident';
+      const isHousingBenefit = currentBenefitType === 'Housing Benefit' || currentBenefitType === 'housing_benefit';
+      const isApplicationLog = currentLogType === 'Application Log' || currentLogType === 'application_log';
+      const isCompletedStatus = currentStatus === 'Completed Application Submitted' || currentStatus === 'completed_application_submitted';
 
-          const awaitingActivationLog = {
-            "Resident ID": resId,
-            "Benefit Type": 'Housing Benefit',
-            "Log Type": 'Awaiting Activation',
-            "Title": `Awaiting Activation - ${residentFullName}`,
-            "Description": `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData["Completed Application Submitted Date"] ? format(new Date(logData["Completed Application Submitted Date"]), 'dd/MM/yyyy') : 'pending'}`,
-            "Log Date": new Date().toISOString(),
-            "Status": 'Awaiting Activation',
-            "Logged By": logData["Logged By"] || '',
-            "Notes": `Linked to application: ${logData.Title || 'HB Application'}`,
-            "Created Date": new Date().toISOString()
-          };
+      // Duplicate prevention: Only trigger if it's a new log OR if the status is changing to Completed
+      const isNewLog = !editingLog;
+      const wasNotCompletedBefore = editingLog && editingLog.status !== 'Completed Application Submitted' && editingLog.status !== 'completed_application_submitted';
 
-          await supabase.from('allocated_housing_benefit_logs').insert([awaitingActivationLog]); // This always goes to HB table
-          console.log('✅ Auto-created Awaiting Activation log for resident:', resId);
-        }
+      if (isHousingBenefit && isApplicationLog && isCompletedStatus && (isNewLog || wasNotCompletedBefore)) {
+        const resId = logData["Resident ID"] || logData.resident_id;
+        const resident = residents.find(r => r.id === resId || r.ID === resId);
+        const residentFullName = resident ? `${resident.first_name || resident["First Name"]} ${resident.last_name || resident["Last Name"]}` : 'Resident';
+
+        const awaitingActivationLog = {
+          "ID": crypto.randomUUID(),
+          "Resident ID": resId,
+          "Benefit Type": 'Housing Benefit',
+          "Log Type": 'Awaiting Activation',
+          "Title": `Awaiting Activation - ${residentFullName}`,
+          "Description": `Auto-generated: Awaiting activation for Housing Benefit application submitted on ${logData["Completed Application Submitted Date"] || logData.completed_application_submitted_date ? format(new Date(logData["Completed Application Submitted Date"] || logData.completed_application_submitted_date), 'dd/MM/yyyy') : 'pending'}`,
+          "Log Date": new Date().toISOString().slice(0, 16),
+          "Status": 'Awaiting Activation',
+          "Logged By": logData["Logged By"] || logData.logged_by || '',
+          "Notes": `Linked to application: ${logData.Title || logData.title || 'HB Application'}`,
+          "Created Date": new Date().toISOString()
+        };
+
+        await supabase.from('allocated_housing_benefit_logs').insert([awaitingActivationLog]); // This always goes to HB table
+        console.log('✅ Auto-created Awaiting Activation log for resident:', resId);
       }
 
       setShowForm(false);
