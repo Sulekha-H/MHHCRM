@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Clock, AlertTriangle, Play, Pause, CheckCircle2, Circle } from "lucide-react";
-import { format, differenceInSeconds } from "date-fns";
+import { Calendar, User, Clock, AlertTriangle, Play, Pause, CheckCircle2, Circle, Lock } from "lucide-react";
+import { format, differenceInSeconds, isPast } from "date-fns";
 import { parseTaskMetadata } from "@/lib/utils";
 import { WEEKLY_ROUTINES, ROUTINE_TITLES } from "@/lib/constants/routines";
 
@@ -36,6 +36,17 @@ export default function TaskCard({
   const targetDuration = metadata?.targetDuration;
   const actualStartTime = metadata?.actualStartTime;
   const durationTaken = metadata?.durationTaken;
+  const deadline = metadata?.deadline || dueDate;
+
+  const isCompleted = status === 'completed' || status === 'Completed';
+  const isInProgress = status === 'in_progress' || status === 'In Progress';
+  const isOverdue = !isCompleted && deadline && isPast(new Date(deadline));
+
+  // A task is expired if the deadline is past, it's not completed, and it's NOT currently running.
+  // Exception: Leticia can always override.
+  const userFullName = (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase();
+  const isAdmin = userFullName === 'leticia' || userFullName === 'admin';
+  const isExpired = isOverdue && !isInProgress && !isAdmin;
 
   useEffect(() => {
     let interval;
@@ -98,10 +109,6 @@ export default function TaskCard({
     return colors[priority] || colors.medium;
   };
 
-  const isCompleted = status === 'completed' || status === 'Completed';
-  const isInProgress = status === 'in_progress' || status === 'In Progress';
-  const isOverdue = !isCompleted && dueDate && new Date(dueDate) < new Date();
-
   const isRoutineInternal = isRoutine || ROUTINE_TITLES.some(t => t.trim().toLowerCase() === (title || "").trim().toLowerCase());
 
   // Robust header detection using titles from WEEKLY_ROUTINES
@@ -131,14 +138,19 @@ export default function TaskCard({
     >
       {/* Checkbox Icon */}
       <div
-        className="flex-shrink-0"
+        className={`flex-shrink-0 ${isExpired ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
         onClick={(e) => {
           e.stopPropagation();
-          onCompleteTask(task);
+          if (!isExpired) onCompleteTask(task);
         }}
       >
         {isCompleted ? (
           <CheckCircle2 className="w-5 h-5 text-green-500" />
+        ) : isExpired ? (
+          <div className="relative">
+            <Circle className="w-5 h-5 text-slate-200" />
+            <Lock className="w-2.5 h-2.5 text-slate-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
         ) : (
           <Circle className="w-5 h-5 text-slate-300 group-hover:text-cyan-500 transition-colors" />
         )}
@@ -155,8 +167,10 @@ export default function TaskCard({
               Up Next
             </Badge>
           )}
-          {isOverdue && (
-            <AlertTriangle className="w-3 h-3 text-red-500" />
+          {isOverdue && !isCompleted && (
+            <Badge variant="outline" className={`border-none h-4 px-1.5 text-[10px] uppercase font-bold ${isExpired ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-700'}`}>
+              {isExpired ? 'Locked' : 'Overdue'}
+            </Badge>
           )}
         </div>
         
@@ -196,7 +210,7 @@ export default function TaskCard({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1">
-        {!isCompleted && (assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase() && (
+        {!isCompleted && !isExpired && (assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase() && (
           <>
             {isInProgress ? (
               <Button
