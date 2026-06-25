@@ -19,6 +19,9 @@ export default function RotaCloudPage() {
   const [staff, setStaff] = useState([]);
   const [shifts, setShifts] = useState([]);
   const [leave, setLeave] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [leaveTypes, setLeaveTypes] = useState([]);
 
   const safeFormatDate = (dateValue, formatStr) => {
     if (!dateValue) return 'N/A';
@@ -48,6 +51,27 @@ export default function RotaCloudPage() {
       if (!usersRes.ok) throw new Error('Failed to fetch staff data');
       const usersData = await usersRes.json();
       setStaff(Array.isArray(usersData) ? usersData : []);
+
+      // Fetch locations
+      const locationsRes = await fetch('/api/rotacloud?endpoint=locations');
+      if (locationsRes.ok) {
+        const locationsData = await locationsRes.json();
+        setLocations(Array.isArray(locationsData) ? locationsData : []);
+      }
+
+      // Fetch roles
+      const rolesRes = await fetch('/api/rotacloud?endpoint=roles');
+      if (rolesRes.ok) {
+        const rolesData = await rolesRes.json();
+        setRoles(Array.isArray(rolesData) ? rolesData : []);
+      }
+
+      // Fetch leave types
+      const leaveTypesRes = await fetch('/api/rotacloud?endpoint=leave_types');
+      if (leaveTypesRes.ok) {
+        const leaveTypesData = await leaveTypesRes.json();
+        setLeaveTypes(Array.isArray(leaveTypesData) ? leaveTypesData : []);
+      }
 
       const now = new Date();
       const future = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -165,6 +189,9 @@ export default function RotaCloudPage() {
                     <tbody className="divide-y divide-slate-100">
                       {shifts.map((shift) => {
                         const staffMember = staff.find(s => s.id === shift.user);
+                        const location = locations.find(l => l.id === shift.location);
+                        const role = roles.find(r => r.id === shift.role);
+
                         return (
                           <tr key={shift.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-4 py-3 font-medium text-slate-900">
@@ -178,11 +205,11 @@ export default function RotaCloudPage() {
                             </td>
                             <td className="px-4 py-3">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {shift.location_name || 'N/A'}
+                                {location ? location.name : (shift.location_name || 'N/A')}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-slate-600">
-                              {shift.role_name || 'N/A'}
+                              {role ? role.name : (shift.role_name || 'N/A')}
                             </td>
                           </tr>
                         );
@@ -270,6 +297,7 @@ export default function RotaCloudPage() {
                     <tbody className="divide-y divide-slate-100">
                       {leave.map((item) => {
                         const staffMember = staff.find(s => s.id === item.user);
+                        const leaveType = leaveTypes.find(t => t.id === item.leave_type);
                         const statusColors = {
                           approved: 'bg-green-100 text-green-800',
                           pending: 'bg-yellow-100 text-yellow-800',
@@ -284,7 +312,7 @@ export default function RotaCloudPage() {
                               {safeFormatDate(item.start_date, 'do MMM')} - {safeFormatDate(item.end_date, 'do MMM yyyy')}
                             </td>
                             <td className="px-4 py-3 text-slate-600">
-                              {item.leave_type_name || 'Annual Leave'}
+                              {leaveType ? leaveType.name : (item.leave_type_name || 'Annual Leave')}
                             </td>
                             <td className="px-4 py-3">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[item.status] || 'bg-slate-100 text-slate-800'}`}>
