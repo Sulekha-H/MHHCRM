@@ -15,6 +15,7 @@ import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
 import BenefitLogCard from "@/components/Benefits/BenefitLogCard";
 import BenefitLogDetailModal from "@/components/Benefits/BenefitLogDetailModal";
 import { format } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 // Helper function to normalize column names from Supabase
 const normalizeData = (data) => {
@@ -170,6 +171,16 @@ useEffect(() => {
           throw error;
         }
         console.log(`✅ Log updated in ${tableName}:`, logId);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.BENEFIT,
+          entityId: logId,
+          description: `Updated allocated benefit log: ${logData.Title || logData.title}`
+        });
       } else {
         // Ensure ID exists for new records
         if (!logData.ID && !logData.id) {
@@ -183,6 +194,16 @@ useEffect(() => {
           throw error;
         }
         console.log(`✅ Log inserted into ${tableName}`, data);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.BENEFIT,
+          entityId: logData.ID || logData.id,
+          description: `Created new allocated benefit log: ${logData.Title || logData.title}`
+        });
       }
 
       // Auto-create "Awaiting Activation" log when Housing Benefit Application Log is marked as "Completed Application Submitted"
@@ -278,6 +299,16 @@ useEffect(() => {
           console.error('❌ Delete error:', error);
           throw error;
         }
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.BENEFIT,
+          entityId: logToDelete.id,
+          description: `Soft deleted allocated benefit log: ${logToDelete.title}`
+        });
 
         console.log('✅ Delete response:', data);
 

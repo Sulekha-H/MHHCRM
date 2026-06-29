@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, ClipboardPlus, Download } from "lucide-react";
 import { format } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import ReferralForm from "@/components/referrals/ReferralForm";
 import ReferralDetailModal from "@/components/referrals/ReferralDetailModal";
 import {
@@ -171,10 +172,20 @@ const { data: usersData } = await supabase.from('users').select('*');
           .update(referralData)
           .eq('"ID"', editingReferral.id);
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.REFERRAL,
+          entityId: editingReferral.id,
+          description: `Updated referral for ${referralData["Applicant Name"] || editingReferral.applicant_name} (${tableName})`
+        });
       } else {
         // Ensure ID exists for new records
+        const newId = referralData.ID || crypto.randomUUID();
         if (!referralData.ID) {
-          referralData.ID = crypto.randomUUID();
+          referralData.ID = newId;
           referralData["Created Date"] = new Date().toISOString();
         }
         
@@ -182,6 +193,15 @@ const { data: usersData } = await supabase.from('users').select('*');
           .from(tableName)
           .insert([referralData]);
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.REFERRAL,
+          entityId: newId,
+          description: `Logged new referral for ${referralData["Applicant Name"]} (${tableName})`
+        });
       }
       
       setShowForm(false);
@@ -222,6 +242,15 @@ const { data: usersData } = await supabase.from('users').select('*');
         .eq('"ID"', referral.id);
 
       if (error) throw error;
+
+      await logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.DELETE,
+        entityType: ENTITIES.REFERRAL,
+        entityId: referral.id,
+        description: `Deleted referral for ${referral.applicant_name} (${tableName})`
+      });
 
       setViewingReferral(null);
       loadData();
@@ -315,6 +344,14 @@ const { data: usersData } = await supabase.from('users').select('*');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.REFERRAL,
+      description: `Exported ${referrals.length} referrals to CSV`
+    });
   };
 
   const emptyStateMessage = searchTerm

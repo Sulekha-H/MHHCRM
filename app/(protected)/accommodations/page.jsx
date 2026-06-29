@@ -15,6 +15,7 @@ import AccommodationCard from "@/components/accommodations/AccommodationCard";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AccommodationDetailModal from "@/components/accommodations/AccommodationDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
  
 // pages/accommodations.jsx
 
@@ -174,9 +175,33 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
       if (editingAccommodation) {
         const { error } = await supabase.from('accommodations').update(accommodationData).eq('"ID"', editingAccommodation.ID);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.ACCOMMODATION,
+          entityId: editingAccommodation.ID,
+          description: `Updated accommodation: ${accommodationData["Room Number"] || accommodationData.room_number} at ${getPropertyName(accommodationData["Property ID"] || accommodationData.property_id)}`
+        });
       } else {
-        const { error } = await supabase.from('accommodations').insert([accommodationData]);
+        // Ensure ID is generated for new records
+        const newId = accommodationData.ID || crypto.randomUUID();
+        const dataToInsert = { ...accommodationData, ID: newId };
+
+        const { error } = await supabase.from('accommodations').insert([dataToInsert]);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.ACCOMMODATION,
+          entityId: newId,
+          description: `Created new accommodation: ${accommodationData["Room Number"] || accommodationData.room_number} at ${getPropertyName(accommodationData["Property ID"] || accommodationData.property_id)}`
+        });
       }
       setShowForm(false);
       setEditingAccommodation(null);
@@ -211,6 +236,16 @@ import AccommodationDetailModal from "@/components/accommodations/AccommodationD
         const { error } = await supabase.from('accommodations').delete().eq('"ID"', accommodation.ID);
         if (error) throw error;
         console.log(`Accommodation ${accommodation.ID} deleted successfully.`);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.ACCOMMODATION,
+          entityId: accommodation.ID,
+          description: `Deleted accommodation: ${accommodation["Room Number"]} at ${propertyName}`
+        });
         setViewingAccommodation(null);
         await loadData();
       } catch (error) {

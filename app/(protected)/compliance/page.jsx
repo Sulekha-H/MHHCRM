@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, FileCheck, AlertTriangle, Calendar, ExternalLink, Building2, MapPin, ChevronDown, ChevronRight, Download, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { format, differenceInDays } from "date-fns";
 import ComplianceForm_Supabase from "@/components/compliance/ComplianceForm";
 import ComplianceDetailModal from "@/components/compliance/ComplianceDetailModal";
@@ -218,12 +219,36 @@ const handleSubmit = async (logData) => {
         .eq('ID', editingLog.id);
 
       if (error) throw error;
+
+      await logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.UPDATE,
+        entityType: ENTITIES.COMPLIANCE,
+        entityId: editingLog.id,
+        description: `Updated property cert "${logData["Certificate Name"]}" for ${getPropertyName(logData["Property ID"])}`
+      });
     } else {
+      const newId = crypto.randomUUID();
+      const insertData = {
+        ...cleanedLogData,
+        "ID": newId
+      };
+
       const { error } = await supabase
         .from('compliance_logs')
-        .insert([cleanedLogData]);
+        .insert([insertData]);
 
       if (error) throw error;
+
+      await logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.CREATE,
+        entityType: ENTITIES.COMPLIANCE,
+        entityId: newId,
+        description: `Added new property cert "${logData["Certificate Name"]}" for ${getPropertyName(logData["Property ID"])}`
+      });
     }
 
     setShowForm(false);
@@ -256,6 +281,15 @@ const handleSubmit = async (logData) => {
         }).eq('"ID"', log.id);
         
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.COMPLIANCE,
+          entityId: log.id,
+          description: `Deleted property cert "${log.certificate_name}" for ${getPropertyName(log.property_id)}`
+        });
         
         setViewingLog(null);
         loadData();
@@ -470,6 +504,14 @@ const handleSubmit = async (logData) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.COMPLIANCE,
+      description: `Exported ${filteredLogs.length} property certs to CSV`
+    });
+
     console.log("✅ Compliance logs CSV export completed successfully");
   };
 

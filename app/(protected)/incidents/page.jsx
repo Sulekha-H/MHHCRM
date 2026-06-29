@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import IncidentForm from "@/components/Incidents/IncidentForm";
 import IncidentCard from "@/components/Incidents/IncidentCard";
 import IncidentDetailModal from "@/components/Incidents/IncidentDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function IncidentsSupabase() {
   const supabase = useClerkSupabaseClient()
@@ -140,12 +141,31 @@ const fetchAllData = useCallback(async () => {
           .eq('ID', editingIncident.ID || editingIncident.id);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.INCIDENT,
+          entityId: editingIncident.ID || editingIncident.id,
+          description: `Updated incident: ${incidentData.Description?.slice(0, 50)}...`
+        });
       } else {
         const { error } = await supabase
           .from('incidents')
           .insert([incidentData]);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.INCIDENT,
+          description: `Reported new incident: ${incidentData.Description?.slice(0, 50)}...`
+        });
       }
       
       setShowForm(false);
@@ -182,6 +202,16 @@ const fetchAllData = useCallback(async () => {
 
         if (error) throw error;
         console.log(`✅ Soft deleted incident ${incident.ID || incident.id}`);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.INCIDENT,
+          entityId: incident.ID || incident.id,
+          description: `Soft deleted incident: ${incident.Description?.slice(0, 50)}...`
+        });
         setViewingIncident(null);
         await fetchAllData();
       } catch (error) {
@@ -309,6 +339,14 @@ const fetchAllData = useCallback(async () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.INCIDENT,
+      description: `Exported incidents to CSV`
+    });
   };
 
   const getSeverityColor = (severity) => {

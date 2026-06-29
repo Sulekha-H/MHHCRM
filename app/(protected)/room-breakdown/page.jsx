@@ -11,6 +11,7 @@ import { PlusCircle, History, RefreshCw, Download } from "lucide-react";
 import { format } from "date-fns";
 import RoomAssignmentForm from "@/components/room-breakdown/RoomAssignmentForm";
 import RoomAssignmentHistory from "@/components/room-breakdown/RoomAssignmentHistory";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 const PROPERTIES_CONFIG = [
   { name: "SPRINGFIELD", rooms: 6 },
@@ -117,6 +118,14 @@ export default function RoomBreakdownPage() {
     if (error) {
       alert("Error updating status: " + error.message);
     } else {
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.UPDATE,
+        entityType: ENTITIES.ACCOMMODATION,
+        description: `Quick status change for ${propertyName} ${roomName} (${slot}) to ${newStatus}`
+      });
       loadData();
     }
   };
@@ -145,6 +154,14 @@ export default function RoomBreakdownPage() {
     if (error) {
       alert("Error saving assignment: " + error.message);
     } else {
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.UPDATE,
+        entityType: ENTITIES.ACCOMMODATION,
+        description: `Updated room assignment for ${activeSlot.propertyName} ${activeSlot.roomName} (${activeSlot.slot})`
+      });
       setShowForm(false);
       loadData();
     }

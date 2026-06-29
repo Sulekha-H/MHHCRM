@@ -26,6 +26,7 @@ import ComplianceCheckForm from "@/components/compliance-checks/ComplianceCheckF
 import ComplianceCheckDetailModal from "@/components/compliance-checks/ComplianceCheckDetailModal";
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
 import { Input } from "@/components/ui/input";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function ComplianceChecksPage() {
   const supabase = useClerkSupabaseClient();
@@ -157,9 +158,30 @@ export default function ComplianceChecksPage() {
       if (editingLog) {
         const { error } = await supabase.from('compliance_checks').update(finalData).eq('"ID"', editingLog.ID);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.COMPLIANCE,
+          entityId: editingLog.ID,
+          description: `Updated weekly compliance check for ${finalData["Property Name"]}`
+        });
       } else {
-        const { error } = await supabase.from('compliance_checks').insert([finalData]);
+        const newLogId = crypto.randomUUID();
+        const { error } = await supabase.from('compliance_checks').insert([{ ...finalData, ID: newLogId }]);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.COMPLIANCE,
+          entityId: newLogId,
+          description: `Created new weekly compliance check for ${finalData["Property Name"]}`
+        });
       }
       setShowForm(false);
       setEditingLog(null);
@@ -173,8 +195,23 @@ export default function ComplianceChecksPage() {
   const handleDelete = async (log) => {
     if (window.confirm(`Are you sure you want to delete the log for ${log["Property Name"]} (Week Ending: ${log["Week Ending Date"]})?`)) {
       try {
-        const { error } = await supabase.from('compliance_checks').update({ Deleted: true }).eq('"ID"', log.ID);
+        const { error } = await supabase.from('compliance_checks').update({
+          Deleted: true,
+          "Deleted Date": new Date().toISOString(),
+          "Deleted By": user?.primaryEmailAddress?.emailAddress
+        }).eq('"ID"', log.ID);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.COMPLIANCE,
+          entityId: log.ID,
+          description: `Soft deleted weekly compliance check for ${log["Property Name"]}`
+        });
+
         loadData();
       } catch (error) {
         console.error("Error deleting log:", error);

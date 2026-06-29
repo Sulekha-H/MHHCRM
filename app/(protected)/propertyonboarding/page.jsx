@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Building, Phone, Mail, MapPin, Calendar, FileText, Eye, Download, User as UserIcon } from "lucide-react";
 import { format, isValid } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PropertyOnboardingForm_Supabase from "@/components/landlord/PropertyOnBoardingForm";
 import PropertyOnboardingDetailModal from "@/components/landlord/PropertyOnBoardingDetailModal";
@@ -317,6 +318,14 @@ export default function PropertyOnboardingSupabase() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.PROPERTY,
+      description: `Exported property onboarding cases to CSV`
+    });
   };
 
   const handleSubmit = async (caseData) => {
@@ -330,6 +339,16 @@ export default function PropertyOnboardingSupabase() {
           .eq('ID', editingCase.id);
         
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: editingCase.id,
+          description: `Updated property onboarding case for ${caseData["Landlord Name"] || editingCase.landlord_name} (${caseData["Property Address"] || editingCase.property_address})`
+        });
+
         console.log("✅ Case updated successfully");
       } else {
         const { error } = await supabase
@@ -337,6 +356,16 @@ export default function PropertyOnboardingSupabase() {
           .insert([caseData]);
         
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: caseData.ID,
+          description: `Started new property onboarding for ${caseData["Landlord Name"]} (${caseData["Property Address"]})`
+        });
+
         console.log("✅ Case created successfully");
       }
       
@@ -375,6 +404,15 @@ export default function PropertyOnboardingSupabase() {
         
         if (error) throw error;
         
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: caseToDelete.id,
+          description: `Permanently deleted property onboarding case for ${caseToDelete.landlord_name} (${caseToDelete.property_address})`
+        });
+
         console.log(`Property onboarding case ${caseToDelete.id} deleted successfully.`);
         setCaseToDelete(null);
         setViewingCase(null);
