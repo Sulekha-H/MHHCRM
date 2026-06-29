@@ -14,6 +14,7 @@ import { ROUTINE_TITLES, WEEKLY_ROUTINES } from "@/lib/constants/routines";
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
+import TaskTimeline from "@/components/tasks/TaskTimeline";
 
 export default function TasksPage() {
   const [mounted, setMounted] = useState(false);
@@ -368,7 +369,7 @@ export default function TasksPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
 
         {/* Header & Date Navigation */}
         <div className="bg-white rounded-xl shadow-sm border p-6 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -431,7 +432,17 @@ export default function TasksPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+          {/* Timeline Section */}
+          <div className="lg:col-span-1 hidden lg:block">
+            <TaskTimeline
+              routineTasks={routineTasks}
+              selectedDate={selectedDate}
+              onTaskClick={setViewingTask}
+              currentUser={currentUser}
+            />
+          </div>
+
           {/* Routine Tasks Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
