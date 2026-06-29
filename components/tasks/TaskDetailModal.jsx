@@ -207,46 +207,53 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                             </div>
 
                             <div className="flex gap-2">
-                                {((assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()) && (
+                                {!isCompleted && !isExpired && (
                                     <>
-                                    {(status === "To Do" || status === "to_do") && (
+                                        {(status === "To Do" || status === "to_do") ? (
                                             <Button
                                                 onClick={() => {
                                                     onStartTask(task);
                                                     onClose();
                                                 }}
-                                                className="bg-indigo-600 hover:bg-indigo-700"
-                                                disabled={isExpired}
+                                                className="bg-indigo-600 hover:bg-indigo-700 font-bold"
+                                                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
                                             >
-                                                <Play className="w-4 h-4 mr-2" />
+                                                <Play className="w-4 h-4 mr-2 fill-current" />
                                                 Start Task
                                             </Button>
-                                        )}
-                                    {(status === "In Progress" || status === "in_progress") && (
-                                        <>
+                                        ) : (status === "In Progress" || status === "in_progress") && (
                                             <Button
                                                 onClick={() => {
                                                     onPauseTask(task);
                                                     onClose();
                                                 }}
-                                                className="bg-amber-600 hover:bg-amber-700"
+                                                className="bg-amber-600 hover:bg-amber-700 font-bold"
+                                                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
                                             >
-                                                <Pause className="w-4 h-4 mr-2" />
+                                                <Pause className="w-4 h-4 mr-2 fill-current" />
                                                 Pause Task
                                             </Button>
-                                            <Button
-                                                onClick={() => {
-                                                    onCompleteTask(task);
-                                                    onClose();
-                                                }}
-                                                className="bg-green-600 hover:bg-green-700"
-                                            >
-                                                <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                Complete Task
-                                            </Button>
-                                        </>
                                         )}
+
+                                        <Button
+                                            onClick={() => {
+                                                onCompleteTask(task);
+                                                onClose();
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700 font-bold"
+                                            disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
+                                        >
+                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                            Complete
+                                        </Button>
                                     </>
+                                )}
+
+                                {isCompleted && (
+                                    <div className="flex items-center gap-2 text-green-600 font-bold">
+                                        <CheckCircle2 className="w-6 h-6" />
+                                        Task Completed
+                                    </div>
                                 )}
                             </div>
                         </DialogFooter>
