@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Clock, AlertTriangle, Play, Pause, CheckCircle2, Circle, Lock } from "lucide-react";
 import { format, differenceInSeconds, isPast } from "date-fns";
 import { parseTaskMetadata } from "@/lib/utils";
-import { WEEKLY_ROUTINES, ROUTINE_TITLES } from "@/lib/constants/routines";
+import { WEEKLY_ROUTINES, ROUTINE_TITLES, QUICK_TASKS } from "@/lib/constants/routines";
 
 export default function TaskCard({
   task,
@@ -121,6 +121,11 @@ export default function TaskCard({
 
   const isHeader = task.isHeader || allHeaders.includes(title?.trim().toLowerCase());
 
+  const isQuickTask = React.useMemo(() => {
+    const t = title?.toLowerCase() || "";
+    return QUICK_TASKS.includes(t.trim());
+  }, [title]);
+
   if (isHeader) {
     return (
       <div className="bg-slate-50 px-4 py-3 border-y border-slate-200 mt-4 first:mt-0">
@@ -192,35 +197,37 @@ export default function TaskCard({
       <div className="flex items-center gap-2">
         {!isCompleted && !isExpired && (
           <>
-            {/* Start/Pause Button */}
-            {isInProgress ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-700 font-bold text-xs gap-1"
-                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPauseTask(task);
-                }}
-              >
-                <Pause className="w-3 h-3 fill-current" />
-                Pause Task
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 font-bold text-xs gap-1"
-                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartTask(task);
-                }}
-              >
-                <Play className="w-3 h-3 fill-current" />
-                Start Task
-              </Button>
+            {/* Start/Pause Button - Hidden for quick tasks */}
+            {!isQuickTask && (
+              isInProgress ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-700 font-bold text-xs gap-1"
+                  disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPauseTask(task);
+                  }}
+                >
+                  <Pause className="w-3 h-3 fill-current" />
+                  Pause Task
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 font-bold text-xs gap-1"
+                  disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartTask(task);
+                  }}
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  Start Task
+                </Button>
+              )
             )}
 
             {/* Complete Button */}

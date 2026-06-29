@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { format, isPast } from 'date-fns';
 import { parseTaskMetadata } from '@/lib/utils';
-import { ROUTINE_TITLES } from '@/lib/constants/routines';
+import { ROUTINE_TITLES, QUICK_TASKS } from '@/lib/constants/routines';
 
 const DetailItem = ({ icon, label, children }) => (
   <div className="flex items-start gap-4">
@@ -102,6 +102,11 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
     const cleanDescription = description?.replace(/---METADATA---\n[\s\S]*?\n---END METADATA---\n?/, '') || '';
 
     const isRoutine = ROUTINE_TITLES.some(t => t.trim().toLowerCase() === (title || "").trim().toLowerCase());
+
+    const isQuickTask = React.useMemo(() => {
+        const t = title?.toLowerCase() || "";
+        return QUICK_TASKS.includes(t.trim());
+      }, [title]);
 
     return (
         <Dialog open={true} onOpenChange={onClose}>
@@ -209,30 +214,32 @@ export default function TaskDetailModal({ task, assignedUser, onClose, onEdit, o
                             <div className="flex gap-2">
                                 {!isCompleted && !isExpired && (
                                     <>
-                                        {(status === "To Do" || status === "to_do") ? (
-                                            <Button
-                                                onClick={() => {
-                                                    onStartTask(task);
-                                                    onClose();
-                                                }}
-                                                className="bg-indigo-600 hover:bg-indigo-700 font-bold"
-                                                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
-                                            >
-                                                <Play className="w-4 h-4 mr-2 fill-current" />
-                                                Start Task
-                                            </Button>
-                                        ) : (status === "In Progress" || status === "in_progress") && (
-                                            <Button
-                                                onClick={() => {
-                                                    onPauseTask(task);
-                                                    onClose();
-                                                }}
-                                                className="bg-amber-600 hover:bg-amber-700 font-bold"
-                                                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
-                                            >
-                                                <Pause className="w-4 h-4 mr-2 fill-current" />
-                                                Pause Task
-                                            </Button>
+                                        {!isQuickTask && (
+                                            (status === "To Do" || status === "to_do") ? (
+                                                <Button
+                                                    onClick={() => {
+                                                        onStartTask(task);
+                                                        onClose();
+                                                    }}
+                                                    className="bg-indigo-600 hover:bg-indigo-700 font-bold"
+                                                    disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
+                                                >
+                                                    <Play className="w-4 h-4 mr-2 fill-current" />
+                                                    Start Task
+                                                </Button>
+                                            ) : (status === "In Progress" || status === "in_progress") && (
+                                                <Button
+                                                    onClick={() => {
+                                                        onPauseTask(task);
+                                                        onClose();
+                                                    }}
+                                                    className="bg-amber-600 hover:bg-amber-700 font-bold"
+                                                    disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
+                                                >
+                                                    <Pause className="w-4 h-4 mr-2 fill-current" />
+                                                    Pause Task
+                                                </Button>
+                                            )
                                         )}
 
                                         <Button
