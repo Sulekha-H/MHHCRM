@@ -136,26 +136,6 @@ export default function TaskCard({
       onClick={() => onViewDetails(task)}
       className={`group flex items-center gap-4 p-3 bg-white border-b hover:bg-slate-50 transition-colors cursor-pointer relative ${isUpNext ? 'bg-cyan-50/30 border-l-4 border-l-cyan-500' : 'border-l-4 border-l-transparent'} ${isCompleted ? 'opacity-60' : ''}`}
     >
-      {/* Checkbox Icon */}
-      <div
-        className={`flex-shrink-0 ${isExpired ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!isExpired) onCompleteTask(task);
-        }}
-      >
-        {isCompleted ? (
-          <CheckCircle2 className="w-5 h-5 text-green-500" />
-        ) : isExpired ? (
-          <div className="relative">
-            <Circle className="w-5 h-5 text-slate-200" />
-            <Lock className="w-2.5 h-2.5 text-slate-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
-        ) : (
-          <Circle className="w-5 h-5 text-slate-300 group-hover:text-cyan-500 transition-colors" />
-        )}
-      </div>
-
       {/* Main Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -209,35 +189,68 @@ export default function TaskCard({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-1">
-        {!isCompleted && !isExpired && (assignedToUserId || "").trim().toLowerCase() === (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase() && (
+      <div className="flex items-center gap-2">
+        {!isCompleted && !isExpired && (
           <>
+            {/* Start/Pause Button */}
             {isInProgress ? (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                className="h-8 px-3 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 hover:text-amber-700 font-bold text-xs gap-1"
+                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onPauseTask(task);
                 }}
               >
-                <Pause className="w-4 h-4 fill-current" />
+                <Pause className="w-3 h-3 fill-current" />
+                Pause Task
               </Button>
             ) : (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                className="h-8 px-3 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-700 font-bold text-xs gap-1"
+                disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onStartTask(task);
                 }}
               >
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-3 h-3 fill-current" />
+                Start Task
               </Button>
             )}
+
+            {/* Complete Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 hover:text-green-700 font-bold text-xs gap-1"
+              disabled={(assignedToUserId || "").trim().toLowerCase() !== (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCompleteTask(task);
+              }}
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              Complete
+            </Button>
           </>
+        )}
+
+        {isCompleted && (
+          <div className="flex items-center gap-1 text-green-600 font-bold text-xs px-2">
+            <CheckCircle2 className="w-4 h-4" />
+            Finished
+          </div>
+        )}
+
+        {isExpired && !isCompleted && (
+          <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-none gap-1">
+            <Lock className="w-3 h-3" /> Locked
+          </Badge>
         )}
       </div>
     </div>
