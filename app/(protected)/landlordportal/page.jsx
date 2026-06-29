@@ -266,7 +266,7 @@ export default function LandlordPortalSupabase() {
           actionType: ACTIONS.DELETE,
           entityType: ENTITIES.BENEFIT,
           entityId: logId,
-          description: `Permanently deleted landlord portal entry for ${format(new Date(logToDelete.Log Date || logToDelete.log_date), 'dd/MM/yyyy')}`
+          description: `Permanently deleted landlord portal entry for ${format(new Date(logToDelete["Log Date"] || logToDelete.log_date), 'dd/MM/yyyy')}`
         });
 
         console.log(`✅ Landlord portal entry ${logId} permanently deleted.`);
