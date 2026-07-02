@@ -34,7 +34,7 @@ export default function TasksPage() {
   const [newMiscTaskTitle, setNewMiscTaskTitle] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [filters, setFilters] = useState({ assignee: "all", search: "" });
+  const [filters, setFilters] = useState({ assignee: "", search: "" });
 
   useEffect(() => {
     setMounted(true);
@@ -84,17 +84,25 @@ export default function TasksPage() {
       setResidents(residentsData || []);
       setProperties(propertiesData || []);
 
+      // Default to current user if no assignee selected
+      let assigneeName = filters.assignee;
+      if (!assigneeName && currentUserData) {
+        assigneeName = currentUserData["Full Name"] || currentUserData.full_name;
+        setFilters(prev => ({ ...prev, assignee: assigneeName }));
+      }
+
       // Routine Injection Logic
-      const assigneeName = filters.assignee === "all" ? (currentUserData?.["Full Name"] || currentUserData?.full_name) : filters.assignee;
-      const targetUser = activeUsers.find(u =>
-        (u["Full Name"] || u?.full_name || "").trim().toLowerCase() === (assigneeName || "").trim().toLowerCase()
-      );
-      
-      if (targetUser) {
-        const injected = await injectRoutineTasks(supabase, targetUser, tasksData || [], selectedDate);
-        if (injected) {
-          const { data: updatedTasks } = await supabase.from('tasks').select('*').or('Deleted.is.null,Deleted.eq.false');
-          setTasks(updatedTasks || []);
+      if (assigneeName) {
+        const targetUser = activeUsers.find(u =>
+          (u["Full Name"] || u?.full_name || "").trim().toLowerCase() === (assigneeName || "").trim().toLowerCase()
+        );
+
+        if (targetUser) {
+          const injected = await injectRoutineTasks(supabase, targetUser, tasksData || [], selectedDate);
+          if (injected) {
+            const { data: updatedTasks } = await supabase.from('tasks').select('*').or('Deleted.is.null,Deleted.eq.false');
+            setTasks(updatedTasks || []);
+          }
         }
       }
     } catch (error) {
@@ -115,9 +123,15 @@ export default function TasksPage() {
     });
 
     // Filter by assignee
-    if (filters.assignee !== "all") {
+    if (filters.assignee) {
       filtered = filtered.filter(t =>
         (t["Assigned To User ID"] || "").trim().toLowerCase() === filters.assignee.trim().toLowerCase()
+      );
+    } else if (currentUser) {
+      // Fallback filter by current user if filters.assignee not yet set
+      const currentUserName = currentUser["Full Name"] || currentUser.full_name;
+      filtered = filtered.filter(t =>
+        (t["Assigned To User ID"] || "").trim().toLowerCase() === (currentUserName || "").trim().toLowerCase()
       );
     }
 
@@ -287,7 +301,7 @@ export default function TasksPage() {
     if (!newMiscTaskTitle.trim()) return;
 
     try {
-      const assigneeName = filters.assignee === "all" ? (currentUser?.["Full Name"] || currentUser?.full_name) : filters.assignee;
+      const assigneeName = filters.assignee || (currentUser?.["Full Name"] || currentUser?.full_name);
       const newTaskId = generateUUID();
 
       const { error } = await supabase.from('tasks').insert([{
@@ -394,7 +408,7 @@ export default function TasksPage() {
   };
 
   const activeTasks = filteredTasks.filter(t => (t.Status || "").toLowerCase() !== "completed");
-  const assigneeName = filters.assignee === "all" ? (currentUser?.["Full Name"] || currentUser?.full_name) : filters.assignee;
+  const assigneeName = filters.assignee || (currentUser?.["Full Name"] || currentUser?.full_name);
 
   const routineTasks = routineTemplates.filter(template => {
     if (!assigneeName) return true;
@@ -457,14 +471,6 @@ export default function TasksPage() {
 
         {/* Staff Selection Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-          <Button
-            variant={filters.assignee === "all" ? "default" : "outline"}
-            className={filters.assignee === "all" ? "bg-cyan-600" : ""}
-            onClick={() => setFilters(f => ({ ...f, assignee: "all" }))}
-            size="sm"
-          >
-            All Staff
-          </Button>
           {users.map(u => {
             const userName = u["Full Name"] || u.full_name;
             return (
