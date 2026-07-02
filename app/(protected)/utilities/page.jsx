@@ -13,6 +13,7 @@ import UtilityForm from "@/components/utilities/UtilityForm";
 import UtilityCard from "@/components/utilities/UtilityCard";
 import UtilityDetailModal from "@/components/utilities/UtilityDetailModal";
 import { format } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function UtilitiesPage() {
   const { user } = useUser();
@@ -97,11 +98,32 @@ export default function UtilitiesPage() {
           .update(utilityData)
           .eq("ID", editingUtility.ID);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.UTILITY,
+          entityId: editingUtility.ID,
+          description: `Updated utility record: ${utilityData["Utility Type"]} for ${utilityData["Company Name"]}`
+        });
       } else {
+        const newId = crypto.randomUUID();
         const { error } = await supabase
           .from("Utilities")
-          .insert([utilityData]);
+          .insert([{ ...utilityData, ID: newId }]);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.UTILITY,
+          entityId: newId,
+          description: `Created new utility record: ${utilityData["Utility Type"]} for ${utilityData["Company Name"]}`
+        });
       }
       setShowForm(false);
       setEditingUtility(null);
@@ -120,11 +142,22 @@ export default function UtilitiesPage() {
         .from("Utilities")
         .update({
           Deleted: true,
-          "Deleted Date": new Date().toISOString()
+          "Deleted Date": new Date().toISOString(),
+          "Deleted By": user?.primaryEmailAddress?.emailAddress
         })
         .eq("ID", utility.ID);
 
       if (error) throw error;
+
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.DELETE,
+        entityType: ENTITIES.UTILITY,
+        entityId: utility.ID,
+        description: `Soft deleted utility record: ${utility["Utility Type"]} for ${utility["Company Name"]}`
+      });
       setViewingUtility(null);
       loadData();
     } catch (error) {
@@ -166,6 +199,14 @@ export default function UtilitiesPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.UTILITY,
+      description: `Exported utilities to CSV`
+    });
   };
 
   return (

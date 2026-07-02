@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import ResidentForm_Supabase from "@/components/Resident/ResidentForm";
 import ResidentCard from "@/components/Resident/ResidentCard";
 import ResidentDetailModal from "@/components/Resident/ResidentDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -221,6 +222,17 @@ useEffect(() => {
         if (updateError) throw updateError;
         savedResident = updatedData;
         console.log("✅ Resident updated");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.RESIDENT,
+          entityId: editingResident.ID,
+          description: `Updated resident: ${cleanedData["First Name"]} ${cleanedData["Last Name"]}`,
+          metadata: { original: originalResident, updated: cleanedData }
+        });
 
         // Handle accommodation updates
         if (newStatus === 'Moved On' && originalStatus === 'Active' && originalAccommodationId) {
@@ -510,6 +522,16 @@ useEffect(() => {
         if (insertError) throw insertError;
         savedResident = newData;
         console.log("✅ New resident created:", savedResident.ID + savedResident["First Name"]);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.RESIDENT,
+          entityId: savedResident.ID,
+          description: `Created new resident: ${savedResident["First Name"]} ${savedResident["Last Name"]}`
+        });
         
         // Mark accommodation as occupied if assigned
         if (savedResident.Status === 'Active' && savedResident["Accommodation ID"]) {
@@ -581,6 +603,16 @@ useEffect(() => {
 
         if (error) throw error;
         console.log(`✅ Soft deleted resident ${resident.ID}`);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.RESIDENT,
+          entityId: resident.ID,
+          description: `Soft deleted resident: ${resident["First Name"]} ${resident["Last Name"]}`
+        });
 
         const accId = resident["Accommodation ID"];
         if (accId) {
@@ -799,6 +831,14 @@ useEffect(() => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.EXPORT,
+        entityType: ENTITIES.RESIDENT,
+        description: `Exported residents to CSV`
+      });
+
       console.log("✅ CSV export completed successfully");
     } catch (error) {
       console.error("❌ Error exporting CSV:", error);

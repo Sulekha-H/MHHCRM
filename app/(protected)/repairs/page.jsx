@@ -21,6 +21,7 @@ import { format, startOfYear, endOfYear, eachMonthOfInterval } from "date-fns";
 import RepairFormSupabase from "@/components/repairs/RepairForm";
 import RepairCard from "@/components/repairs/RepairCard";
 import RepairDetailModal from "@/components/repairs/RepairDetailModal"; // New import
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function Repairs() { // Component name changed
   const supabase = useClerkSupabaseClient();
@@ -326,6 +327,16 @@ useEffect(() => {
         
         if (error) throw error;
         console.log("✅ Repair updated successfully");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.REPAIR,
+          entityId: editingRepair["ID"] || editingRepair.id,
+          description: `Updated repair: ${formattedRepairData["Title"]}`
+        });
       } else {
         // Generate UUID and add Created Date for new repair
         formattedRepairData.ID = crypto.randomUUID();
@@ -339,6 +350,16 @@ useEffect(() => {
         
         if (error) throw error;
         console.log("✅ Repair created successfully");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.REPAIR,
+          entityId: formattedRepairData.ID,
+          description: `Created new repair: ${formattedRepairData["Title"]}`
+        });
       }
       
       setShowForm(false);
@@ -464,6 +485,16 @@ useEffect(() => {
         if (error) throw error;
         
         console.log(`✅ Repair ${repairId} soft deleted successfully`);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.REPAIR,
+          entityId: repairId,
+          description: `Soft deleted repair: ${repair["Title"] || repair.title}`
+        });
         
         // Close detail modal if it's open and the deleted repair is being viewed
         if (viewingRepair && (viewingRepair.id === repairId || viewingRepair["ID"] === repairId)) {
@@ -618,6 +649,14 @@ useEffect(() => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.REPAIR,
+      description: `Exported repairs to CSV`
+    });
   };
 
   const getPriorityColor = (priority) => {

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Search, Users, Phone, Mail, MapPin, Calendar, Building, Eye, Download, User as UserIcon } from "lucide-react";
 import { format, isValid } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import LandlordEnquiryForm_Supabase from "@/components/landlord/LandlordEnquiryForm";
 import LandlordEnquiryDetailModal from "@/components/landlord/LandlordEnquiryDetailModal";
@@ -329,12 +330,23 @@ export default function LandlordEnquiries() {
           .eq('ID', editingEnquiry.id); // Changed to 'ID'
         
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: editingEnquiry.id,
+          description: `Updated landlord enquiry for ${enquiryData.landlord_name} (${enquiryData.property_address})`
+        });
+
         console.log("✅ Enquiry updated successfully");
       } else {
         // For new enquiries, add Created Date and ID
+        const newId = crypto.randomUUID();
         const insertData = {
           ...supabaseData,
-          "ID": crypto.randomUUID(), // Generated UUID
+          "ID": newId, // Generated UUID
           "Created Date": new Date().toISOString(), // Current timestamp
           "Created By": currentUser?.email || null // Current user's email
         };
@@ -344,6 +356,16 @@ export default function LandlordEnquiries() {
           .insert([insertData]);
         
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: newId,
+          description: `Logged new landlord enquiry for ${enquiryData.landlord_name} (${enquiryData.property_address})`
+        });
+
         console.log("✅ Enquiry created successfully");
       }
       
@@ -387,6 +409,15 @@ export default function LandlordEnquiries() {
         
         if (error) throw error;
         
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: enquiryToDelete.id,
+          description: `Soft deleted landlord enquiry for ${enquiryToDelete.landlord_name}`
+        });
+
         console.log(`✅ Soft deleted landlord enquiry ${enquiryToDelete.id}`);
         setEnquiryToDelete(null);
         setViewingEnquiry(null);
@@ -646,6 +677,14 @@ export default function LandlordEnquiries() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.PROPERTY,
+      description: `Exported ${filteredEnquiries.length} landlord enquiries to CSV`
+    });
+
     console.log("✅ Landlord Enquiries CSV export completed successfully");
   };
 

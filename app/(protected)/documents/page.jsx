@@ -18,6 +18,7 @@ import DocumentDetailModal from "@/components/documents/DocumentDetailModal";
 import WarrantyDetailModal from "@/components/documents/WarrantyDetailModal";
 import InsuranceDetailModal from "@/components/documents/InsuranceDetailModal";
 import ApplianceDetailModal from "@/components/documents/ApplianceDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import {
   Table,
   TableBody,
@@ -235,36 +236,120 @@ export default function DocumentsSupabase() {
         if (editingRecord) {
           const recordId = editingRecord.ID || editingRecord.id;
           ({ error } = await supabase.from('documents').update(recordData).eq('"ID"', recordId));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.UPDATE,
+              entityType: ENTITIES.OFFICE_LOG,
+              entityId: recordId,
+              description: `Updated document: ${recordData.Title || recordData.title}`
+            });
+          }
           console.log(`✅ Updated document ${recordId}`);
         } else {
-          ({ error } = await supabase.from('documents').insert([recordData]));
+          const newId = crypto.randomUUID();
+          ({ error } = await supabase.from('documents').insert([{ ...recordData, ID: newId }]));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.CREATE,
+              entityType: ENTITIES.OFFICE_LOG,
+              entityId: newId,
+              description: `Created new document: ${recordData.Title || recordData.title}`
+            });
+          }
           console.log(`✅ Created new document`);
         }
       } else if (activeTab === "warranties") {
         if (editingRecord) {
           const recordId = editingRecord.ID || editingRecord.id;
           ({ error } = await supabase.from('warranties').update(recordData).eq('"ID"', recordId));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.UPDATE,
+              entityType: ENTITIES.COMPLIANCE,
+              entityId: recordId,
+              description: `Updated warranty: ${recordData["Product Name"] || recordData.product_name}`
+            });
+          }
           console.log(`✅ Updated warranty ${recordId}`);
         } else {
-          ({ error } = await supabase.from('warranties').insert([recordData]));
+          const newId = crypto.randomUUID();
+          ({ error } = await supabase.from('warranties').insert([{ ...recordData, ID: newId }]));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.CREATE,
+              entityType: ENTITIES.COMPLIANCE,
+              entityId: newId,
+              description: `Created new warranty: ${recordData["Product Name"] || recordData.product_name}`
+            });
+          }
           console.log(`✅ Created new warranty`);
         }
       } else if (activeTab === "insurances") {
         if (editingRecord) {
           const recordId = editingRecord.ID || editingRecord.id;
           ({ error } = await supabase.from('insurances').update(recordData).eq('"ID"', recordId));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.UPDATE,
+              entityType: ENTITIES.COMPLIANCE,
+              entityId: recordId,
+              description: `Updated insurance: ${recordData["Policy Name"] || recordData.policy_name}`
+            });
+          }
           console.log(`✅ Updated insurance ${recordId}`);
         } else {
-          ({ error } = await supabase.from('insurances').insert([recordData]));
+          const newId = crypto.randomUUID();
+          ({ error } = await supabase.from('insurances').insert([{ ...recordData, ID: newId }]));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.CREATE,
+              entityType: ENTITIES.COMPLIANCE,
+              entityId: newId,
+              description: `Created new insurance: ${recordData["Policy Name"] || recordData.policy_name}`
+            });
+          }
           console.log(`✅ Created new insurance`);
         }
       } else if (activeTab === "appliances") {
         if (editingRecord) {
           const recordId = editingRecord.ID || editingRecord.id;
           ({ error } = await supabase.from('appliances').update(recordData).eq('"ID"', recordId));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.UPDATE,
+              entityType: ENTITIES.REPAIR,
+              entityId: recordId,
+              description: `Updated appliance: ${recordData["Appliance Name"] || recordData.appliance_name}`
+            });
+          }
           console.log(`✅ Updated appliance ${recordId}`);
         } else {
-          ({ error } = await supabase.from('appliances').insert([recordData]));
+          const newId = crypto.randomUUID();
+          ({ error } = await supabase.from('appliances').insert([{ ...recordData, ID: newId }]));
+          if (!error) {
+            logActivity(supabase, {
+              userName: user.fullName || user.username || "Unknown",
+              userEmail: user.primaryEmailAddress?.emailAddress,
+              actionType: ACTIONS.CREATE,
+              entityType: ENTITIES.REPAIR,
+              entityId: newId,
+              description: `Created new appliance: ${recordData["Appliance Name"] || recordData.appliance_name}`
+            });
+          }
           console.log(`✅ Created new appliance`);
         }
       }
@@ -311,17 +396,32 @@ export default function DocumentsSupabase() {
         };
 
         let error;
+        let recordName = "";
         if (activeTab === "documents") {
+          recordName = documents.find(d => (d.id || d.ID) === recordId)?.title || "Document";
           ({ error } = await supabase.from('documents').update(deleteData).eq('"ID"', recordId));
         } else if (activeTab === "warranties") {
+          recordName = warranties.find(w => (w.id || w.ID) === recordId)?.product_name || "Warranty";
           ({ error } = await supabase.from('warranties').update(deleteData).eq('"ID"', recordId));
         } else if (activeTab === "insurances") {
+          recordName = insurances.find(i => (i.id || i.ID) === recordId)?.policy_name || "Insurance";
           ({ error } = await supabase.from('insurances').update(deleteData).eq('"ID"', recordId));
         } else if (activeTab === "appliances") {
+          recordName = appliances.find(a => (a.id || a.ID) === recordId)?.appliance_name || "Appliance";
           ({ error } = await supabase.from('appliances').update(deleteData).eq('"ID"', recordId));
         }
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: activeTab === "documents" ? ENTITIES.OFFICE_LOG : activeTab === "appliances" ? ENTITIES.REPAIR : ENTITIES.COMPLIANCE,
+          entityId: recordId,
+          description: `Soft deleted ${activeTab}: ${recordName}`
+        });
         
         console.log(`✅ Soft deleted ${activeTab} record ${recordId}`);
         setViewingRecord(null);
@@ -710,6 +810,14 @@ export default function DocumentsSupabase() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.EXPORT,
+        entityType: activeTab === "documents" ? ENTITIES.OFFICE_LOG : activeTab === "appliances" ? ENTITIES.REPAIR : ENTITIES.COMPLIANCE,
+        description: `Exported ${activeTab} to CSV`
+      });
+
       console.log(`✅ ${activeTab} CSV export completed successfully`);
     }
   };

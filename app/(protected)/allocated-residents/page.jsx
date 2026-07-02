@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import AllocatedResidentForm from "@/components/AllocatedResident/AllocatedResidentForm";
 import AllocatedResidentCard from "@/components/AllocatedResident/AllocatedResidentCard";
 import AllocatedResidentDetailModal from "@/components/AllocatedResident/AllocatedResidentDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -175,6 +176,16 @@ export default function AllocatedResidentsPage() {
         }).eq('"ID"', residentId).select().single();
         if (error) throw error;
         saved = data;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.ALLOCATED_RESIDENT,
+          entityId: residentId,
+          description: `Updated allocated resident: ${cleanedData["First Name"]} ${cleanedData["Last Name"]}`
+        });
       } else {
         const newId = crypto.randomUUID();
         const { data, error } = await supabase.from('allocated_residents').insert([{
@@ -185,6 +196,16 @@ export default function AllocatedResidentsPage() {
         }]).select().single();
         if (error) throw error;
         saved = data;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.ALLOCATED_RESIDENT,
+          entityId: newId,
+          description: `Created new allocated resident: ${cleanedData["First Name"]} ${cleanedData["Last Name"]}`
+        });
       }
 
       const oldAccId = original?.["Accommodation ID"] || original?.accommodation_id;
@@ -269,6 +290,16 @@ export default function AllocatedResidentsPage() {
       }).eq('"ID"', rId);
 
       if (error) throw error;
+
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.DELETE,
+        entityType: ENTITIES.ALLOCATED_RESIDENT,
+        entityId: rId,
+        description: `Soft deleted allocated resident: ${firstName} ${lastName}`
+      });
 
       const accId = r["Accommodation ID"] || r.accommodation_id;
       if (accId) {

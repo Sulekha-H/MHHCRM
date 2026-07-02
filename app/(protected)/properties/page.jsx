@@ -13,6 +13,7 @@ import PropertyForm from "@/components/properties/PropertyForm";
 import PropertyCard from "@/components/properties/PropertyCard";
 import PropertyDetailModal from "@/components/properties/PropertyDetailModal";
 import { format } from 'date-fns';
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function Properties() {
   const supabase = useClerkSupabaseClient()
@@ -229,6 +230,16 @@ export default function Properties() {
           .eq('ID', editingProperty["ID"] || editingProperty.id);
 
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: editingProperty["ID"] || editingProperty.id,
+          description: `Updated property: ${propertyData.Name || propertyData.name}`
+        });
       } else {
         // Generate UUID for new property
         const insertData = {
@@ -241,6 +252,16 @@ export default function Properties() {
           .insert([insertData]);
 
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: insertData.ID,
+          description: `Created new property: ${insertData.Name || insertData.name}`
+        });
       }
       
       setShowForm(false);
@@ -287,6 +308,16 @@ export default function Properties() {
         if (error) throw error;
         
         console.log(`Property ${property["ID"] || property.id} soft deleted successfully.`);
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.PROPERTY,
+          entityId: property["ID"] || property.id,
+          description: `Soft deleted property: ${propertyName}`
+        });
         setPropertyToDelete(null);
         setViewingProperty(null);
         window.location.reload();
@@ -452,6 +483,14 @@ export default function Properties() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.PROPERTY,
+      description: `Exported properties to CSV`
+    });
+
     console.log("✅ Properties CSV export completed successfully");
   };
 

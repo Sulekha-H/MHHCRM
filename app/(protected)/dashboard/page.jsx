@@ -1,8 +1,9 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
+import { logActivity, ACTIONS } from "@/lib/activityUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,7 @@ const CountdownDisplay = ({ deadline }) => {
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const supabase = useClerkSupabaseClient();
+  const loginLogged = useRef(false);
   console.log(`[Dashboard] User Status - Loaded: ${isLoaded}, SignedIn: ${isSignedIn}, UserID: ${user?.id}`);
 
   const [error, setError] = useState(null);
@@ -606,8 +608,25 @@ export default function Dashboard() {
 
     if (user) {
       loadDashboardData();
+
+      // Log login event once per session
+      if (supabase && !loginLogged.current) {
+        const sessionKey = `login_logged_${user.id}_${new Date().toISOString().split('T')[0]}`;
+        const alreadyLoggedToday = sessionStorage.getItem(sessionKey);
+
+        if (!alreadyLoggedToday) {
+          logActivity(supabase, {
+            userName: user.fullName || user.username || "Unknown",
+            userEmail: user.primaryEmailAddress?.emailAddress,
+            actionType: ACTIONS.LOGIN,
+            description: `User logged in to the dashboard`
+          });
+          sessionStorage.setItem(sessionKey, 'true');
+        }
+        loginLogged.current = true;
+      }
     }
-  }, [user, delay, retryApiCall]);
+  }, [user, delay, retryApiCall, supabase]);
 
   if (error) {
     return (
