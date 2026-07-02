@@ -410,10 +410,14 @@ export default function TasksPage() {
     if (template.isHeader) {
       return { ...template, ID: `header-${template.title}-${dayName}` };
     }
-    return activeTasks.find(t => (t.Title || "").trim().toLowerCase() === (template.title || "").trim().toLowerCase());
+    // Include all tasks (even completed) in the timeline/routine list to maintain daily structure
+    return filteredTasks.find(t => (t.Title || "").trim().toLowerCase() === (template.title || "").trim().toLowerCase());
   }).filter(Boolean);
 
-  const completedTasksList = sortTasks(filteredTasks.filter(t => (t.Status || "").toLowerCase() === "completed"), 'misc');
+  const completedTasksList = sortTasks(filteredTasks.filter(t =>
+    (t.Status || "").toLowerCase() === "completed" &&
+    !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())
+  ), 'misc');
   const miscTasks = sortTasks(activeTasks.filter(t => !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'misc');
 
   const upNextId = routineTasks.find(t => t && !t.isHeader && (t.Status || "").toLowerCase() === "to do")?.ID;
@@ -485,51 +489,23 @@ export default function TasksPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
-          {/* Timeline Section */}
-          <div className="lg:col-span-1 hidden lg:block">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Merged Timeline & Routine Section */}
+          <div className="lg:col-span-7 xl:col-span-8">
             <TaskTimeline
               routineTasks={routineTasks}
               selectedDate={selectedDate}
               onTaskClick={setViewingTask}
               currentUser={currentUser}
+              onStartTask={handleStartTask}
+              onPauseTask={handlePauseTask}
+              onCompleteTask={handleCompleteTask}
+              upNextId={upNextId}
             />
           </div>
 
-          {/* Routine Tasks Section */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Clock className="w-4 h-4" /> Routine Tasks
-              </h2>
-              <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-none">
-                {routineTasks.filter(t => !t.isHeader).length} Pending
-              </Badge>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border divide-y overflow-hidden">
-              {routineTasks.length > 0 ? routineTasks.map(task => (
-                <TaskCard
-                  key={task.ID}
-                  task={task}
-                  onEdit={setEditingTask}
-                  onViewDetails={setViewingTask}
-                  onDelete={handleDelete}
-                  onStartTask={handleStartTask}
-                  onPauseTask={handlePauseTask}
-                  onCompleteTask={handleCompleteTask}
-                  currentUser={currentUser}
-                  assignedUserName={task["Assigned To User ID"]}
-                  isRoutine={true}
-                  isUpNext={task.ID === upNextId}
-                />
-              )) : (
-                <div className="p-8 text-center text-slate-400 italic text-sm">No active routines</div>
-              )}
-            </div>
-          </div>
-
           {/* Miscellaneous Tasks Section */}
-          <div className="space-y-3">
+          <div className="lg:col-span-5 xl:col-span-4 space-y-3">
             <div className="flex items-center justify-between px-1">
               <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                 <ListTodo className="w-4 h-4" /> Miscellaneous Stuff

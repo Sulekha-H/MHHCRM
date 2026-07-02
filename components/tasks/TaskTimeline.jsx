@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { format, addMinutes, isSameDay, startOfDay, setHours, setMinutes, isAfter, isBefore, isEqual, differenceInMinutes } from 'date-fns';
+import { format, addMinutes, isSameDay, startOfDay, setHours, setMinutes, isAfter, isBefore, isEqual, differenceInMinutes, isPast } from 'date-fns';
 import {
   Mail, Building, Sun, Wind, MoveHorizontal, Home, Phone, DoorOpen,
   Layout, Users, Thermometer, Wrench, HardHat, Video, Utensils,
@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { parseTaskMetadata } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { QUICK_TASKS } from "@/lib/constants/routines";
 
 const CATEGORY_COLORS = {
   communication: {
@@ -125,7 +127,7 @@ const KEYWORD_MAP = {
 };
 
 const getTaskStyling = (title) => {
-  const lowerTitle = title.toLowerCase();
+  const lowerTitle = (title || "").toLowerCase();
   for (const [key, config] of Object.entries(KEYWORD_MAP)) {
     if (lowerTitle.includes(key)) {
       return {
@@ -140,7 +142,16 @@ const getTaskStyling = (title) => {
   };
 };
 
-export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, currentUser }) {
+export default function TaskTimeline({
+  routineTasks,
+  selectedDate,
+  onTaskClick,
+  currentUser,
+  onStartTask,
+  onPauseTask,
+  onCompleteTask,
+  upNextId
+}) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -158,11 +169,13 @@ export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, 
     current = addMinutes(current, 15);
   }
 
-  const scheduledTasks = React.useMemo(() => {
+  const scheduledItems = React.useMemo(() => {
     let lastTime = startTime;
     const scheduled = [];
 
     routineTasks.forEach(item => {
+      if (!item) return;
+
       if (item.isHeader) {
         const timeMatch = item.title.match(/(\d+)(?:\.(\d+))?\s*(am|pm)/i);
         if (timeMatch) {
@@ -178,13 +191,12 @@ export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, 
             lastTime = headerTime;
           }
         }
+        scheduled.push({ ...item, startTime: lastTime, isHeader: true });
         return;
       }
 
       const metadata = parseTaskMetadata(item.Description || item.description);
-      if (!metadata || !metadata.targetDuration) return;
-
-      const duration = parseInt(metadata.targetDuration);
+      const duration = parseInt(metadata?.targetDuration || 15);
       const taskStartTime = lastTime;
       const taskEndTime = addMinutes(taskStartTime, duration);
 
@@ -201,7 +213,7 @@ export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, 
     return scheduled;
   }, [routineTasks, startTime, selectedDate]);
 
-  const PIXELS_PER_MINUTE = 3; // 45px per 15 mins
+  const PIXELS_PER_MINUTE = 4; // 60px per 15 mins
 
   const currentTimeTop = React.useMemo(() => {
     if (!isSameDay(now, selectedDate)) return null;
@@ -209,11 +221,14 @@ export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, 
     return differenceInMinutes(now, startTime) * PIXELS_PER_MINUTE;
   }, [now, selectedDate, startTime, endTime]);
 
+  const userFullName = (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase();
+  const isAdmin = userFullName === 'leticia' || userFullName === 'admin';
+
   return (
     <div className="bg-white rounded-3xl shadow-sm border p-6 h-[calc(100vh-250px)] flex flex-col">
       <div className="flex items-center justify-between mb-6 px-2">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-slate-400" /> Timeline
+          <Clock className="w-5 h-5 text-slate-400" /> Routine Tasks
         </h2>
         <Badge variant="secondary" className="rounded-full bg-slate-100 text-slate-500 border-none px-3">
           9:45 - 17:00
@@ -223,32 +238,31 @@ export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, 
       <ScrollArea className="flex-1 pr-4">
         <div className="relative pt-4 pb-12">
           {/* Vertical Line */}
-          <div className="absolute left-[64px] top-0 bottom-0 w-[2px] bg-slate-100 rounded-full" />
+          <div className="absolute left-[40px] top-0 bottom-0 w-[2px] bg-slate-100 rounded-full" />
 
           {/* Time Markers */}
           <div className="space-y-0">
             {intervals.map((time, i) => {
               const minutes = time.getMinutes();
               const isHour = minutes === 0;
-              const isQuarter = minutes === 15 || minutes === 45;
               const isHalf = minutes === 30;
 
               return (
-                <div key={i} className="flex items-start h-[45px] relative">
-                  {/* Time Label on the left */}
+                <div key={i} className="flex items-start h-[60px] relative">
+                  {/* Time Label on the left - Narrowed */}
                   <div className={cn(
-                    "w-12 text-right pr-4 mt-[-8px] transition-colors",
-                    isHour ? "text-[11px] font-bold text-slate-900" : "text-[10px] font-medium text-slate-300"
+                    "w-10 text-right pr-3 mt-[-8px] transition-colors",
+                    isHour ? "text-[10px] font-bold text-slate-900" : "text-[9px] font-medium text-slate-300"
                   )}>
                     {isHour ? format(time, 'HH:mm') : format(time, 'mm')}
                   </div>
 
                   {/* Horizontal Tick */}
                   <div className={cn(
-                    "absolute left-[60px] top-0 h-[2px] rounded-full z-10",
-                    isHour ? "w-3 bg-slate-400" :
-                    isHalf ? "w-2 bg-slate-300" :
-                    "w-1.5 bg-slate-200"
+                    "absolute left-[38px] top-0 h-[2px] rounded-full z-10",
+                    isHour ? "w-2 bg-slate-400" :
+                    isHalf ? "w-1.5 bg-slate-300" :
+                    "w-1 bg-slate-200"
                   )} />
                 </div>
               );
@@ -261,107 +275,158 @@ export default function TaskTimeline({ routineTasks, selectedDate, onTaskClick, 
               className="absolute left-0 right-0 z-50 flex items-center pointer-events-none"
               style={{ top: `${currentTimeTop}px` }}
             >
-              <div className="w-12 text-right pr-4 text-[10px] font-bold text-red-500">
+              <div className="w-10 text-right pr-3 text-[9px] font-bold text-red-500 bg-white/50">
                 {format(now, 'HH:mm')}
               </div>
               <div className="relative flex-1 h-[2px] bg-red-500/50">
-                {/* Dot aligned with vertical line (64px from left of parent) */}
-                {/* Since flex-1 starts after w-12 (48px), we need 64 - 48 = 16px */}
-                <div className="absolute left-[16px] top-[-3px] w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+                <div className="absolute left-[-2px] top-[-3px] w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
               </div>
             </div>
           )}
 
-          {/* Task Bubbles */}
-          <div className="absolute top-0 left-[84px] right-2">
-            {scheduledTasks.map((task) => {
-              const startOffset = differenceInMinutes(task.startTime, startTime);
+          {/* Task Items */}
+          <div className="absolute top-0 left-[56px] right-2">
+            {scheduledItems.map((item) => {
+              const startOffset = differenceInMinutes(item.startTime, startTime);
               const top = startOffset * PIXELS_PER_MINUTE;
-              const height = task.duration * PIXELS_PER_MINUTE;
 
-              const status = (task.Status || task.status || "").toLowerCase();
+              if (item.isHeader) {
+                return (
+                  <div
+                    key={item.ID}
+                    className="absolute left-0 right-0 border-y border-slate-100 bg-slate-50/50 px-3 py-1.5 z-10"
+                    style={{ top: `${top}px` }}
+                  >
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      {item.title}
+                    </span>
+                  </div>
+                );
+              }
+
+              const height = item.duration * PIXELS_PER_MINUTE;
+              const status = (item.Status || item.status || "").toLowerCase();
               const isCompleted = status === 'completed';
               const isInProgress = status === 'in progress';
 
-              const { Icon, colors } = getTaskStyling(task.Title || task.title);
+              const metadata = parseTaskMetadata(item.Description || item.description);
+              const deadline = metadata?.deadline || item["Due Date"] || item.due_date;
+              const isOverdue = !isCompleted && deadline && isPast(new Date(deadline));
+              const isExpired = isOverdue && !isInProgress && !isAdmin;
+              const isQuickTask = QUICK_TASKS.includes((item.Title || item.title || "").toLowerCase().trim());
+
+              const { Icon, colors } = getTaskStyling(item.Title || item.title);
+              const assignedTo = (item["Assigned To User ID"] || item.assigned_to_user_id || "").trim().toLowerCase();
+              const isOwnTask = assignedTo === userFullName;
 
               return (
-                <React.Fragment key={task.ID}>
-                  {/* Task Times on the left of vertical line */}
-                  <div
-                    className="absolute left-[-84px] w-12 text-right pr-4 flex flex-col justify-between z-20 pointer-events-none"
-                    style={{ top: `${top}px`, height: `${height}px` }}
-                  >
-                    <span className="text-[10px] font-bold text-slate-600 bg-white/80 backdrop-blur-sm rounded px-1 -mt-1">
-                      {format(task.startTime, 'HH:mm')}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 bg-white/80 backdrop-blur-sm rounded px-1 -mb-1">
-                      {format(task.endTime, 'HH:mm')}
-                    </span>
+                <div
+                  key={item.ID}
+                  onClick={() => onTaskClick(item)}
+                  className={cn(
+                    "absolute left-0 right-0 rounded-2xl border p-3 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-3 group",
+                    isCompleted ? 'bg-slate-50 border-slate-200 opacity-60' :
+                    isInProgress ? 'bg-white border-indigo-500 ring-4 ring-indigo-50 shadow-indigo-100 shadow-lg' :
+                    item.ID === upNextId ? 'bg-cyan-50/50 border-cyan-200 shadow-cyan-100 shadow-md ring-2 ring-cyan-100' :
+                    `${colors.bg} ${colors.border} shadow-sm`
+                  )}
+                  style={{
+                    top: `${top}px`,
+                    height: `${height - 4}px`,
+                    minHeight: '60px'
+                  }}
+                >
+                  {/* Category Icon */}
+                  <div className={cn(
+                    "p-2 rounded-xl transition-transform group-hover:scale-110 shrink-0",
+                    isCompleted ? 'bg-slate-200 text-slate-500' :
+                    isInProgress ? 'bg-indigo-100 text-indigo-600' :
+                    colors.iconBg + ' ' + colors.iconColor
+                  )}>
+                    <Icon className="w-5 h-5" />
                   </div>
 
-                  <div
-                    onClick={() => onTaskClick(task)}
-                    className={cn(
-                      "absolute left-0 right-0 rounded-[24px] border p-4 cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] z-10 flex items-center gap-4 group",
-                      isCompleted ? 'bg-slate-50 border-slate-200 opacity-60' :
-                      isInProgress ? 'bg-white border-indigo-300 ring-4 ring-indigo-50 shadow-indigo-100 shadow-xl' :
-                      `${colors.bg} ${colors.border} shadow-sm`
-                    )}
-                    style={{
-                      top: `${top}px`,
-                      height: `${height - 4}px`,
-                      minHeight: '41px'
-                    }}
-                  >
-                    {/* Category Icon */}
-                    <div className={cn(
-                      "p-3 rounded-2xl transition-transform group-hover:scale-110",
-                      isCompleted ? 'bg-slate-200 text-slate-500' :
-                      isInProgress ? 'bg-indigo-100 text-indigo-600' :
-                      colors.iconBg + ' ' + colors.iconColor
-                    )}>
-                      <Icon className="w-6 h-6" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
                       <h4 className={cn(
-                        "text-sm font-bold truncate transition-colors",
+                        "text-[13px] font-bold truncate transition-colors leading-tight",
                         isCompleted ? 'line-through text-slate-400' : 'text-slate-900',
                         isInProgress && 'text-indigo-900'
                       )}>
-                        {task.Title || task.title}
+                        {item.Title || item.title}
                       </h4>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={cn(
-                          "text-[10px] font-bold tracking-tight uppercase",
-                          isCompleted ? 'text-slate-400' : colors.text
-                        )}>
-                          {task.duration} mins
-                        </span>
-                        {isInProgress && (
-                          <Badge className="bg-indigo-500 text-[9px] h-4 px-1.5 rounded-full border-none animate-pulse">
-                            Active
-                          </Badge>
-                        )}
-                      </div>
+                      {item.ID === upNextId && !isCompleted && (
+                        <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-none text-[9px] h-3.5 px-1 font-bold uppercase tracking-tighter shrink-0">
+                          Next
+                        </Badge>
+                      )}
                     </div>
-
-                    <div className="flex flex-col justify-center">
-                      {isCompleted ? (
-                        <div className="bg-green-100 p-1.5 rounded-full">
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        </div>
-                      ) : isInProgress ? (
-                        <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full border-2 border-slate-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Play className="w-3 h-3 text-slate-400 fill-slate-400" />
-                        </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={cn(
+                        "text-[10px] font-bold tracking-tight uppercase",
+                        isCompleted ? 'text-slate-400' : colors.text
+                      )}>
+                        {item.duration} mins • {format(item.startTime, 'HH:mm')}
+                      </span>
+                      {isOverdue && !isCompleted && (
+                        <Badge variant="outline" className={cn(
+                          "border-none h-4 px-1.5 text-[9px] uppercase font-bold",
+                          isExpired ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-700'
+                        )}>
+                          {isExpired ? 'Locked' : 'Overdue'}
+                        </Badge>
                       )}
                     </div>
                   </div>
-                </React.Fragment>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                    {!isCompleted && !isExpired && (
+                      <>
+                        {!isQuickTask && (
+                          isInProgress ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 text-[10px] font-bold"
+                              disabled={!isOwnTask}
+                              onClick={() => onPauseTask(item)}
+                            >
+                              <Pause className="w-3 h-3 fill-current" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-bold"
+                              disabled={!isOwnTask}
+                              onClick={() => onStartTask(item)}
+                            >
+                              <Play className="w-3 h-3 fill-current" />
+                            </Button>
+                          )
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 text-[10px] font-bold"
+                          disabled={!isOwnTask}
+                          onClick={() => onCompleteTask(item)}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                        </Button>
+                      </>
+                    )}
+                    {isCompleted && (
+                      <div className="bg-green-100 p-1 rounded-full">
+                        <CheckCircle2 className="w-3 h-3 text-green-600" />
+                      </div>
+                    )}
+                    {isExpired && !isCompleted && (
+                       <Lock className="w-3 h-3 text-slate-400" />
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
