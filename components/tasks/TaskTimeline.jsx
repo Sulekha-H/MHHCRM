@@ -151,22 +151,15 @@ export default function TaskTimeline({
   onCompleteTask,
   upNextId
 }) {
+  const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
+    setMounted(true);
     const timer = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
-
   const startTime = setMinutes(setHours(startOfDay(selectedDate), 9), 45);
-  const endTime = setMinutes(setHours(startOfDay(selectedDate), 17), 0);
-
-  const intervals = [];
-  let current = startTime;
-  while (current <= endTime) {
-    intervals.push(new Date(current));
-    current = addMinutes(current, 15);
-  }
 
   const scheduledItems = React.useMemo(() => {
     let lastTime = startTime;
@@ -217,14 +210,38 @@ export default function TaskTimeline({
 
   const PIXELS_PER_MINUTE = 6; // 90px per 15 mins
 
+  const timelineEndTime = React.useMemo(() => {
+    const defaultEnd = setMinutes(setHours(startOfDay(selectedDate), 17), 0);
+    if (scheduledItems.length === 0) return defaultEnd;
+
+    const lastTask = scheduledItems[scheduledItems.length - 1];
+    const lastTaskEnd = lastTask.isHeader ? addMinutes(lastTask.startTime, 15) : lastTask.endTime;
+
+    return isAfter(lastTaskEnd, defaultEnd) ? lastTaskEnd : defaultEnd;
+  }, [scheduledItems, selectedDate]);
+
+  const intervals = React.useMemo(() => {
+    const items = [];
+    let current = startTime;
+    while (current <= timelineEndTime) {
+      items.push(new Date(current));
+      current = addMinutes(current, 15);
+    }
+    return items;
+  }, [startTime, timelineEndTime]);
+
   const currentTimeTop = React.useMemo(() => {
     if (!isSameDay(now, selectedDate)) return null;
-    if (isBefore(now, startTime) || isAfter(now, endTime)) return null;
+    if (isBefore(now, startTime) || isAfter(now, timelineEndTime)) return null;
     return differenceInMinutes(now, startTime) * PIXELS_PER_MINUTE;
-  }, [now, selectedDate, startTime, endTime]);
+  }, [now, selectedDate, startTime, timelineEndTime]);
+
+  const totalHeight = differenceInMinutes(timelineEndTime, startTime) * PIXELS_PER_MINUTE;
 
   const userFullName = (currentUser?.["Full Name"] || currentUser?.full_name || "").trim().toLowerCase();
   const isAdmin = userFullName === 'leticia' || userFullName === 'admin';
+
+  if (!mounted) return null;
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border p-6 flex flex-col">
@@ -237,12 +254,12 @@ export default function TaskTimeline({
         </Badge>
       </div>
 
-      <div className="relative pt-4 pb-12">
+      <div className="relative pt-4" style={{ height: `${totalHeight + 100}px` }}>
         {/* Vertical Line */}
         <div className="absolute left-[40px] top-0 bottom-0 w-[2px] bg-slate-100 rounded-full" />
 
         {/* Time Markers */}
-        <div className="space-y-0">
+        <div className="space-y-0 absolute inset-0">
           {intervals.map((time, i) => {
             const minutes = time.getMinutes();
             const isHour = minutes === 0;
@@ -261,9 +278,9 @@ export default function TaskTimeline({
                 {/* Horizontal Tick */}
                 <div className={cn(
                   "absolute left-[38px] top-0 h-[2px] rounded-full z-10",
-                  isHour ? "w-2 bg-slate-400" :
-                  isHalf ? "w-1.5 bg-slate-300" :
-                  "w-1 bg-slate-200"
+                  isHour ? "w-3 bg-slate-300" :
+                  isHalf ? "w-2 bg-slate-200" :
+                  "w-1.5 bg-slate-100"
                 )} />
               </div>
             );
@@ -308,6 +325,11 @@ export default function TaskTimeline({
             const height = item.duration * PIXELS_PER_MINUTE;
             const status = (item.Status || item.status || "").toLowerCase();
             const isCompleted = status === 'completed';
+
+            // If the user wants completed tasks at the bottom, we hide them from the timeline
+            // to keep it focused on what's left to do.
+            if (isCompleted && !item.isHeader) return null;
+
             const isInProgress = status === 'in progress';
 
             const metadata = parseTaskMetadata(item.Description || item.description);
@@ -325,7 +347,7 @@ export default function TaskTimeline({
                 key={item.ID}
                 onClick={() => onTaskClick(item)}
                 className={cn(
-                  "absolute left-0 right-0 rounded-2xl border p-4 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-4 group overflow-hidden",
+                  "absolute left-0 right-0 rounded-2xl border p-3 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-3 group overflow-hidden",
                   isCompleted ? 'bg-slate-50 border-slate-200 opacity-60' :
                   isInProgress ? 'bg-white border-indigo-500 ring-4 ring-indigo-50 shadow-indigo-100 shadow-lg' :
                   item.ID === upNextId ? 'bg-cyan-50/50 border-cyan-200 shadow-cyan-100 shadow-md ring-2 ring-cyan-100' :
@@ -339,39 +361,39 @@ export default function TaskTimeline({
               >
                 {/* Category Icon */}
                 <div className={cn(
-                  "p-2.5 rounded-xl transition-transform group-hover:scale-110 shrink-0",
+                  "p-2 rounded-xl transition-transform group-hover:scale-110 shrink-0",
                   isCompleted ? 'bg-slate-200 text-slate-500' :
                   isInProgress ? 'bg-indigo-100 text-indigo-600' :
                   colors.iconBg + ' ' + colors.iconColor
                 )}>
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h4 className={cn(
-                      "text-[14px] font-bold truncate transition-colors leading-tight",
+                      "text-[13px] font-bold truncate transition-colors leading-tight",
                       isCompleted ? 'line-through text-slate-400' : 'text-slate-900',
                       isInProgress && 'text-indigo-900'
                     )}>
                       {item.Title || item.title}
                     </h4>
                     {item.ID === upNextId && !isCompleted && (
-                      <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-none text-[10px] h-4 px-1.5 font-bold uppercase tracking-tighter shrink-0">
+                      <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-none text-[9px] h-3.5 px-1.5 font-bold uppercase tracking-tighter shrink-0">
                         Next
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className={cn(
-                      "text-[10px] font-bold tracking-tight uppercase",
+                      "text-[9px] font-bold tracking-tight uppercase",
                       isCompleted ? 'text-slate-400' : colors.text
                     )}>
                       {item.duration} mins • {format(item.startTime, 'HH:mm')}
                     </span>
                     {isOverdue && !isCompleted && (
                       <Badge variant="outline" className={cn(
-                        "border-none h-4 px-1.5 text-[9px] uppercase font-bold",
+                        "border-none h-3.5 px-1.5 text-[8px] uppercase font-bold",
                         isExpired ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-700'
                       )}>
                         {isExpired ? 'Locked' : 'Overdue'}
@@ -381,7 +403,7 @@ export default function TaskTimeline({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
                   {!isCompleted && !isExpired && (
                     <>
                       {!isQuickTask && (
@@ -389,42 +411,42 @@ export default function TaskTimeline({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-3 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold gap-1"
+                            className="h-7 px-2 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 text-[10px] font-bold gap-1"
                             disabled={!isOwnTask}
                             onClick={() => onPauseTask(item)}
                           >
-                            <Pause className="w-3.5 h-3.5 fill-current" /> Pause
+                            <Pause className="w-3 h-3 fill-current" /> Pause
                           </Button>
                         ) : (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-3 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[11px] font-bold gap-1"
+                            className="h-7 px-2 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-bold gap-1"
                             disabled={!isOwnTask}
                             onClick={() => onStartTask(item)}
                           >
-                            <Play className="w-3.5 h-3.5 fill-current" /> Start
+                            <Play className="w-3 h-3 fill-current" /> Start
                           </Button>
                         )
                       )}
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 px-3 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 text-[11px] font-bold gap-1"
+                        className="h-7 px-2 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 text-[10px] font-bold gap-1"
                         disabled={!isOwnTask}
                         onClick={() => onCompleteTask(item)}
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Done
+                        <CheckCircle2 className="w-3 h-3" /> Done
                       </Button>
                     </>
                   )}
                   {isCompleted && (
-                    <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center gap-1.5 text-[11px] font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Finished
+                    <div className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1 text-[10px] font-bold">
+                      <CheckCircle2 className="w-3 h-3" /> Finished
                     </div>
                   )}
                   {isExpired && !isCompleted && (
-                     <Lock className="w-3.5 h-3.5 text-slate-400" />
+                     <Lock className="w-3 h-3 text-slate-400" />
                   )}
                 </div>
               </div>
