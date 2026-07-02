@@ -19,6 +19,7 @@ import CashLogFormSupabase from "@/components/service-charges/CashLogForm";
 import CashLogCard from "@/components/service-charges/CashLogCard";
 import ServiceChargeDetailModal from "@/components/service-charges/ServiceChargeDetailModal";
 import CashLogDetailModal from "@/components/service-charges/CashLogDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import {
   Table,
   TableBody,
@@ -515,12 +516,31 @@ try {
           .eq('"ID"', editingCharge.id);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.SERVICE_CHARGE,
+          entityId: editingCharge.id,
+          description: `Updated service charge for ${getResidentName(chargeData.resident_id || chargeData["Resident ID"])}`
+        });
       } else {
         const { error } = await supabase
           .from('service_charges')
           .insert([chargeData]);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.SERVICE_CHARGE,
+          description: `Created new service charge for ${getResidentName(chargeData.resident_id || chargeData["Resident ID"])}`
+        });
       }
       setShowForm(false);
       setEditingCharge(null);
@@ -541,12 +561,31 @@ try {
           .eq('"ID"', editingCashLog.id);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: editingCashLog.id,
+          description: `Updated cash log for ${getResidentName(cashLogData.resident_id || cashLogData["Resident ID"])}`
+        });
       } else {
         const { error } = await supabase
           .from('cash_logs')
           .insert([cashLogData]);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.OFFICE_LOG,
+          description: `Created new cash log for ${getResidentName(cashLogData.resident_id || cashLogData["Resident ID"])}`
+        });
       }
       setShowCashForm(false);
       setEditingCashLog(null);
@@ -592,6 +631,16 @@ try {
           .eq('"ID"', cashLog.id || cashLog.ID);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: cashLog.id || cashLog.ID,
+          description: `Soft deleted cash log for ${getResidentName(cashLogResidentId)}`
+        });
         
         setViewingCashLog(null);
         setShowCashForm(false);
@@ -614,6 +663,16 @@ try {
           .eq('"ID"', charge.id);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.SERVICE_CHARGE,
+          entityId: charge.id,
+          description: `Deleted service charge for ${getResidentName(chargeResidentId)}`
+        });
         
         setViewingCharge(null);
         loadData();
@@ -654,10 +713,24 @@ try {
   };
 
   const exportServiceChargesToCSV = () => {
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.SERVICE_CHARGE,
+      description: `Exported service charges to CSV`
+    });
     console.log("✅ Service Charges CSV export completed successfully");
   };
 
   const exportCashLogsToCSV = () => {
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.OFFICE_LOG,
+      description: `Exported cash logs to CSV`
+    });
     console.log("✅ Cash Logs CSV export completed successfully");
   };
 

@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
 import BenefitLogDetailModal from "@/components/Benefits/BenefitLogDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameWeek } from "date-fns";
 
 // Helper function to normalize Supabase data to snake_case for the modal/form
@@ -182,6 +183,16 @@ export default function LandlordPortalSupabase() {
           console.error("❌ Error updating log:", error);
           throw error;
         }
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.BENEFIT,
+          entityId: editingLog.ID,
+          description: `Updated landlord portal check for ${format(new Date(logData["Log Date"]), 'dd/MM/yyyy')}`
+        });
+
         console.log("✅ Updated log in landlord_portal table");
       } else {
         const { error } = await supabase
@@ -192,6 +203,16 @@ export default function LandlordPortalSupabase() {
           console.error("❌ Error creating log:", error);
           throw error;
         }
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.BENEFIT,
+          entityId: logData.ID,
+          description: `Logged new landlord portal check for ${format(new Date(logData["Log Date"]), 'dd/MM/yyyy')}`
+        });
+
         console.log("✅ Created log in landlord_portal table");
       }
       
@@ -239,6 +260,15 @@ export default function LandlordPortalSupabase() {
         
         if (error) throw error;
         
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.BENEFIT,
+          entityId: logId,
+          description: `Permanently deleted landlord portal entry for ${format(new Date(logToDelete["Log Date"] || logToDelete.log_date), 'dd/MM/yyyy')}`
+        });
+
         console.log(`✅ Landlord portal entry ${logId} permanently deleted.`);
         setLogToDelete(null);
         setViewingLog(null);
@@ -410,6 +440,14 @@ export default function LandlordPortalSupabase() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.BENEFIT,
+      description: `Exported ${filteredLogs.length} landlord portal checks to CSV`
+    });
+
     console.log("✅ Landlord Portal CSV export completed successfully");
   };
 

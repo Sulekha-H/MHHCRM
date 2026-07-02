@@ -22,6 +22,7 @@ import {
 } from "date-fns";
 import SupportPlanForm_Supabase from "@/components/support-plans/SupportPlanForm";
 import SupportPlanDetailModal from "@/components/support-plans/SupportPlanDetailModal";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import {
   Table,
   TableBody,
@@ -327,6 +328,18 @@ useEffect(() => {
       let result;
       if (editingPlan && editingPlan.id) {
         result = await supabase.from(tableName).update(planData).eq('"ID"', editingPlan.id);
+
+        if (!result.error) {
+          // Log activity
+          logActivity(supabase, {
+            userName: user.fullName || user.username || "Unknown",
+            userEmail: user.primaryEmailAddress?.emailAddress,
+            actionType: ACTIONS.UPDATE,
+            entityType: tableName.includes('quarterly_reviews') ? ENTITIES.SUPPORT_PLAN : ENTITIES.OFFICE_LOG,
+            entityId: editingPlan.id,
+            description: `Updated allocated ${tableName.replace(/allocated_|/g, '').replace(/_/g, ' ')}: ${planData.Title}`
+          });
+        }
       } else {
         // Ensure ID is present before insert
         if (!planData.ID) {
@@ -335,6 +348,18 @@ useEffect(() => {
           return;
         }
         result = await supabase.from(tableName).insert([planData]);
+
+        if (!result.error) {
+          // Log activity
+          logActivity(supabase, {
+            userName: user.fullName || user.username || "Unknown",
+            userEmail: user.primaryEmailAddress?.emailAddress,
+            actionType: ACTIONS.CREATE,
+            entityType: tableName.includes('quarterly_reviews') ? ENTITIES.SUPPORT_PLAN : ENTITIES.OFFICE_LOG,
+            entityId: planData.ID,
+            description: `Created new allocated ${tableName.replace(/allocated_|/g, '').replace(/_/g, ' ')}: ${planData.Title}`
+          });
+        }
       }
 
       if (result.error) {
@@ -374,11 +399,23 @@ useEffect(() => {
       try {
         const tableName = planToDelete.plan_type === 'quarterly_reviews' ? 'allocated_quarterly_reviews' : 'allocated_support_notes';
 
-        await supabase.from(tableName).update({
+        const { error } = await supabase.from(tableName).update({
           "Deleted": true,
           "Deleted Date": new Date().toISOString(),
           "Deleted By": currentUser?.email || user?.primaryEmailAddress?.emailAddress || "Unknown User"
         }).eq('"ID"', planToDelete.id);
+
+        if (!error) {
+          // Log activity
+          logActivity(supabase, {
+            userName: user.fullName || user.username || "Unknown",
+            userEmail: user.primaryEmailAddress?.emailAddress,
+            actionType: ACTIONS.DELETE,
+            entityType: tableName.includes('quarterly_reviews') ? ENTITIES.SUPPORT_PLAN : ENTITIES.OFFICE_LOG,
+            entityId: planToDelete.id,
+            description: `Soft deleted allocated ${tableName.replace(/allocated_|/g, '').replace(/_/g, ' ')}: ${planToDelete.title}`
+          });
+        }
 
         setPlanToDelete(null);
         setViewingPlan(null);

@@ -53,6 +53,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
+import { useClerkSupabaseClient } from "@/lib/supabaseClient";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 const VIEWS = {
   MONTH: "month",
@@ -62,6 +64,7 @@ const VIEWS = {
 
 export default function MicrosoftCalendar() {
   const { user } = useUser();
+  const supabase = useClerkSupabaseClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState(VIEWS.MONTH);
   const [events, setEvents] = useState([]);
@@ -228,6 +231,16 @@ export default function MicrosoftCalendar() {
 
       if (res.ok) {
         toast.success(selectedEvent ? "Event updated" : "Event created");
+
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: selectedEvent ? ACTIONS.UPDATE : ACTIONS.CREATE,
+          entityType: ENTITIES.CALENDAR_EVENT,
+          entityId: selectedEvent?.id || 'new',
+          description: `${selectedEvent ? 'Updated' : 'Created'} Microsoft calendar event: ${formData.subject}`
+        });
+
         setIsEventModalOpen(false);
         fetchEvents();
       } else {
@@ -253,6 +266,16 @@ export default function MicrosoftCalendar() {
       });
       if (res.ok) {
         toast.success("Event deleted");
+
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.CALENDAR_EVENT,
+          entityId: selectedEvent.id,
+          description: `Deleted Microsoft calendar event: ${selectedEvent.subject}`
+        });
+
         setIsEventModalOpen(false);
         fetchEvents();
       } else {

@@ -11,6 +11,7 @@ import { Plus, Search, Download, FolderOpen, Settings, Eye, Trash2, Edit } from 
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import CustomSectionForm_Supabase from "@/components/custom-sections/csform";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function CustomSections() {
   const { user } = useUser();
@@ -95,13 +96,34 @@ export default function CustomSections() {
         
         if (error) throw error;
         console.log("✅ Custom section updated successfully");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: editingSection.ID,
+          description: `Updated custom section: ${sectionData["Section Name"]}`
+        });
       } else {
+        const newId = crypto.randomUUID();
         const { error } = await supabase
           .from('custom_sections')
-          .insert([sectionData]);
+          .insert([{ ...sectionData, ID: newId }]);
         
         if (error) throw error;
         console.log("✅ Custom section created successfully");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: newId,
+          description: `Created new custom section: ${sectionData["Section Name"]}`
+        });
       }
       
       setShowForm(false);
@@ -136,6 +158,16 @@ export default function CustomSections() {
           .eq('ID', sectionToDelete.ID);
         
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: sectionToDelete.ID,
+          description: `Soft deleted custom section: ${sectionToDelete["Section Name"]}`
+        });
         
         console.log(`✅ Custom section ${sectionToDelete.ID} soft deleted successfully.`);
         setSectionToDelete(null);
@@ -243,6 +275,14 @@ export default function CustomSections() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    logActivity(supabase, {
+      userName: currentUser?.["Full Name"] || user?.fullName || "Unknown",
+      userEmail: user?.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.CUSTOM_SECTION,
+      description: `Exported custom sections to CSV`
+    });
+
     console.log("✅ Custom Sections CSV export completed successfully");
   };
 

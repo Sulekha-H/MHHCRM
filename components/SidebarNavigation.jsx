@@ -33,7 +33,8 @@ import {
   Trash2,
   Zap,
   ClipboardCheck,
-  ShoppingCart
+  ShoppingCart,
+  History
 } from "lucide-react";
 
 export default function SidebarNavigation() {
@@ -107,6 +108,7 @@ export default function SidebarNavigation() {
   ];
 
   const adminNav = [
+    { name: "Staff Activity", href: "/staff-activity", icon: History, current: pathname === "/staff-activity" },
     { name: "Custom Sections", href: "/customsections", icon: Settings, current: pathname === "/customsections" },
     { name: "Landlord Portal", href: "/landlordportal", icon: Settings, current: pathname === "/landlordportal" },
     { name: "Settings", href: "/settings", icon: Settings, current: pathname === "/settings" },

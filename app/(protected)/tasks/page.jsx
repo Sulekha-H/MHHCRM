@@ -13,6 +13,7 @@ import { generateUUID, updateTaskMetadata, parseTaskMetadata } from "@/lib/utils
 import { ROUTINE_TITLES, WEEKLY_ROUTINES } from "@/lib/constants/routines";
 import TaskForm_Supabase from "@/components/tasks/TaskForm";
 import TaskCard from "@/components/tasks/TaskCard";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import TaskDetailModal from "@/components/tasks/TaskDetailModal";
 import TaskTimeline from "@/components/tasks/TaskTimeline";
 
@@ -141,15 +142,36 @@ export default function TasksPage() {
       if (editingTask) {
         const { error } = await supabase.from('tasks').update({ ...taskData, "Updated Date": new Date().toISOString() }).eq('ID', editingTask.ID);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.TASK,
+          entityId: editingTask.ID,
+          description: `Updated task: ${taskData.Title}`
+        });
       } else {
+        const newTaskId = generateUUID();
         const { error } = await supabase.from('tasks').insert([{
           ...taskData,
-          ID: generateUUID(),
+          ID: newTaskId,
           "Created Date": new Date().toISOString(),
           "Updated Date": new Date().toISOString(),
           "Created By": currentUser?.Email || "Unknown"
         }]);
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.TASK,
+          entityId: newTaskId,
+          description: `Created new task: ${taskData.Title}`
+        });
       }
       setShowForm(false);
       setEditingTask(null);
@@ -266,9 +288,10 @@ export default function TasksPage() {
 
     try {
       const assigneeName = filters.assignee === "all" ? (currentUser?.["Full Name"] || currentUser?.full_name) : filters.assignee;
+      const newTaskId = generateUUID();
 
       const { error } = await supabase.from('tasks').insert([{
-        ID: generateUUID(),
+        ID: newTaskId,
         Title: newMiscTaskTitle.trim(),
         Status: "To Do",
         Priority: "Medium",
@@ -283,6 +306,17 @@ export default function TasksPage() {
       }]);
 
       if (error) throw error;
+
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.CREATE,
+        entityType: ENTITIES.TASK,
+        entityId: newTaskId,
+        description: `Created new miscellaneous task: ${newMiscTaskTitle.trim()}`
+      });
+
       setNewMiscTaskTitle("");
       loadTasks();
     } catch (error) {
@@ -293,6 +327,17 @@ export default function TasksPage() {
   const handleDelete = async (task) => {
     if (confirm("Delete this task?")) {
       await supabase.from('tasks').update({ Deleted: true, "Deleted Date": new Date().toISOString(), "Deleted By": currentUser?.["Full Name"] }).eq('ID', task.ID);
+
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.DELETE,
+        entityType: ENTITIES.TASK,
+        entityId: task.ID,
+        description: `Soft deleted task: ${task.Title}`
+      });
+
       loadTasks();
     }
   };
@@ -306,6 +351,14 @@ export default function TasksPage() {
     a.href = url;
     a.download = `tasks_${format(selectedDate, 'yyyy-MM-dd')}.csv`;
     a.click();
+
+    logActivity(supabase, {
+      userName: currentUser?.["Full Name"] || user?.fullName || "Unknown",
+      userEmail: user?.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.TASK,
+      description: `Exported tasks for ${format(selectedDate, 'yyyy-MM-dd')} to CSV`
+    });
   };
 
   // Sorting Logic

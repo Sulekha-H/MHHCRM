@@ -12,6 +12,7 @@ import { Plus, Search, FileText, Download, CheckCircle, AlertCircle, Timer, Cale
 import { format, startOfYear, endOfYear, eachMonthOfInterval } from "date-fns";
 import OfficeLogForm from "@/components/office-logs/OfficeLogForm";
 import OfficeLogCard from "@/components/office-logs/OfficeLogCard";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 // Helper function to normalize column names from Supabase
 const normalizeData = (data) => {
@@ -275,6 +276,16 @@ useEffect(() => {
         
         if (error) throw error;
         console.log("✅ Office log updated successfully");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: editingLog["ID"] || editingLog.id,
+          description: `Updated office log: ${formattedLogData["Title"]}`
+        });
       } else {
         // Add ID for new logs
         if (logData.ID) {
@@ -287,6 +298,16 @@ useEffect(() => {
         
         if (error) throw error;
         console.log("✅ Office log created successfully");
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.OFFICE_LOG,
+          entityId: formattedLogData.ID,
+          description: `Created new office log: ${formattedLogData["Title"]}`
+        });
       }
       
       setShowForm(false);
@@ -334,6 +355,16 @@ useEffect(() => {
       if (error) throw error;
 
       console.log(`Office log ${log["ID"] || log.id} deleted permanently.`);
+
+      // Log activity
+      logActivity(supabase, {
+        userName: user.fullName || user.username || "Unknown",
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        actionType: ACTIONS.DELETE,
+        entityType: ENTITIES.OFFICE_LOG,
+        entityId: log["ID"] || log.id,
+        description: `Deleted office log: ${logTitle}`
+      });
       await loadAllData();
 
     } catch (error) {
@@ -470,6 +501,14 @@ useEffect(() => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.OFFICE_LOG,
+      description: `Exported office logs to CSV`
+    });
   };
 
   const getPriorityColor = (priority) => {

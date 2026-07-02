@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format, startOfYear, endOfYear, eachMonthOfInterval } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import PropertyPurchaseForm from "@/components/properties/PropertyPurchaseForm";
 import PropertyPurchaseCard from "@/components/properties/PropertyPurchaseCard";
 import PropertyPurchaseDetailModal from "@/components/properties/PropertyPurchaseDetailModal";
@@ -150,18 +151,38 @@ export default function PropertyPurchases() {
       };
 
       if (editingPurchase) {
+        const purchaseId = editingPurchase["ID"] || editingPurchase.id;
         const { error } = await supabase
           .from('property_purchases')
           .update(supabaseData)
-          .eq('"ID"', editingPurchase["ID"] || editingPurchase.id);
+          .eq('"ID"', purchaseId);
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.PROPERTY_PURCHASE,
+          entityId: purchaseId,
+          description: `Updated property purchase: ${formData.item_name} for ${getPropertyName(formData.property_id)}`
+        });
       } else {
-        supabaseData.ID = crypto.randomUUID();
+        const newId = crypto.randomUUID();
+        supabaseData.ID = newId;
         supabaseData["Created Date"] = new Date().toISOString();
         const { error } = await supabase
           .from('property_purchases')
           .insert([supabaseData]);
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.PROPERTY_PURCHASE,
+          entityId: newId,
+          description: `Logged new property purchase: ${formData.item_name} for ${getPropertyName(formData.property_id)}`
+        });
       }
 
       setShowForm(false);
@@ -192,6 +213,16 @@ export default function PropertyPurchases() {
           .eq('"ID"', purchase["ID"] || purchase.id);
 
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.PROPERTY_PURCHASE,
+          entityId: purchase["ID"] || purchase.id,
+          description: `Deleted property purchase: ${purchase["Item Name"] || purchase.item_name}`
+        });
+
         setViewingPurchase(null);
         fetchAllData();
       } catch (err) {
@@ -226,6 +257,14 @@ export default function PropertyPurchases() {
     link.href = URL.createObjectURL(blob);
     link.download = `property_purchases_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     link.click();
+
+    logActivity(supabase, {
+      userName: user.fullName || user.username || "Unknown",
+      userEmail: user.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.PROPERTY_PURCHASE,
+      description: `Exported ${filteredPurchases.length} property purchases to CSV`
+    });
   };
 
   const currentYear = new Date().getFullYear();

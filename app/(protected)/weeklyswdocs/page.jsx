@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, CheckCircle, AlertTriangle, FileStack, XCircle, Download, RefreshCw } from "lucide-react";
 import { format, isSameWeek } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -198,11 +199,22 @@ useEffect(() => {
                         })
                         .eq('ID', logData.id);
                 if (error) throw error;
+
+                await logActivity(supabase, {
+                    userName: user.fullName || user.username || "Unknown",
+                    userEmail: user.primaryEmailAddress?.emailAddress,
+                    actionType: ACTIONS.UPDATE,
+                    entityType: ENTITIES.OFFICE_LOG,
+                    entityId: logData.id,
+                    description: `Updated weekly SW document log for ${formContext.documentName} at ${properties.find(p => p.ID === logData.property_id)?.Name || 'Unknown'}`
+                });
+
                 console.log("✅ Log updated successfully");
             } else {
                 console.log("➕ Creating new log");
+                const newId = crypto.randomUUID();
                 const newLog = {
-                    'ID': crypto.randomUUID(),
+                    'ID': newId,
                     'Property ID': logData.property_id,
                     'SW Document ID': logData.sw_document_id,
                     'Week Start Date': logData.week_start_date,
@@ -219,6 +231,16 @@ useEffect(() => {
                         .from('weekly_sw_doc_logs')
                         .insert([newLog]);
                 if (error) throw error;
+
+                await logActivity(supabase, {
+                    userName: user.fullName || user.username || "Unknown",
+                    userEmail: user.primaryEmailAddress?.emailAddress,
+                    actionType: ACTIONS.CREATE,
+                    entityType: ENTITIES.OFFICE_LOG,
+                    entityId: newId,
+                    description: `Created new weekly SW document log for ${formContext.documentName} at ${properties.find(p => p.ID === logData.property_id)?.Name || 'Unknown'}`
+                });
+
                 console.log("✅ Log created successfully");
             }
             setShowForm(false);
@@ -248,6 +270,15 @@ useEffect(() => {
                         .eq('ID', logToDelete.id);
                 if (error) throw error;
                 
+                await logActivity(supabase, {
+                    userName: user.fullName || user.username || "Unknown",
+                    userEmail: user.primaryEmailAddress?.emailAddress,
+                    actionType: ACTIONS.DELETE,
+                    entityType: ENTITIES.OFFICE_LOG,
+                    entityId: logToDelete.id,
+                    description: `Deleted weekly SW document log for ${formContext.documentName} at ${properties.find(p => p.ID === logToDelete.property_id)?.Name || 'Unknown'}`
+                });
+
                 console.log(`Weekly SW Doc Log ${logToDelete.id} soft deleted successfully.`);
                 setLogToDelete(null);
                 setViewingLog(null);
@@ -401,6 +432,14 @@ useEffect(() => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
+        logActivity(supabase, {
+            userName: user.fullName || user.username || "Unknown",
+            userEmail: user.primaryEmailAddress?.emailAddress,
+            actionType: ACTIONS.EXPORT,
+            entityType: ENTITIES.OFFICE_LOG,
+            description: `Exported ${filteredLogs.length} weekly SW document logs to CSV`
+        });
+
         console.log("✅ Weekly SW Doc Logs CSV export completed successfully");
         console.log(`✅ Exported ${filteredLogs.length} logs for Weekly risk assessment and Weekly schedule`);
     };

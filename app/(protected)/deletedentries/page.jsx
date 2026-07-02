@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, RotateCcw, Trash2, Calendar, User as UserIcon, Download } from "lucide-react";
 import { format } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 export default function DeletedEntries() {
   const { user } = useUser();
@@ -254,6 +255,16 @@ export default function DeletedEntries() {
           .eq('"ID"', restoreItem.item.id);
 
         if (error) throw error;
+
+        // Log activity
+        logActivity(supabase, {
+          userName: user.fullName || user.username || "Unknown",
+          userEmail: user.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.RESTORE,
+          entityType: restoreItem.tableName.includes('resident') ? ENTITIES.RESIDENT : restoreItem.tableName.includes('property') ? ENTITIES.PROPERTY : ENTITIES.OFFICE_LOG,
+          entityId: restoreItem.item.id,
+          description: `Restored deleted entry: ${restoreItem.item.title || restoreItem.item.name || restoreItem.item.landlord_name || restoreItem.item.certificate_name || restoreItem.item.id}`
+        });
         
         await loadAllDeletedData();
         setRestoreItem(null);

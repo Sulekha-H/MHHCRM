@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, ArrowLeft, Settings, FolderOpen, Download } from "lucide-react";
 import { format } from "date-fns";
+import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import Link from "next/link";
 import { useParams, useRouter} from "next/navigation";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -138,18 +139,39 @@ export default function CustomSectionDetail() {
           .eq('ID', editingRecord.id);
 
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: currentUser?.["Full Name"] || user?.fullName || 'Unknown User',
+          userEmail: user?.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.UPDATE,
+          entityType: ENTITIES.CUSTOM_SECTION_DATA,
+          entityId: editingRecord.id,
+          description: `Updated entry "${recordData.Title || editingRecord.title}" in custom section "${section?.section_name}"`,
+          metadata: { section_id: sectionId, section_name: section?.section_name }
+        });
       } else {
+        const newId = crypto.randomUUID();
         const { error } = await supabase
           .from('custom_section_data')
           .insert([{
             ...recordData,
             'Custom Section ID': sectionId,
-            'ID': crypto.randomUUID(),
+            'ID': newId,
             'Created Date': new Date().toISOString(),
             'Created By': currentUser?.email || null
           }]);
 
         if (error) throw error;
+
+        await logActivity(supabase, {
+          userName: currentUser?.["Full Name"] || user?.fullName || 'Unknown User',
+          userEmail: user?.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.CREATE,
+          entityType: ENTITIES.CUSTOM_SECTION_DATA,
+          entityId: newId,
+          description: `Added new entry "${recordData.Title || 'Untitled'}" to custom section "${section?.section_name}"`,
+          metadata: { section_id: sectionId, section_name: section?.section_name }
+        });
       }
       setShowForm(false);
       setEditingRecord(null);
@@ -187,6 +209,16 @@ export default function CustomSectionDetail() {
 
         if (error) throw error;
         
+        await logActivity(supabase, {
+          userName: currentUser?.["Full Name"] || user?.fullName || 'Unknown User',
+          userEmail: user?.primaryEmailAddress?.emailAddress,
+          actionType: ACTIONS.DELETE,
+          entityType: ENTITIES.CUSTOM_SECTION_DATA,
+          entityId: recordToDelete.id,
+          description: `Deleted entry "${recordToDelete.title || 'Untitled'}" from custom section "${section?.section_name}"`,
+          metadata: { section_id: sectionId, section_name: section?.section_name }
+        });
+
         console.log(`✅ Custom section data record ${recordToDelete.id} soft deleted successfully.`);
         setRecordToDelete(null);
         setViewingRecord(null);
@@ -295,6 +327,16 @@ export default function CustomSectionDetail() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
+    logActivity(supabase, {
+      userName: currentUser?.["Full Name"] || user?.fullName || 'Unknown User',
+      userEmail: user?.primaryEmailAddress?.emailAddress,
+      actionType: ACTIONS.EXPORT,
+      entityType: ENTITIES.CUSTOM_SECTION_DATA,
+      entityId: sectionId,
+      description: `Exported entries for custom section "${section?.section_name}" to CSV`,
+      metadata: { section_id: sectionId, section_name: section?.section_name, record_count: filteredRecords.length }
+    });
+
     console.log("✅ Custom Section Data CSV export completed successfully");
   };
 
