@@ -8,7 +8,6 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { parseTaskMetadata } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -191,7 +190,10 @@ export default function TaskTimeline({
             lastTime = headerTime;
           }
         }
+
+        // Give header a synthetic duration so it doesn't overlap with the next task
         scheduled.push({ ...item, startTime: lastTime, isHeader: true });
+        lastTime = addMinutes(lastTime, 15);
         return;
       }
 
@@ -213,7 +215,7 @@ export default function TaskTimeline({
     return scheduled;
   }, [routineTasks, startTime, selectedDate]);
 
-  const PIXELS_PER_MINUTE = 4; // 60px per 15 mins
+  const PIXELS_PER_MINUTE = 6; // 90px per 15 mins
 
   const currentTimeTop = React.useMemo(() => {
     if (!isSameDay(now, selectedDate)) return null;
@@ -225,8 +227,8 @@ export default function TaskTimeline({
   const isAdmin = userFullName === 'leticia' || userFullName === 'admin';
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border p-6 h-[calc(100vh-250px)] flex flex-col">
-      <div className="flex items-center justify-between mb-6 px-2">
+    <div className="bg-white rounded-3xl shadow-sm border p-6 flex flex-col">
+      <div className="flex items-center justify-between mb-8 px-2">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <Clock className="w-5 h-5 text-slate-400" /> Routine Tasks
         </h2>
@@ -235,203 +237,201 @@ export default function TaskTimeline({
         </Badge>
       </div>
 
-      <ScrollArea className="flex-1 pr-4">
-        <div className="relative pt-4 pb-12">
-          {/* Vertical Line */}
-          <div className="absolute left-[40px] top-0 bottom-0 w-[2px] bg-slate-100 rounded-full" />
+      <div className="relative pt-4 pb-12">
+        {/* Vertical Line */}
+        <div className="absolute left-[40px] top-0 bottom-0 w-[2px] bg-slate-100 rounded-full" />
 
-          {/* Time Markers */}
-          <div className="space-y-0">
-            {intervals.map((time, i) => {
-              const minutes = time.getMinutes();
-              const isHour = minutes === 0;
-              const isHalf = minutes === 30;
+        {/* Time Markers */}
+        <div className="space-y-0">
+          {intervals.map((time, i) => {
+            const minutes = time.getMinutes();
+            const isHour = minutes === 0;
+            const isHalf = minutes === 30;
 
-              return (
-                <div key={i} className="flex items-start h-[60px] relative">
-                  {/* Time Label on the left - Narrowed */}
-                  <div className={cn(
-                    "w-10 text-right pr-3 mt-[-8px] transition-colors",
-                    isHour ? "text-[10px] font-bold text-slate-900" : "text-[9px] font-medium text-slate-300"
-                  )}>
-                    {isHour ? format(time, 'HH:mm') : format(time, 'mm')}
-                  </div>
-
-                  {/* Horizontal Tick */}
-                  <div className={cn(
-                    "absolute left-[38px] top-0 h-[2px] rounded-full z-10",
-                    isHour ? "w-2 bg-slate-400" :
-                    isHalf ? "w-1.5 bg-slate-300" :
-                    "w-1 bg-slate-200"
-                  )} />
+            return (
+              <div key={i} className="flex items-start h-[90px] relative">
+                {/* Time Label on the left - Narrowed */}
+                <div className={cn(
+                  "w-10 text-right pr-3 mt-[-8px] transition-colors",
+                  isHour ? "text-[10px] font-bold text-slate-900" : "text-[9px] font-medium text-slate-300"
+                )}>
+                  {isHour ? format(time, 'HH:mm') : format(time, 'mm')}
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Current Time Indicator */}
-          {currentTimeTop !== null && (
-            <div
-              className="absolute left-0 right-0 z-50 flex items-center pointer-events-none"
-              style={{ top: `${currentTimeTop}px` }}
-            >
-              <div className="w-10 text-right pr-3 text-[9px] font-bold text-red-500 bg-white/50">
-                {format(now, 'HH:mm')}
+                {/* Horizontal Tick */}
+                <div className={cn(
+                  "absolute left-[38px] top-0 h-[2px] rounded-full z-10",
+                  isHour ? "w-2 bg-slate-400" :
+                  isHalf ? "w-1.5 bg-slate-300" :
+                  "w-1 bg-slate-200"
+                )} />
               </div>
-              <div className="relative flex-1 h-[2px] bg-red-500/50">
-                <div className="absolute left-[-2px] top-[-3px] w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-              </div>
+            );
+          })}
+        </div>
+
+        {/* Current Time Indicator */}
+        {currentTimeTop !== null && (
+          <div
+            className="absolute left-0 right-0 z-50 flex items-center pointer-events-none"
+            style={{ top: `${currentTimeTop}px` }}
+          >
+            <div className="w-10 text-right pr-3 text-[9px] font-bold text-red-500 bg-white/50">
+              {format(now, 'HH:mm')}
             </div>
-          )}
+            <div className="relative flex-1 h-[2px] bg-red-500/50">
+              <div className="absolute left-[-2px] top-[-3px] w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
+            </div>
+          </div>
+        )}
 
-          {/* Task Items */}
-          <div className="absolute top-0 left-[56px] right-2">
-            {scheduledItems.map((item) => {
-              const startOffset = differenceInMinutes(item.startTime, startTime);
-              const top = startOffset * PIXELS_PER_MINUTE;
+        {/* Task Items */}
+        <div className="absolute top-0 left-[56px] right-2">
+          {scheduledItems.map((item) => {
+            const startOffset = differenceInMinutes(item.startTime, startTime);
+            const top = startOffset * PIXELS_PER_MINUTE;
 
-              if (item.isHeader) {
-                return (
-                  <div
-                    key={item.ID}
-                    className="absolute left-0 right-0 border-y border-slate-100 bg-slate-50/50 px-3 py-1.5 z-10"
-                    style={{ top: `${top}px` }}
-                  >
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                      {item.title}
-                    </span>
-                  </div>
-                );
-              }
-
-              const height = item.duration * PIXELS_PER_MINUTE;
-              const status = (item.Status || item.status || "").toLowerCase();
-              const isCompleted = status === 'completed';
-              const isInProgress = status === 'in progress';
-
-              const metadata = parseTaskMetadata(item.Description || item.description);
-              const deadline = metadata?.deadline || item["Due Date"] || item.due_date;
-              const isOverdue = !isCompleted && deadline && isPast(new Date(deadline));
-              const isExpired = isOverdue && !isInProgress && !isAdmin;
-              const isQuickTask = QUICK_TASKS.includes((item.Title || item.title || "").toLowerCase().trim());
-
-              const { Icon, colors } = getTaskStyling(item.Title || item.title);
-              const assignedTo = (item["Assigned To User ID"] || item.assigned_to_user_id || "").trim().toLowerCase();
-              const isOwnTask = assignedTo === userFullName;
-
+            if (item.isHeader) {
               return (
                 <div
                   key={item.ID}
-                  onClick={() => onTaskClick(item)}
-                  className={cn(
-                    "absolute left-0 right-0 rounded-2xl border p-3 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-3 group",
-                    isCompleted ? 'bg-slate-50 border-slate-200 opacity-60' :
-                    isInProgress ? 'bg-white border-indigo-500 ring-4 ring-indigo-50 shadow-indigo-100 shadow-lg' :
-                    item.ID === upNextId ? 'bg-cyan-50/50 border-cyan-200 shadow-cyan-100 shadow-md ring-2 ring-cyan-100' :
-                    `${colors.bg} ${colors.border} shadow-sm`
-                  )}
-                  style={{
-                    top: `${top}px`,
-                    height: `${height - 4}px`,
-                    minHeight: '60px'
-                  }}
+                  className="absolute left-0 right-0 border-y border-slate-100 bg-slate-50/50 px-3 py-1.5 z-10"
+                  style={{ top: `${top}px` }}
                 >
-                  {/* Category Icon */}
-                  <div className={cn(
-                    "p-2 rounded-xl transition-transform group-hover:scale-110 shrink-0",
-                    isCompleted ? 'bg-slate-200 text-slate-500' :
-                    isInProgress ? 'bg-indigo-100 text-indigo-600' :
-                    colors.iconBg + ' ' + colors.iconColor
-                  )}>
-                    <Icon className="w-5 h-5" />
-                  </div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                    {item.title}
+                  </span>
+                </div>
+              );
+            }
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className={cn(
-                        "text-[13px] font-bold truncate transition-colors leading-tight",
-                        isCompleted ? 'line-through text-slate-400' : 'text-slate-900',
-                        isInProgress && 'text-indigo-900'
-                      )}>
-                        {item.Title || item.title}
-                      </h4>
-                      {item.ID === upNextId && !isCompleted && (
-                        <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-none text-[9px] h-3.5 px-1 font-bold uppercase tracking-tighter shrink-0">
-                          Next
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className={cn(
-                        "text-[10px] font-bold tracking-tight uppercase",
-                        isCompleted ? 'text-slate-400' : colors.text
-                      )}>
-                        {item.duration} mins • {format(item.startTime, 'HH:mm')}
-                      </span>
-                      {isOverdue && !isCompleted && (
-                        <Badge variant="outline" className={cn(
-                          "border-none h-4 px-1.5 text-[9px] uppercase font-bold",
-                          isExpired ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-700'
-                        )}>
-                          {isExpired ? 'Locked' : 'Overdue'}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+            const height = item.duration * PIXELS_PER_MINUTE;
+            const status = (item.Status || item.status || "").toLowerCase();
+            const isCompleted = status === 'completed';
+            const isInProgress = status === 'in progress';
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-                    {!isCompleted && !isExpired && (
-                      <>
-                        {!isQuickTask && (
-                          isInProgress ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 px-2 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 text-[10px] font-bold"
-                              disabled={!isOwnTask}
-                              onClick={() => onPauseTask(item)}
-                            >
-                              <Pause className="w-3 h-3 fill-current" />
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 px-2 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-bold"
-                              disabled={!isOwnTask}
-                              onClick={() => onStartTask(item)}
-                            >
-                              <Play className="w-3 h-3 fill-current" />
-                            </Button>
-                          )
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 px-2 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 text-[10px] font-bold"
-                          disabled={!isOwnTask}
-                          onClick={() => onCompleteTask(item)}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                        </Button>
-                      </>
+            const metadata = parseTaskMetadata(item.Description || item.description);
+            const deadline = metadata?.deadline || item["Due Date"] || item.due_date;
+            const isOverdue = !isCompleted && deadline && isPast(new Date(deadline));
+            const isExpired = isOverdue && !isInProgress && !isAdmin;
+            const isQuickTask = QUICK_TASKS.includes((item.Title || item.title || "").toLowerCase().trim());
+
+            const { Icon, colors } = getTaskStyling(item.Title || item.title);
+            const assignedTo = (item["Assigned To User ID"] || item.assigned_to_user_id || "").trim().toLowerCase();
+            const isOwnTask = assignedTo === userFullName;
+
+            return (
+              <div
+                key={item.ID}
+                onClick={() => onTaskClick(item)}
+                className={cn(
+                  "absolute left-0 right-0 rounded-2xl border p-4 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-4 group overflow-hidden",
+                  isCompleted ? 'bg-slate-50 border-slate-200 opacity-60' :
+                  isInProgress ? 'bg-white border-indigo-500 ring-4 ring-indigo-50 shadow-indigo-100 shadow-lg' :
+                  item.ID === upNextId ? 'bg-cyan-50/50 border-cyan-200 shadow-cyan-100 shadow-md ring-2 ring-cyan-100' :
+                  `${colors.bg} ${colors.border} shadow-sm`
+                )}
+                style={{
+                  top: `${top}px`,
+                  height: `${height - 8}px`,
+                  minHeight: '36px'
+                }}
+              >
+                {/* Category Icon */}
+                <div className={cn(
+                  "p-2.5 rounded-xl transition-transform group-hover:scale-110 shrink-0",
+                  isCompleted ? 'bg-slate-200 text-slate-500' :
+                  isInProgress ? 'bg-indigo-100 text-indigo-600' :
+                  colors.iconBg + ' ' + colors.iconColor
+                )}>
+                  <Icon className="w-5 h-5" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className={cn(
+                      "text-[14px] font-bold truncate transition-colors leading-tight",
+                      isCompleted ? 'line-through text-slate-400' : 'text-slate-900',
+                      isInProgress && 'text-indigo-900'
+                    )}>
+                      {item.Title || item.title}
+                    </h4>
+                    {item.ID === upNextId && !isCompleted && (
+                      <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-none text-[10px] h-4 px-1.5 font-bold uppercase tracking-tighter shrink-0">
+                        Next
+                      </Badge>
                     )}
-                    {isCompleted && (
-                      <div className="bg-green-100 p-1 rounded-full">
-                        <CheckCircle2 className="w-3 h-3 text-green-600" />
-                      </div>
-                    )}
-                    {isExpired && !isCompleted && (
-                       <Lock className="w-3 h-3 text-slate-400" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={cn(
+                      "text-[10px] font-bold tracking-tight uppercase",
+                      isCompleted ? 'text-slate-400' : colors.text
+                    )}>
+                      {item.duration} mins • {format(item.startTime, 'HH:mm')}
+                    </span>
+                    {isOverdue && !isCompleted && (
+                      <Badge variant="outline" className={cn(
+                        "border-none h-4 px-1.5 text-[9px] uppercase font-bold",
+                        isExpired ? 'bg-slate-100 text-slate-500' : 'bg-red-100 text-red-700'
+                      )}>
+                        {isExpired ? 'Locked' : 'Overdue'}
+                      </Badge>
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                  {!isCompleted && !isExpired && (
+                    <>
+                      {!isQuickTask && (
+                        isInProgress ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100 text-[11px] font-bold gap-1"
+                            disabled={!isOwnTask}
+                            onClick={() => onPauseTask(item)}
+                          >
+                            <Pause className="w-3.5 h-3.5 fill-current" /> Pause
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-[11px] font-bold gap-1"
+                            disabled={!isOwnTask}
+                            onClick={() => onStartTask(item)}
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" /> Start
+                          </Button>
+                        )
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-green-600 border-green-200 bg-green-50 hover:bg-green-100 text-[11px] font-bold gap-1"
+                        disabled={!isOwnTask}
+                        onClick={() => onCompleteTask(item)}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Done
+                      </Button>
+                    </>
+                  )}
+                  {isCompleted && (
+                    <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full flex items-center gap-1.5 text-[11px] font-bold">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Finished
+                    </div>
+                  )}
+                  {isExpired && !isCompleted && (
+                     <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
