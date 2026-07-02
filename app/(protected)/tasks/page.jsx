@@ -340,9 +340,7 @@ export default function TasksPage() {
     });
   };
 
-  const routineTitlesLower = ROUTINE_TITLES.map(t => t.trim().toLowerCase());
   const activeTasks = filteredTasks.filter(t => (t.Status || "").toLowerCase() !== "completed");
-
   const assigneeName = filters.assignee === "all" ? (currentUser?.["Full Name"] || currentUser?.full_name) : filters.assignee;
 
   const routineTasks = routineTemplates.filter(template => {
@@ -357,15 +355,20 @@ export default function TasksPage() {
     if (template.isHeader) {
       return { ...template, ID: `header-${template.title}-${dayName}` };
     }
-    // Include all tasks (even completed) in the timeline/routine list to maintain daily structure
+    // Include all tasks in the timeline list (TaskTimeline will handle hiding them visually)
     return filteredTasks.find(t => (t.Title || "").trim().toLowerCase() === (template.title || "").trim().toLowerCase());
   }).filter(Boolean);
 
+  // Identify which tasks are "Routine" (they are in the routineTasks array)
+  const routineTaskIds = new Set(routineTasks.map(t => t?.ID).filter(Boolean));
+
+  // All completed tasks (both routine and misc) for the bottom section
   const completedTasksList = sortTasks(filteredTasks.filter(t =>
-    (t.Status || "").toLowerCase() === "completed" &&
-    !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())
+    (t.Status || "").toLowerCase() === "completed"
   ), 'misc');
-  const miscTasks = sortTasks(activeTasks.filter(t => !routineTitlesLower.includes((t.Title || "").trim().toLowerCase())), 'misc');
+
+  // Misc tasks are active tasks that are NOT routine
+  const miscTasks = sortTasks(activeTasks.filter(t => !routineTaskIds.has(t.ID)), 'misc');
 
   const upNextId = routineTasks.find(t => t && !t.isHeader && (t.Status || "").toLowerCase() === "to do")?.ID;
 
