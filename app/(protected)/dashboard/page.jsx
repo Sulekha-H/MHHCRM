@@ -66,6 +66,42 @@ const CountdownDisplay = ({ deadline }) => {
   return <span>{parts.join(" ")} remaining</span>;
 };
 
+const DeadlineGroup = ({ title, deadlines, colorClass, icon: Icon }) => {
+  if (deadlines.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      <h3 className={`text-sm font-bold uppercase tracking-wider flex items-center gap-2 ${colorClass}`}>
+        <Icon className="w-4 h-4" />
+        {title} ({deadlines.length})
+      </h3>
+      <div className="flex overflow-x-auto gap-4 pb-4">
+        {deadlines.map((d) => (
+          <Card key={d.id} className="min-w-[250px] max-w-[250px] flex-shrink-0 border-l-4 border-l-current shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <Badge variant="outline" className="text-[10px] uppercase font-bold">
+                  {d.source}
+                </Badge>
+                <span className={`text-[10px] font-bold ${d.date < new Date() ? 'text-red-500' : 'text-slate-500'}`}>
+                  {format(d.date, 'MMM d')}
+                </span>
+              </div>
+              <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 min-h-[40px]">
+                {d.title}
+              </h4>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-[10px] text-slate-500 italic">
+                  <CountdownDisplay deadline={d.date} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const supabase = useClerkSupabaseClient();
@@ -132,6 +168,11 @@ export default function Dashboard() {
   const [loadingReminders, setLoadingReminders] = useState(true);
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState({
+    overdue: [],
+    next7Days: [],
+    next14Days: []
+  });
 
   const delay = useCallback((ms) => new Promise(resolve => setTimeout(resolve, ms)), []);
 
@@ -179,9 +220,17 @@ export default function Dashboard() {
           serviceChargesResult,
           repairsResult,
           benefitLogsResult,
+          ucLogsResult,
+          pipLogsResult,
+          wcaLogsResult,
+          allocatedHbLogsResult,
+          allocatedUcLogsResult,
+          allocatedPipLogsResult,
+          allocatedWcaLogsResult,
           orgReferralsResult,
           selfReferralsResult,
-          propertiesResult
+          propertiesResult,
+          landlordEnquiriesResult
         ] = await Promise.all([
           retryApiCall(() => supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false })),
           retryApiCall(() => supabase.from('incidents').select('*').or('Deleted.is.null,Deleted.eq.false').order('Incident Date', { ascending: false })),
@@ -193,9 +242,17 @@ export default function Dashboard() {
           retryApiCall(() => supabase.from('service_charges').select('*').or('Deleted.is.null,Deleted.eq.false')),
           retryApiCall(() => supabase.from('repairs').select('*').order('Reported Date', { ascending: false })),
           retryApiCall(() => supabase.from('housing_benefit_logs').select('*').or('Deleted.is.null,Deleted.eq.false').order('Log Date', { ascending: false })),
+          retryApiCall(() => supabase.from('universal_credit_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('pip_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('wca_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('allocated_housing_benefit_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('allocated_universal_credit_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('allocated_pip_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('allocated_wca_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
           retryApiCall(() => supabase.from('organisation_referrals').select('*').or('Deleted.is.null,Deleted.eq.false').order('Referral Date', { ascending: false })),
           retryApiCall(() => supabase.from('self_referrals').select('*').or('Deleted.is.null,Deleted.eq.false').order('Referral Date', { ascending: false })),
-          retryApiCall(() => supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false'))
+          retryApiCall(() => supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('landlord_enquiries').select('*').or('Deleted.is.null,Deleted.eq.false'))
         ]);
 
         console.log("[Dashboard] ✅ All data loaded successfully from Supabase");
@@ -210,8 +267,16 @@ export default function Dashboard() {
         const serviceCharges = serviceChargesResult.data || [];
         const repairs = repairsResult.data || [];
         const benefitLogs = benefitLogsResult.data || [];
+        const ucLogs = ucLogsResult.data || [];
+        const pipLogs = pipLogsResult.data || [];
+        const wcaLogs = wcaLogsResult.data || [];
+        const allocatedHbLogs = allocatedHbLogsResult.data || [];
+        const allocatedUcLogs = allocatedUcLogsResult.data || [];
+        const allocatedPipLogs = allocatedPipLogsResult.data || [];
+        const allocatedWcaLogs = allocatedWcaLogsResult.data || [];
         const allReferrals = [...(orgReferralsResult.data || []), ...(selfReferralsResult.data || [])];
         const allProperties = propertiesResult.data || [];
+        const landlordEnquiries = landlordEnquiriesResult.data || [];
 
         setProperties(allProperties);
         setResidents(residentsData);
@@ -598,6 +663,119 @@ export default function Dashboard() {
           dueSoon: dueSoonReviews.slice(0, 5)
         });
 
+        // --- Upcoming Deadlines Logic ---
+        const allDeadlines = [];
+
+        // Helper to add deadlines with robustness for field names
+        const addDeadlines = (items, dateField, titleField, source, statusField = null, completedStatus = 'completed') => {
+          const altDateField = dateField.toLowerCase().replace(/ /g, '_');
+          const altTitleField = titleField.toLowerCase().replace(/ /g, '_');
+          const altStatusField = statusField ? statusField.toLowerCase().replace(/ /g, '_') : null;
+
+          items.forEach(item => {
+            const dateStr = item[dateField] || item[altDateField];
+            if (!dateStr) return;
+
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return;
+
+            const status = (item[statusField] || (altStatusField ? item[altStatusField] : '') || '').toString().toLowerCase().replace(/ /g, '_');
+
+            if (statusField && status === completedStatus.toLowerCase().replace(/ /g, '_')) return;
+
+            allDeadlines.push({
+              id: item.ID || item.id || `${source}-${Math.random()}`,
+              title: item[titleField] || item[altTitleField] || item.Title || item.title || 'Untitled',
+              date: date,
+              source: source,
+              item: item
+            });
+          });
+        };
+
+        // 1. Tasks
+        addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed');
+
+        // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated)
+        const allBenefitLogs = [...benefitLogs, ...ucLogs, ...pipLogs, ...wcaLogs, ...allocatedHbLogs, ...allocatedUcLogs, ...allocatedPipLogs, ...allocatedWcaLogs];
+        addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed');
+
+        // 3. Office Logs
+        const officeLogsWithActions = officeLogs.filter(log => log["Action Required"] || log.action_required);
+        addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed');
+
+        // 4. Compliance
+        addDeadlines(complianceLogs.filter(c => !c.Actioned), 'Expiry Date', 'Certificate Name', 'Compliance');
+
+        // 5. Quarterly Reviews
+        addDeadlines(quarterlyReviewsData, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed');
+
+        // 6. Repairs
+        addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed');
+        addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid');
+
+        // 7. Landlord Enquiries
+        addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed');
+
+        // 8. Referrals
+        addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted'); // accepted as a proxy for completed
+
+        // 9. Service Charges
+        activeResidents.forEach(resident => {
+          const residentId = resident.ID;
+          const residentCharges = serviceCharges.filter(p => p["Resident ID"] === residentId);
+
+          financialYearMonths.forEach(monthStartDate => {
+            const chargeForMonth = residentCharges.find(p => {
+              const dueDate = p["Due Date"];
+              if (!dueDate) return false;
+              return format(new Date(dueDate), 'yyyy-MM') === format(monthStartDate, 'yyyy-MM');
+            });
+
+            if (!chargeForMonth || (chargeForMonth["Payment Status"] !== 'Paid' && !chargeForMonth.Exempt)) {
+              let expectedPaymentDay = 1;
+              const benefits = resident.Benefits || [];
+              const ucBenefit = benefits.find(b => b.benefit_type === 'universal_credit' && b.payment_day);
+              if (ucBenefit) expectedPaymentDay = ucBenefit.payment_day;
+
+              let dayOfMonth = Math.min(expectedPaymentDay, new Date(monthStartDate.getFullYear(), monthStartDate.getMonth() + 1, 0).getDate());
+              const dueDate = new Date(monthStartDate.getFullYear(), monthStartDate.getMonth(), dayOfMonth);
+
+              if (chargeForMonth?.["Due Date"]) {
+                const actualDueDate = new Date(chargeForMonth["Due Date"]);
+                allDeadlines.push({
+                  id: chargeForMonth.ID,
+                  title: `Service Charge: ${resident["First Name"]} ${resident["Last Name"]}`,
+                  date: actualDueDate,
+                  source: 'Service Charge',
+                  item: chargeForMonth
+                });
+              } else if (dueDate < addDays(now, 14)) {
+                 allDeadlines.push({
+                  id: `sc-${residentId}-${format(monthStartDate, 'yyyy-MM')}`,
+                  title: `Service Charge: ${resident["First Name"]} ${resident["Last Name"]}`,
+                  date: dueDate,
+                  source: 'Service Charge',
+                  item: resident
+                });
+              }
+            }
+          });
+        });
+
+        // Categorize and Sort
+        const endOfToday = new Date(now);
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const sevenDaysFromNow = addDays(endOfToday, 7);
+        const fourteenDaysFromNow = addDays(endOfToday, 14);
+
+        const overdue = allDeadlines.filter(d => d.date < now).sort((a, b) => a.date - b.date);
+        const next7Days = allDeadlines.filter(d => d.date >= now && d.date <= sevenDaysFromNow).sort((a, b) => a.date - b.date);
+        const next14Days = allDeadlines.filter(d => d.date > sevenDaysFromNow && d.date <= fourteenDaysFromNow).sort((a, b) => a.date - b.date);
+
+        setUpcomingDeadlines({ overdue, next7Days, next14Days });
+
         setLoadingReminders(false);
       } catch (error) {
         console.error("❌ Error loading dashboard:", error);
@@ -674,6 +852,38 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+      {/* Upcoming Deadlines Section */}
+      {(upcomingDeadlines.overdue.length > 0 || upcomingDeadlines.next7Days.length > 0 || upcomingDeadlines.next14Days.length > 0) && (
+        <Card className="mb-8 border-0 shadow-sm bg-white overflow-hidden">
+          <CardHeader className="bg-slate-50 border-b py-4">
+            <CardTitle className="text-xl flex items-center gap-2 text-slate-800">
+              <Clock className="w-6 h-6 text-indigo-600" />
+              Upcoming Deadlines
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-8">
+            <DeadlineGroup
+              title="Overdue"
+              deadlines={upcomingDeadlines.overdue}
+              colorClass="text-red-600"
+              icon={AlertTriangle}
+            />
+            <DeadlineGroup
+              title="Next 7 Days"
+              deadlines={upcomingDeadlines.next7Days}
+              colorClass="text-orange-600"
+              icon={Calendar}
+            />
+            <DeadlineGroup
+              title="Next 14 Days"
+              deadlines={upcomingDeadlines.next14Days}
+              colorClass="text-blue-600"
+              icon={Clock}
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Welcome Section */}
       <Card className="mb-8 border-0 shadow-sm overflow-hidden">
         <CardContent className="p-8">
