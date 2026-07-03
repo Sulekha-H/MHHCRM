@@ -1147,6 +1147,7 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Row 2 - Card 4: Service Charge Reminders */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
@@ -1202,7 +1203,7 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-          )}
+
 
           {/* Row 2 - Card 5: Repairs Reminders */}
           {!isSCStaff && (
