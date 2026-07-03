@@ -5,14 +5,11 @@ import { useUser } from "@clerk/nextjs";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus,
   Search,
   Download,
   Calendar as CalendarIcon,
-  Users,
   Filter,
   Loader2,
   RefreshCw
@@ -25,9 +22,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
+import { isOfficeStaff } from "@/lib/permissions";
 
-import ServiceProviderForm from "@/components/work-bookings/ServiceProviderForm";
-import ServiceProviderList from "@/components/work-bookings/ServiceProviderList";
 import WorkBookingForm from "@/components/work-bookings/WorkBookingForm";
 import WorkBookingList from "@/components/work-bookings/WorkBookingList";
 
@@ -36,36 +32,19 @@ export default function WorkBookingsPage() {
   const supabase = useClerkSupabaseClient();
 
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("bookings");
-
   const [providers, setProviders] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [properties, setProperties] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
 
-  const [showProviderForm, setShowProviderForm] = useState(false);
-  const [editingProvider, setEditingProvider] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
 
-  const isOfficeStaff = useCallback(() => {
-    if (!user?.emailAddresses?.[0]?.emailAddress) return false;
-    const officeStaff = [
-      'burton@myhopehousing.org.uk',
-      'leticia@myhopehousing.org.uk',
-      'amaani@myhopehousing.org.uk',
-      'sulekha@myhopehousing.org.uk'
-    ].map(email => email.toLowerCase());
-    const userEmail = user.emailAddresses[0].emailAddress?.trim().toLowerCase();
-    return officeStaff.includes(userEmail);
-  }, [user]);
-
-  const canEdit = isOfficeStaff();
+  const canEdit = isOfficeStaff(user);
 
   const fetchData = useCallback(async () => {
     if (!supabase) return;
@@ -103,59 +82,6 @@ export default function WorkBookingsPage() {
     fetchData();
   }, [fetchData]);
 
-  // Handle Provider Submission
-  const handleProviderSubmit = async (formData) => {
-    try {
-      const data = {
-        "Name": formData.name,
-        "Category": formData.category,
-        "Contact Number": formData.contact_number,
-        "Email": formData.email,
-        "Default Hourly Rate": formData.default_hourly_rate || 0,
-        "Notes": formData.notes,
-        "Updated Date": new Date().toISOString()
-      };
-
-      if (editingProvider) {
-        const { error } = await supabase
-          .from('service_providers')
-          .update(data)
-          .eq('ID', editingProvider.ID || editingProvider.id);
-        if (error) throw error;
-
-        logActivity(supabase, {
-          userName: user.fullName || "Unknown",
-          userEmail: user.primaryEmailAddress?.emailAddress,
-          actionType: ACTIONS.UPDATE,
-          entityType: ENTITIES.SERVICE_PROVIDER,
-          entityId: editingProvider.ID || editingProvider.id,
-          description: `Updated service provider: ${data.Name}`
-        });
-      } else {
-        const { data: newProvider, error } = await supabase
-          .from('service_providers')
-          .insert([{ ...data, "ID": crypto.randomUUID(), "Created Date": new Date().toISOString() }])
-          .select();
-        if (error) throw error;
-
-        logActivity(supabase, {
-          userName: user.fullName || "Unknown",
-          userEmail: user.primaryEmailAddress?.emailAddress,
-          actionType: ACTIONS.CREATE,
-          entityType: ENTITIES.SERVICE_PROVIDER,
-          entityId: newProvider[0].ID,
-          description: `Created service provider: ${data.Name}`
-        });
-      }
-      setShowProviderForm(false);
-      setEditingProvider(null);
-      fetchData();
-    } catch (err) {
-      alert("Error saving provider: " + err.message);
-    }
-  };
-
-  // Handle Booking Submission
   const handleBookingSubmit = async (formData) => {
     try {
       const data = {
@@ -216,20 +142,6 @@ export default function WorkBookingsPage() {
     }
   };
 
-  const handleDeleteProvider = async (provider) => {
-    if (!window.confirm(`Are you sure you want to delete ${provider.Name || provider.name}?`)) return;
-    try {
-      const { error } = await supabase
-        .from('service_providers')
-        .update({ Deleted: true, "Deleted Date": new Date().toISOString(), "Deleted By": user.primaryEmailAddress?.emailAddress })
-        .eq('ID', provider.ID || provider.id);
-      if (error) throw error;
-      fetchData();
-    } catch (err) {
-      alert("Error deleting provider: " + err.message);
-    }
-  };
-
   const handleDeleteBooking = async (booking) => {
     if (!window.confirm(`Are you sure you want to delete this booking?`)) return;
     try {
@@ -244,13 +156,6 @@ export default function WorkBookingsPage() {
     }
   };
 
-  // Filter Logic
-  const filteredProviders = providers.filter(p => {
-    const matchesSearch = (p.Name || p.name || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || (p.Category || p.category) === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
-
   const filteredBookings = bookings.filter(b => {
     const provider = providers.find(p => (p.ID || p.id) === (b["Service Provider ID"] || b.service_provider_id));
     const providerName = provider ? (provider.Name || provider.name || "") : "";
@@ -262,20 +167,29 @@ export default function WorkBookingsPage() {
   });
 
   const exportToCSV = () => {
-    // Basic CSV export logic
     const headers = ["Date", "Provider", "Property", "Area", "Duration", "Total Pay", "Payment Status", "Work Status"];
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return '';
+      const stringVal = String(val);
+      if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+        return `"${stringVal.replace(/"/g, '""')}"`;
+      }
+      return stringVal;
+    };
+
     const rows = filteredBookings.map(b => {
       const p = providers.find(pr => (pr.ID || pr.id) === (b["Service Provider ID"] || b.service_provider_id));
       const prop = properties.find(pr => (pr.ID || pr.id) === (b["Property ID"] || b.property_id));
       return [
-        b.Date || b.date,
-        p ? p.Name || p.name : "Unknown",
-        prop ? prop.Name || prop.name : "Unknown",
-        b.Area || b.area,
-        `${b["Duration Hours"] || 0}h ${b["Duration Minutes"] || 0}m`,
-        b["Total Pay"] || 0,
-        b["Payment Status"] || "Pending",
-        b["Work Status"] || "Scheduled"
+        escapeCSV(b.Date || b.date),
+        escapeCSV(p ? p.Name || p.name : "Unknown"),
+        escapeCSV(prop ? prop.Name || prop.name : "Unknown"),
+        escapeCSV(b.Area || b.area),
+        escapeCSV(`${b["Duration Hours"] || 0}h ${b["Duration Minutes"] || 0}m`),
+        escapeCSV(b["Total Pay"] || 0),
+        escapeCSV(b["Payment Status"] || "Pending"),
+        escapeCSV(b["Work Status"] || "Scheduled")
       ];
     });
 
@@ -291,7 +205,6 @@ export default function WorkBookingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
@@ -299,7 +212,7 @@ export default function WorkBookingsPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Work Bookings</h1>
-            <p className="text-sm text-slate-600">Manage cleaners, tradesmen, and gardeners</p>
+            <p className="text-sm text-slate-600">Track logs and payments for service work</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -315,123 +228,79 @@ export default function WorkBookingsPage() {
             <Button
               size="sm"
               className="bg-orange-600 hover:bg-orange-700 text-white"
-              onClick={() => {
-                if (activeTab === "bookings") setShowBookingForm(true);
-                else setShowProviderForm(true);
-              }}
+              onClick={() => setShowBookingForm(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
-              {activeTab === "bookings" ? "New Booking" : "Add Provider"}
+              New Booking
             </Button>
           )}
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
-          <TabsList className="bg-white border border-slate-200">
-            <TabsTrigger value="bookings" className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              Bookings
-            </TabsTrigger>
-            <TabsTrigger value="providers" className="data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
-              <Users className="w-4 h-4 mr-2" />
-              Service Providers
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex flex-1 w-full md:w-auto items-center gap-2 max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder={activeTab === "bookings" ? "Search by provider or work..." : "Search by name..."}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            {activeTab === "bookings" ? (
-              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                <SelectTrigger className="w-[130px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Payment" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Paid">Paid</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[130px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="Cleaner">Cleaner</SelectItem>
-                  <SelectItem value="Tradesman">Tradesman</SelectItem>
-                  <SelectItem value="Gardener">Gardener</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Search by provider or work..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
+        <Select value={propertyFilter} onValueChange={setPropertyFilter}>
+          <SelectTrigger className="w-full md:w-[200px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Property" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Properties</SelectItem>
+            {properties.map(p => (
+              <SelectItem key={p.ID || p.id} value={p.ID || p.id}>
+                {p.Name || p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+          <SelectTrigger className="w-full md:w-[150px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Payment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Paid">Paid</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-            <Loader2 className="w-10 h-10 animate-spin mb-4" />
-            <p>Loading data...</p>
-          </div>
-        )}
+      {showBookingForm && (
+        <WorkBookingForm
+          booking={editingBooking}
+          providers={providers}
+          properties={properties}
+          accommodations={accommodations}
+          onSubmit={handleBookingSubmit}
+          onCancel={() => { setShowBookingForm(false); setEditingBooking(null); }}
+        />
+      )}
 
-        {/* Bookings Tab */}
-        <TabsContent value="bookings" className="m-0">
-          {showBookingForm && (
-            <WorkBookingForm
-              booking={editingBooking}
-              providers={providers}
-              properties={properties}
-              accommodations={accommodations}
-              onSubmit={handleBookingSubmit}
-              onCancel={() => { setShowBookingForm(false); setEditingBooking(null); }}
-            />
-          )}
-          {!loading && (
-            <WorkBookingList
-              bookings={filteredBookings}
-              providers={providers}
-              properties={properties}
-              accommodations={accommodations}
-              onEdit={(b) => { setEditingBooking(b); setShowBookingForm(true); }}
-              onDelete={handleDeleteBooking}
-              canEdit={canEdit}
-            />
-          )}
-        </TabsContent>
-
-        {/* Providers Tab */}
-        <TabsContent value="providers" className="m-0">
-          {showProviderForm && (
-            <ServiceProviderForm
-              provider={editingProvider}
-              onSubmit={handleProviderSubmit}
-              onCancel={() => { setShowProviderForm(false); setEditingProvider(null); }}
-            />
-          )}
-          {!loading && (
-            <ServiceProviderList
-              providers={filteredProviders}
-              onEdit={(p) => { setEditingProvider(p); setShowProviderForm(true); }}
-              onDelete={handleDeleteProvider}
-              canEdit={canEdit}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+          <Loader2 className="w-10 h-10 animate-spin mb-4" />
+          <p>Loading bookings...</p>
+        </div>
+      ) : (
+        <WorkBookingList
+          bookings={filteredBookings}
+          providers={providers}
+          properties={properties}
+          accommodations={accommodations}
+          onEdit={(b) => { setEditingBooking(b); setShowBookingForm(true); }}
+          onDelete={handleDeleteBooking}
+          canEdit={canEdit}
+        />
+      )}
     </div>
   );
 }
