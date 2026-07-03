@@ -61,6 +61,18 @@ export default function SidebarNavigation() {
     return adminUsers.includes(userEmail);
   };
 
+  const isOfficeStaff = (user) => {
+    if (!user?.emailAddresses?.[0]?.emailAddress) return false;
+    const officeStaff = [
+      'burton@myhopehousing.org.uk',
+      'leticia@myhopehousing.org.uk',
+      'amaani@myhopehousing.org.uk',
+      'sulekha@myhopehousing.org.uk'
+    ].map(email => email.toLowerCase());
+    const userEmail = user.emailAddresses[0].emailAddress?.trim().toLowerCase();
+    return officeStaff.includes(userEmail);
+  };
+
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home, current: pathname === "/" },
     { name: "Staff Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
@@ -78,6 +90,7 @@ export default function SidebarNavigation() {
     { name: "Office Logs", href: "/officelogs", icon: FileText, current: pathname === "/officelogs" },
     { name: "Repairs", href: "/repairs", icon: Wrench, current: pathname === "/repairs" },
     { name: "Property Purchases", href: "/property-purchases", icon: ShoppingCart, current: pathname === "/property-purchases" },
+    { name: "Work Bookings", href: "/work-bookings", icon: CalendarIcon, current: pathname === "/work-bookings" },
   ];
 
   const supportNav = [
