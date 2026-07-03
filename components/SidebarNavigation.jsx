@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { isAdmin, isOfficeStaff } from "@/lib/permissions";
+import { isAdmin, isOfficeStaff, isServiceChargeStaff } from "@/lib/permissions";
 import {
   Home,
   Calendar as CalendarIcon,
@@ -41,6 +41,7 @@ import {
 export default function SidebarNavigation() {
   const { user } = useUser();
   const pathname = usePathname();
+  const isSCStaff = isServiceChargeStaff(user);
 
   const hasPropertyLandlordAccess = (user) => {
     if (!user?.emailAddresses?.[0]?.emailAddress) return false;
@@ -120,7 +121,9 @@ export default function SidebarNavigation() {
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu className="gap-0.5">
-            {navigation.map((item) => (
+            {navigation
+              .filter(item => !isSCStaff || item.name === "Dashboard")
+              .map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
                   <Link href={item.href} className={linkClass}>
@@ -134,65 +137,69 @@ export default function SidebarNavigation() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <SidebarGroup className="p-1.5">
-        <SidebarGroupLabel className={groupLabelClass}>
-          Operations
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {operationsNav.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className={linkClass}>
-                    <item.icon className={iconClass} />
-                    {item.name}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {!isSCStaff && (
+        <>
+          <SidebarGroup className="p-1.5">
+            <SidebarGroupLabel className={groupLabelClass}>
+              Operations
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {operationsNav.map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={item.current}>
+                      <Link href={item.href} className={linkClass}>
+                        <item.icon className={iconClass} />
+                        {item.name}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-      <SidebarGroup className="p-1.5">
-        <SidebarGroupLabel className={groupLabelClass}>
-          Support & Care
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {supportNav.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className={linkClass}>
-                    <item.icon className={iconClass} />
-                    {item.name}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-      
-      <SidebarGroup className="p-1.5">
-        <SidebarGroupLabel className={groupLabelClass}>
-          Allocated Residents
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {allocatedResidentNav.map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className={linkClass}>
-                    <item.icon className={iconClass} />
-                    {item.name}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+          <SidebarGroup className="p-1.5">
+            <SidebarGroupLabel className={groupLabelClass}>
+              Support & Care
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {supportNav.map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={item.current}>
+                      <Link href={item.href} className={linkClass}>
+                        <item.icon className={iconClass} />
+                        {item.name}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarGroup className="p-1.5">
+            <SidebarGroupLabel className={groupLabelClass}>
+              Allocated Residents
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {allocatedResidentNav.map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={item.current}>
+                      <Link href={item.href} className={linkClass}>
+                        <item.icon className={iconClass} />
+                        {item.name}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </>
+      )}
 
 
       <SidebarGroup className="p-1.5">
@@ -201,7 +208,9 @@ export default function SidebarNavigation() {
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu className="gap-0.5">
-            {complianceNav.map((item) => (
+            {complianceNav
+              .filter(item => !isSCStaff || item.name === "Service Charges")
+              .map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>
                   <Link href={item.href} className={linkClass}>
@@ -215,7 +224,7 @@ export default function SidebarNavigation() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {hasPropertyLandlordAccess(user) && (
+      {!isSCStaff && hasPropertyLandlordAccess(user) && (
         <SidebarGroup className="p-1.5">
           <SidebarGroupLabel className={groupLabelClass}>
             Property/Landlords
@@ -237,7 +246,7 @@ export default function SidebarNavigation() {
         </SidebarGroup>
       )}
 
-      {isAdmin(user) && (
+      {!isSCStaff && isAdmin(user) && (
         <SidebarGroup className="p-1.5">
           <SidebarGroupLabel className={groupLabelClass}>
             Administration

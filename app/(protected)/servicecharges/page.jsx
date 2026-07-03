@@ -20,6 +20,7 @@ import CashLogCard from "@/components/service-charges/CashLogCard";
 import ServiceChargeDetailModal from "@/components/service-charges/ServiceChargeDetailModal";
 import CashLogDetailModal from "@/components/service-charges/CashLogDetailModal";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
+import { isServiceChargeStaff } from "@/lib/permissions";
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ import {
 
 export default function ServiceChargesSupabase() {
   const { user } = useUser();
+  const isSCStaff = isServiceChargeStaff(user);
   const supabase = useClerkSupabaseClient()
   const [serviceCharges, setServiceCharges] = useState([]);
   const [cashLogs, setCashLogs] = useState([]);
@@ -766,10 +768,12 @@ try {
 
         <TabsContent value="service-charges" className="space-y-6">
           <div className="flex justify-between items-center">
-            <Button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Charge
-            </Button>
+            {!isSCStaff && (
+              <Button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Charge
+              </Button>
+            )}
             <Button onClick={exportServiceChargesToCSV} variant="outline" className="flex items-center gap-2" disabled={loading || filteredCharges.length === 0}>
               <Download className="w-4 h-4" />
               Export Service Charges
@@ -916,8 +920,8 @@ try {
               getResidentName={getResidentName}
               getPaymentStatusColor={getPaymentStatusColor}
               onClose={() => setViewingCharge(null)}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              onEdit={isSCStaff ? null : handleEdit}
+              onDelete={isSCStaff ? null : handleDelete}
             />
           )}
 
@@ -1091,7 +1095,7 @@ try {
                                           onClick={() => {
                                             if (chargeForMonth) {
                                               handleViewChargeDetails(chargeForMonth);
-                                            } else {
+                                            } else if (!isSCStaff) {
                                               const newDueDate = setDate(monthStartDate, paymentDay);
                                               const newChargeTemplate = {
                                                 resident_id: residentId,
@@ -1146,10 +1150,12 @@ try {
 
         <TabsContent value="cash-logs" className="space-y-6">
           <div className="flex justify-between items-center">
-            <Button onClick={() => setShowCashForm(true)} className="bg-green-600 hover:bg-green-700 shadow-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Cash Log
-            </Button>
+            {!isSCStaff && (
+              <Button onClick={() => setShowCashForm(true)} className="bg-green-600 hover:bg-green-700 shadow-sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Cash Log
+              </Button>
+            )}
             <Button onClick={exportCashLogsToCSV} variant="outline" className="flex items-center gap-2" disabled={loading || filteredCashLogs.length === 0}>
               <Download className="w-4 h-4" />
               Export Cash Logs
@@ -1200,8 +1206,8 @@ try {
               getResidentName={getResidentName}
               getPropertyName={getPropertyName}
               onClose={() => setViewingCashLog(null)}
-              onEdit={handleCashLogEdit}
-              onDelete={handleCashLogDelete}
+              onEdit={isSCStaff ? null : handleCashLogEdit}
+              onDelete={isSCStaff ? null : handleCashLogDelete}
             />
           )}
 
@@ -1241,7 +1247,7 @@ try {
                           property_name: propertyName
                         }}
                         onView={handleViewCashLogDetails}
-                        onEdit={handleCashLogEdit}
+                        onEdit={isSCStaff ? null : handleCashLogEdit}
                       />
                     );
                   })}
