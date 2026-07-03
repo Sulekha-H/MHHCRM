@@ -164,24 +164,31 @@ export default function TaskTimeline({
   const scheduledItems = React.useMemo(() => {
     let lastTime = startTime;
     const scheduled = [];
+    const activeTasks = [];
 
     routineTasks.forEach(item => {
       if (!item) return;
 
       if (item.isHeader) {
-        const timeMatch = item.title.match(/(\d+)(?:\.(\d+))?\s*(am|pm)/i);
+        // Robustly match time patterns like "10am", "11.00", "12:30pm", "13:30"
+        const timeMatch = item.title.match(/(\d+)(?:[:.](\d+))?\s*(am|pm)?/i);
         if (timeMatch) {
           let hours = parseInt(timeMatch[1]);
           const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-          const period = timeMatch[3].toLowerCase();
+          let period = timeMatch[3]?.toLowerCase();
+
+          if (!period && hours < 12) {
+            // Heuristic for office hours: 7am-11am are AM, others PM
+            period = (hours >= 7 && hours <= 11) ? 'am' : 'pm';
+          }
 
           if (period === 'pm' && hours < 12) hours += 12;
           if (period === 'am' && hours === 12) hours = 0;
 
           const headerTime = setMinutes(setHours(startOfDay(selectedDate), hours), minutes);
-          if (isAfter(headerTime, lastTime)) {
-            lastTime = headerTime;
-          }
+          // Always reset lastTime to the header time to prevent cumulative drift
+          // and allow tasks to overlap if they exceed their time slot.
+          lastTime = headerTime;
         }
 
         // Give header a synthetic duration so it doesn't overlap with the next task
@@ -195,11 +202,27 @@ export default function TaskTimeline({
       const taskStartTime = lastTime;
       const taskEndTime = addMinutes(taskStartTime, duration);
 
+      // Lane allocation for overlaps
+      let lane = 0;
+      // Remove tasks that ended before this one started
+      for (let i = activeTasks.length - 1; i >= 0; i--) {
+        if (isBefore(activeTasks[i].endTime, taskStartTime) || isEqual(activeTasks[i].endTime, taskStartTime)) {
+          activeTasks.splice(i, 1);
+        }
+      }
+
+      // Find smallest available lane
+      while (activeTasks.some(t => t.lane === lane)) {
+        lane++;
+      }
+      activeTasks.push({ endTime: taskEndTime, lane });
+
       scheduled.push({
         ...item,
         startTime: taskStartTime,
         endTime: taskEndTime,
-        duration
+        duration,
+        lane
       });
 
       lastTime = taskEndTime;
@@ -214,10 +237,15 @@ export default function TaskTimeline({
     const defaultEnd = setMinutes(setHours(startOfDay(selectedDate), 17), 0);
     if (scheduledItems.length === 0) return defaultEnd;
 
-    const lastTask = scheduledItems[scheduledItems.length - 1];
-    const lastTaskEnd = lastTask.isHeader ? addMinutes(lastTask.startTime, 15) : lastTask.endTime;
+    let maxEnd = defaultEnd;
+    scheduledItems.forEach(item => {
+      const itemEnd = item.isHeader ? addMinutes(item.startTime, 15) : item.endTime;
+      if (isAfter(itemEnd, maxEnd)) {
+        maxEnd = itemEnd;
+      }
+    });
 
-    return isAfter(lastTaskEnd, defaultEnd) ? lastTaskEnd : defaultEnd;
+    return maxEnd;
   }, [scheduledItems, selectedDate]);
 
   const intervals = React.useMemo(() => {
@@ -347,7 +375,7 @@ export default function TaskTimeline({
                 key={item.ID}
                 onClick={() => onTaskClick(item)}
                 className={cn(
-                  "absolute left-0 right-0 rounded-2xl border p-3 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-3 group overflow-hidden",
+                  "absolute rounded-2xl border p-3 cursor-pointer transition-all duration-300 hover:scale-[1.005] hover:shadow-md active:scale-[0.995] z-20 flex items-center gap-3 group overflow-hidden",
                   isCompleted ? 'bg-slate-50 border-slate-200 opacity-60' :
                   isInProgress ? 'bg-white border-indigo-500 ring-4 ring-indigo-50 shadow-indigo-100 shadow-lg' :
                   item.ID === upNextId ? 'bg-cyan-50/50 border-cyan-200 shadow-cyan-100 shadow-md ring-2 ring-cyan-100' :
@@ -356,7 +384,10 @@ export default function TaskTimeline({
                 style={{
                   top: `${top}px`,
                   height: `${height - 8}px`,
-                  minHeight: '36px'
+                  minHeight: '36px',
+                  left: `${(item.lane || 0) * 24}px`,
+                  right: `${(item.lane || 0) * 4}px`,
+                  zIndex: 20 + (item.lane || 0)
                 }}
               >
                 {/* Category Icon */}
