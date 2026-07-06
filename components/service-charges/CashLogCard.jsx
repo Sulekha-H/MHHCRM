@@ -92,17 +92,19 @@ export default function CashLogCard({ cashLog, residents, properties, onEdit, on
             <PoundSterling className="w-5 h-5 text-green-600" />
             £{amountGiven.toFixed(2)}
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(cashLog);
-            }}
-            className="text-slate-400 hover:text-slate-600"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(cashLog);
+              }}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className="flex items-center gap-1">

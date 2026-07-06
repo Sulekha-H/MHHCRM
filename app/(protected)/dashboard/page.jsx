@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { logActivity, ACTIONS } from "@/lib/activityUtils";
+import { isServiceChargeStaff } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +105,7 @@ const DeadlineGroup = ({ title, deadlines, colorClass, icon: Icon }) => {
 
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
+  const isSCStaff = isServiceChargeStaff(user);
   const supabase = useClerkSupabaseClient();
   const loginLogged = useRef(false);
   console.log(`[Dashboard] User Status - Loaded: ${isLoaded}, SignedIn: ${isSignedIn}, UserID: ${user?.id}`);
@@ -692,32 +694,34 @@ export default function Dashboard() {
           });
         };
 
-        // 1. Tasks
-        addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed');
+        if (!isSCStaff) {
+          // 1. Tasks
+          addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed');
 
-        // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated)
-        const allBenefitLogs = [...benefitLogs, ...ucLogs, ...pipLogs, ...wcaLogs, ...allocatedHbLogs, ...allocatedUcLogs, ...allocatedPipLogs, ...allocatedWcaLogs];
-        addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed');
+          // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated)
+          const allBenefitLogs = [...benefitLogs, ...ucLogs, ...pipLogs, ...wcaLogs, ...allocatedHbLogs, ...allocatedUcLogs, ...allocatedPipLogs, ...allocatedWcaLogs];
+          addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed');
 
-        // 3. Office Logs
-        const officeLogsWithActions = officeLogs.filter(log => log["Action Required"] || log.action_required);
-        addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed');
+          // 3. Office Logs
+          const officeLogsWithActions = officeLogs.filter(log => log["Action Required"] || log.action_required);
+          addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed');
 
-        // 4. Compliance
-        addDeadlines(complianceLogs.filter(c => !c.Actioned), 'Expiry Date', 'Certificate Name', 'Compliance');
+          // 4. Compliance
+          addDeadlines(complianceLogs.filter(c => !c.Actioned), 'Expiry Date', 'Certificate Name', 'Compliance');
 
-        // 5. Quarterly Reviews
-        addDeadlines(quarterlyReviewsData, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed');
+          // 5. Quarterly Reviews
+          addDeadlines(quarterlyReviewsData, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed');
 
-        // 6. Repairs
-        addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed');
-        addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid');
+          // 6. Repairs
+          addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed');
+          addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid');
 
-        // 7. Landlord Enquiries
-        addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed');
+          // 7. Landlord Enquiries
+          addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed');
 
-        // 8. Referrals
-        addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted'); // accepted as a proxy for completed
+          // 8. Referrals
+          addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted'); // accepted as a proxy for completed
+        }
 
         // 9. Service Charges
         activeResidents.forEach(resident => {
@@ -887,67 +891,69 @@ export default function Dashboard() {
       </Card>
 
       <div className="space-y-6">
-        {/* Quick Action Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <a href={createPageUrl("Residents")}>
-            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
-              <CardContent className="p-4 text-center text-white">
-                <Users className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Add Resident</p>
-              </CardContent>
-            </Card>
-          </a>
+        {!isSCStaff && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <a href={createPageUrl("Residents")}>
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
+                <CardContent className="p-4 text-center text-white">
+                  <Users className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">Add Resident</p>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("Incidents")}>
-            <Card className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
-              <CardContent className="p-4 text-center text-white">
-                <AlertTriangle className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Report Incident</p>
-              </CardContent>
-            </Card>
-          </a>
+            <a href={createPageUrl("Incidents")}>
+              <Card className="bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
+                <CardContent className="p-4 text-center text-white">
+                  <AlertTriangle className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">Report Incident</p>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("Referrals")}>
-            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
-              <CardContent className="p-4 text-center text-white">
-                <FileUp className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Add Enquiry</p>
-              </CardContent>
-            </Card>
-          </a>
+            <a href={createPageUrl("Referrals")}>
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
+                <CardContent className="p-4 text-center text-white">
+                  <FileUp className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">Add Enquiry</p>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("Documents")}>
-            <Card className="bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
-              <CardContent className="p-4 text-center text-white">
-                <Upload className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Upload Document</p>
-              </CardContent>
-            </Card>
-          </a>
+            <a href={createPageUrl("Documents")}>
+              <Card className="bg-gradient-to-br from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
+                <CardContent className="p-4 text-center text-white">
+                  <Upload className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">Upload Document</p>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("tasks")}>
-            <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
-              <CardContent className="p-4 text-center text-white">
-                <CheckSquare className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Tasks</p>
-              </CardContent>
-            </Card>
-          </a>
+            <a href={createPageUrl("tasks")}>
+              <Card className="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
+                <CardContent className="p-4 text-center text-white">
+                  <CheckSquare className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">Tasks</p>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("Repairs")}>
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
-              <CardContent className="p-4 text-center text-white">
-                <Wrench className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium text-sm">Add Repair</p>
-              </CardContent>
-            </Card>
-          </a>
-        </div>
+            <a href={createPageUrl("Repairs")}>
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 cursor-pointer transition-all duration-200 h-24 flex items-center justify-center border-0 shadow-md">
+                <CardContent className="p-4 text-center text-white">
+                  <Wrench className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">Add Repair</p>
+                </CardContent>
+              </Card>
+            </a>
+          </div>
+        )}
 
         {/* Six Reminder Cards - 2 Rows of 3 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Row 1 - Card 1: Voids / Available Rooms */}
-          <Card className="bg-gradient-to-br from-teal-50 to-blue-50 border-teal-200">
+          {!isSCStaff && (
+            <Card className="bg-gradient-to-br from-teal-50 to-blue-50 border-teal-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2 text-teal-700">
@@ -1005,8 +1011,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+          )}
+
           {/* Row 1 - Card 2: Task Reminders */}
-          <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
+          {!isSCStaff && (
+            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2 text-orange-700">
@@ -1077,9 +1086,11 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Row 1 - Card 3: Compliance Reminders */}
-          <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200">
+          {!isSCStaff && (
+            <Card className="bg-gradient-to-br from-red-50 to-pink-50 border-red-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2 text-red-700">
@@ -1136,6 +1147,7 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Row 2 - Card 4: Service Charge Reminders */}
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
@@ -1192,8 +1204,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
+
           {/* Row 2 - Card 5: Repairs Reminders */}
-          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
+          {!isSCStaff && (
+            <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2 text-gray-700">
@@ -1250,9 +1264,11 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Row 2 - Card 6: Referrals Reminders */}
-          <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
+          {!isSCStaff && (
+            <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2 text-indigo-700">
@@ -1303,10 +1319,12 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+          )}
         </div>
 
         {/* Housing Benefit Alerts - Full Width */}
-        <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
+        {!isSCStaff && (
+          <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
@@ -1451,219 +1469,226 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <a href={createPageUrl("Residents")}>
-            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-                  <UserCheck className="w-5 h-5" />
-                  Active Residents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-blue-600 mb-2">{stats.residents}</div>
-                  <div className="text-sm text-blue-700">currently active in system</div>
-                </div>
-                <Button variant="link" className="w-full mt-4 text-blue-700 hover:text-blue-800">
-                  View All Residents <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </CardContent>
-            </Card>
-          </a>
+        {!isSCStaff && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <a href={createPageUrl("Residents")}>
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
+                    <UserCheck className="w-5 h-5" />
+                    Active Residents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-blue-600 mb-2">{stats.residents}</div>
+                    <div className="text-sm text-blue-700">currently active in system</div>
+                  </div>
+                  <Button variant="link" className="w-full mt-4 text-blue-700 hover:text-blue-800">
+                    View All Residents <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("Incidents")}>
-            <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-red-700">
-                  <AlertTriangle className="w-5 h-5" />
-                  Open Incidents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-red-600 mb-2">{stats.activeIncidents}</div>
-                  <div className="text-sm text-red-700">requiring attention</div>
-                </div>
-                <Button variant="link" className="w-full mt-4 text-red-700 hover:text-red-800">
-                  View All Incidents <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </CardContent>
-            </Card>
-          </a>
+            <a href={createPageUrl("Incidents")}>
+              <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2 text-red-700">
+                    <AlertTriangle className="w-5 h-5" />
+                    Open Incidents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-red-600 mb-2">{stats.activeIncidents}</div>
+                    <div className="text-sm text-red-700">requiring attention</div>
+                  </div>
+                  <Button variant="link" className="w-full mt-4 text-red-700 hover:text-red-800">
+                    View All Incidents <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </a>
 
-          <a href={createPageUrl("OfficeLogs")}>
-            <Card className="bg-gradient-to-br from-sky-50 to-blue-50 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
-                  <FileText className="w-5 h-5" />
-                  Today's Logs
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-5xl font-bold text-blue-600 mb-2">{stats.todayLogs}</div>
-                  <div className="text-sm text-blue-700">office logs recorded today</div>
-                </div>
-                <Button variant="link" className="w-full mt-4 text-blue-700 hover:text-blue-800">
-                  View All Logs <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </CardContent>
-            </Card>
-          </a>
-        </div>
+            <a href={createPageUrl("OfficeLogs")}>
+              <Card className="bg-gradient-to-br from-sky-50 to-blue-50 border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center gap-2 text-blue-700">
+                    <FileText className="w-5 h-5" />
+                    Today's Logs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div className="text-5xl font-bold text-blue-600 mb-2">{stats.todayLogs}</div>
+                    <div className="text-sm text-blue-700">office logs recorded today</div>
+                  </div>
+                  <Button variant="link" className="w-full mt-4 text-blue-700 hover:text-blue-800">
+                    View All Logs <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </a>
+          </div>
+        )}
 
         {/* Recent Activity Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-gray-700">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
-                  Recent Incidents (Last 4 Weeks)
-                </CardTitle>
-                <a href={createPageUrl("Incidents")}>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
-                    View All <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </a>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {recentActivity.incidents.length > 0 ? (
-                <div className="space-y-3">
-                  {recentActivity.incidents.map((incident) => (
-                    <div key={incident.ID} className="border-l-4 border-red-400 pl-3 py-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge className="bg-red-100 text-red-800 text-xs">
-                              {(incident["Incident Type"] || incident.incident_type)?.replace(/_/g, ' ')}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                              {format(new Date(incident["Incident Date"] || incident.incident_date), 'MMM d')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 font-medium">{incident.Description?.slice(0, 60)}...</p>
-                    </div>
-                  ))}
+        {!isSCStaff && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-gray-700">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                    Recent Incidents (Last 4 Weeks)
+                  </CardTitle>
+                  <a href={createPageUrl("Incidents")}>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
+                      View All <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </a>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-8">No incidents in the last 4 weeks</p>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                {recentActivity.incidents.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentActivity.incidents.map((incident) => (
+                      <div key={incident.ID} className="border-l-4 border-red-400 pl-3 py-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <Badge className="bg-red-100 text-red-800 text-xs">
+                                {(incident["Incident Type"] || incident.incident_type)?.replace(/_/g, ' ')}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                                {format(new Date(incident["Incident Date"] || incident.incident_date), 'MMM d')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 font-medium">{incident.Description?.slice(0, 60)}...</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-8">No incidents in the last 4 weeks</p>
+                )}
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-gray-700">
-                  <FileText className="w-5 h-5 text-blue-500" />
-                  This Week's Office Logs
-                </CardTitle>
-                <a href={createPageUrl("OfficeLogs")}>
-                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
-                    View All <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </a>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {recentActivity.logs.length > 0 ? (
-                <div className="space-y-3">
-                  {recentActivity.logs.map((log) => (
-                    <div key={log.ID} className="border-l-4 border-blue-400 pl-3 py-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge className="bg-blue-100 text-blue-800 text-xs capitalize">
-                              {(log["Log Type"] || log.log_type)?.replace(/_/g, ' ')}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                              {format(new Date(log["Date Time"] || log.date_time || log["Date/Time"]), 'MMM d')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-700 font-medium">
-                        {log.Title || log.Description?.slice(0, 60) || 'Office log entry'}
-                      </p>
-                      {log["Person Involved"] && (
-                        <p className="text-xs text-gray-500 mt-1">By: {log["Person Involved"]}</p>
-                      )}
-                    </div>
-                  ))}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-gray-700">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                    This Week's Office Logs
+                  </CardTitle>
+                  <a href={createPageUrl("OfficeLogs")}>
+                    <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
+                      View All <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </a>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-8">No office logs this week</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardHeader>
+              <CardContent>
+                {recentActivity.logs.length > 0 ? (
+                  <div className="space-y-3">
+                    {recentActivity.logs.map((log) => (
+                      <div key={log.ID} className="border-l-4 border-blue-400 pl-3 py-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <Badge className="bg-blue-100 text-blue-800 text-xs capitalize">
+                                {(log["Log Type"] || log.log_type)?.replace(/_/g, ' ')}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                                {format(new Date(log["Date Time"] || log.date_time || log["Date/Time"]), 'MMM d')}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 font-medium">
+                          {log.Title || log.Description?.slice(0, 60) || 'Office log entry'}
+                        </p>
+                        {log["Person Involved"] && (
+                          <p className="text-xs text-gray-500 mt-1">By: {log["Person Involved"]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-8">No office logs this week</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Quarterly Review Reminders */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-gray-700">
-                <Heart className="w-5 h-5 text-pink-500" />
-                Quarterly Review Reminders
-              </CardTitle>
-              <a href={createPageUrl("SupportPlans")}>
-                <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
-                  View Support Plans <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </a>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loadingReminders ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
+        {!isSCStaff && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-gray-700">
+                  <Heart className="w-5 h-5 text-pink-500" />
+                  Quarterly Review Reminders
+                </CardTitle>
+                <a href={createPageUrl("SupportPlans")}>
+                  <Button variant="link" className="text-blue-600 hover:text-blue-700 text-sm">
+                    View Support Plans <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </a>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    Overdue ({quarterlyReviewSummary.overdue.length})
-                  </h3>
-                  {quarterlyReviewSummary.overdue.length > 0 ? (
-                    <div className="space-y-2">
-                      {quarterlyReviewSummary.overdue.slice(0, 3).map(review => (
-                        <div key={review.ID} className="p-3 bg-red-50 rounded-lg text-sm border border-red-200">
-                          <div className="font-medium text-gray-900">{review.Title}</div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            Due: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 py-4">No overdue reviews ✅</p>
-                  )}
+            </CardHeader>
+            <CardContent>
+              {loadingReminders ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Skeleton className="h-24 w-full" />
+                  <Skeleton className="h-24 w-full" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-yellow-700 mb-3 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    Due Soon ({quarterlyReviewSummary.dueSoon.length})
-                  </h3>
-                  {quarterlyReviewSummary.dueSoon.length > 0 ? (
-                    <div className="space-y-2">
-                      {quarterlyReviewSummary.dueSoon.slice(0, 3).map(review => (
-                        <div key={review.ID} className="p-3 bg-yellow-50 rounded-lg text-sm border border-yellow-200">
-                          <div className="font-medium text-gray-900">{review.Title}</div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            Due: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-red-700 mb-3 flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Overdue ({quarterlyReviewSummary.overdue.length})
+                    </h3>
+                    {quarterlyReviewSummary.overdue.length > 0 ? (
+                      <div className="space-y-2">
+                        {quarterlyReviewSummary.overdue.slice(0, 3).map(review => (
+                          <div key={review.ID} className="p-3 bg-red-50 rounded-lg text-sm border border-red-200">
+                            <div className="font-medium text-gray-900">{review.Title}</div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              Due: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 py-4">No reviews due soon</p>
-                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 py-4">No overdue reviews ✅</p>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-700 mb-3 flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Due Soon ({quarterlyReviewSummary.dueSoon.length})
+                    </h3>
+                    {quarterlyReviewSummary.dueSoon.length > 0 ? (
+                      <div className="space-y-2">
+                        {quarterlyReviewSummary.dueSoon.slice(0, 3).map(review => (
+                          <div key={review.ID} className="p-3 bg-yellow-50 rounded-lg text-sm border border-yellow-200">
+                            <div className="font-medium text-gray-900">{review.Title}</div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              Due: {review["Next Review Date"] ? format(new Date(review["Next Review Date"]), 'MMM d, yyyy') : 'N/A'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 py-4">No reviews due soon</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
