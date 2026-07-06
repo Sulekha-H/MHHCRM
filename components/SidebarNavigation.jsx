@@ -39,9 +39,19 @@ import {
 } from "lucide-react";
 
 export default function SidebarNavigation() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const pathname = usePathname();
   const isSCStaff = isServiceChargeStaff(user);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex flex-col gap-4 p-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-8 w-full animate-pulse rounded bg-slate-100" />
+        ))}
+      </div>
+    );
+  }
 
   const hasPropertyLandlordAccess = (user) => {
     if (!user?.emailAddresses?.[0]?.emailAddress) return false;
