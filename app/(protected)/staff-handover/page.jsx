@@ -18,6 +18,7 @@ import {
   AlertCircle,
   FileText
 } from "lucide-react";
+import { generateUUID } from "@/lib/utils";
 import {
   format,
   startOfWeek,
@@ -128,8 +129,8 @@ export default function StaffHandoverPage() {
       const { data, error } = await supabase
         .from('staff_handover')
         .select('*')
-        .gte('Handover Date', format(currentWeekStart, 'yyyy-MM-dd'))
-        .lte('Handover Date', format(weekEnd, 'yyyy-MM-dd'));
+        .gte('"Handover Date"', format(currentWeekStart, 'yyyy-MM-dd'))
+        .lte('"Handover Date"', format(weekEnd, 'yyyy-MM-dd'));
 
       if (error) throw error;
       setHandovers((data || []).map(normalizeHandover));
@@ -255,12 +256,17 @@ export default function StaffHandoverPage() {
         const { error: updateError } = await supabase
           .from('staff_handover')
           .update(payload)
-          .eq('ID', existing.id);
+          .eq('"ID"', existing.id || existing.ID);
         error = updateError;
       } else {
+        const insertPayload = {
+          ...payload,
+          "ID": generateUUID(),
+          "Created At": new Date().toISOString()
+        };
         const { error: insertError } = await supabase
           .from('staff_handover')
-          .insert([payload]);
+          .insert([insertPayload]);
         error = insertError;
       }
 
