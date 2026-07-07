@@ -65,6 +65,7 @@ export default function SidebarNavigation() {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home, current: pathname === "/" },
+    { name: "Staff Handover", href: "/staff-handover", icon: History, current: pathname === "/staff-handover" },
     { name: "Staff Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
     { name: "RotaCloud", href: "/rotacloud", icon: CalendarIcon, current: pathname === "/rotacloud" },
     { name: "M365 Calendar", href: "/microsoft-calendar", icon: CalendarIcon, current: pathname === "/microsoft-calendar" },

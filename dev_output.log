@@ -1,0 +1,25 @@
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 542ms
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+○ Compiling /staff-handover ...
+
+[35m
+[Clerk]:[0m You are running in keyless mode.
+You can [35mclaim your keys[0m by visiting https://dashboard.clerk.com/apps/claim?token=yo4715erk5cexbjl2zn7k60anktwfsdmuiya8lr1&return_url=http%3A%2F%2Flocalhost%3A3000%2F
+
+ GET /staff-handover 200 in 10.8s (next.js: 8.9s, proxy.ts: 162ms, application-code: 1694ms)
+ POST /staff-handover 200 in 59ms (next.js: 16ms, proxy.ts: 26ms, application-code: 18ms)
+  └─ ƒ detectKeylessEnvDriftAction() in 1ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+[browser] Clerk: Clerk has been loaded with development keys. Development instances have strict usage limits and should not be used when deploying your application to production. Learn more: https://clerk.com/docs/deployments/overview (https://sunny-jaybird-44.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js:19:7048)
+ GET /staff-handover 404 in 1541ms (next.js: 1422ms, proxy.ts: 33ms, application-code: 87ms)
+ POST /staff-handover 303 in 1616ms (next.js: 5ms, proxy.ts: 12ms, application-code: 1599ms)
+  └─ ƒ syncKeylessConfigAction({"apiKeysUrl":"https://dashboard.clerk.com/apps/app_3GB0ACZSizAGF63a1YnOCPxyOjk/instances/ins_3GB0A8zCyTrdrGVu686MHXAHDxL/api-keys","claimUrl":"https://dashboard.clerk.com/apps/claim?token=yo4715erk5cexbjl2zn7k60anktwfsdmuiya8lr1","...":"3 items not stringified"}) in 10ms node_modules/@clerk/nextjs/dist/esm-router/keyless-actions.js
+[browser] Failed to fetch RSC payload for http://localhost:3000/clerk-sync-keyless?returnUrl=http://localhost:3000/staff-handover. Falling back to browser navigation. TypeError: Failed to fetch
