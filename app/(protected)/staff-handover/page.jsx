@@ -90,19 +90,26 @@ export default function StaffHandoverPage() {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
-        .order('Full_Name', { ascending: true });
+        .select('*');
 
       if (error) throw error;
 
       const normalizedUsers = (data || [])
         .map(normalizeUser)
         .filter(u => {
-          const isActive = u.is_active !== false;
-          const name = (u.full_name || "").toLowerCase();
-          return isActive && !name.includes('test') && name !== "";
+          // Normalize active status - default to true if null/undefined
+          const isActive = u.is_active !== false && u.is_active !== 'FALSE';
+          const name = (u.full_name || u.full_name || u.email || "").toLowerCase();
+          const isTest = name.includes('test');
+          return isActive && !isTest && name !== "";
+        })
+        .sort((a, b) => {
+          const nameA = (a.full_name || a.email || "").toLowerCase();
+          const nameB = (b.full_name || b.email || "").toLowerCase();
+          return nameA.localeCompare(nameB);
         });
 
+      console.log("Fetched users for handover:", normalizedUsers.length);
       setUsers(normalizedUsers);
     } catch (err) {
       console.error("Error fetching users:", err);
