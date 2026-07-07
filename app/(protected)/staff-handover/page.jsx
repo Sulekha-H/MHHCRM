@@ -51,20 +51,25 @@ const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 const normalizeUser = (user) => {
   if (!user) return user;
-  const normalized = {};
+  // Keep original keys and add normalized ones
+  const normalized = { ...user };
   Object.keys(user).forEach(key => {
     const normalizedKey = key.trim().toLowerCase().replace(/ /g, '_');
-    normalized[normalizedKey] = user[key];
+    if (!normalized[normalizedKey]) {
+      normalized[normalizedKey] = user[key];
+    }
   });
   return normalized;
 };
 
 const normalizeHandover = (handover) => {
   if (!handover) return handover;
-  const normalized = {};
+  const normalized = { ...handover };
   Object.keys(handover).forEach(key => {
     const normalizedKey = key.trim().toLowerCase().replace(/ /g, '_');
-    normalized[normalizedKey] = handover[key];
+    if (!normalized[normalizedKey]) {
+      normalized[normalizedKey] = handover[key];
+    }
   });
   return normalized;
 };
@@ -98,14 +103,14 @@ export default function StaffHandoverPage() {
         .map(normalizeUser)
         .filter(u => {
           // Normalize active status - default to true if null/undefined
-          const isActive = u.is_active !== false && u.is_active !== 'FALSE';
-          const name = (u.full_name || u.full_name || u.email || "").toLowerCase();
-          const isTest = name.includes('test');
-          return isActive && !isTest && name !== "";
+          const isActive = u.is_active !== false && u.is_active !== 'FALSE' && u['Is Active'] !== false;
+          const name = (u.full_name || u['Full Name'] || u.email || u.Email || "").toLowerCase();
+          const isTest = name.includes('test') || name.includes('demo');
+          return isActive && !isTest && name.trim() !== "";
         })
         .sort((a, b) => {
-          const nameA = (a.full_name || a.email || "").toLowerCase();
-          const nameB = (b.full_name || b.email || "").toLowerCase();
+          const nameA = (a.full_name || a['Full Name'] || a.email || a.Email || "").toLowerCase();
+          const nameB = (b.full_name || b['Full Name'] || b.email || b.Email || "").toLowerCase();
           return nameA.localeCompare(nameB);
         });
 
@@ -146,10 +151,59 @@ export default function StaffHandoverPage() {
 
   const weekDates = DAYS_OF_WEEK.map((_, index) => addDays(currentWeekStart, index));
 
-  const getHandover = (userId, date) => {
+  const isCurrentUser = useCallback((staffMember) => {
+    if (!user) return false;
+
+    const clerkEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase();
+    const clerkId = user.id;
+    const clerkName = user.fullName?.toLowerCase();
+
+    const staffEmail = (staffMember.email || staffMember.Email || staffMember.user_email || "").toLowerCase();
+    const staffId = (staffMember.id || staffMember.ID || "").toString();
+    const staffName = (staffMember.full_name || staffMember['Full Name'] || "").toLowerCase();
+
+    // 1. Try matching by Clerk ID
+    if (clerkId && staffId && clerkId === staffId) return true;
+
+    // 2. Try matching by Exact Email
+    if (clerkEmail && staffEmail && clerkEmail === staffEmail) return true;
+
+    // 3. Try matching by Email Prefix (e.g. sulekha@...)
+    if (clerkEmail && staffEmail) {
+        const clerkPrefix = clerkEmail.split('@')[0];
+        const staffPrefix = staffEmail.split('@')[0];
+        if (clerkPrefix === staffPrefix && clerkPrefix.length > 2) return true;
+    }
+
+    // 4. Try matching by Name
+    if (clerkName && staffName && clerkName === staffName && clerkName.length > 2) return true;
+
+    return false;
+  }, [user]);
+
+  const getHandover = useCallback((staffMember, date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return handovers.find(h => h.user_id === userId && h.handover_date === dateStr);
-  };
+    const staffEmail = (staffMember.email || staffMember.Email || staffMember.user_email || "").toLowerCase();
+    const staffId = (staffMember.id || staffMember.ID || "").toString();
+
+    return handovers.find(h => {
+      if (h.handover_date !== dateStr) return false;
+
+      const hEmail = (h.user_email || "").toLowerCase();
+      const hUserId = (h.user_id || "").toString();
+
+      // Match by email
+      if (hEmail && staffEmail && hEmail === staffEmail) return true;
+
+      // Match by staff record ID
+      if (hUserId && staffId && hUserId === staffId) return true;
+
+      // Match by current logged in user ID if this is the current user's row
+      if (isCurrentUser(staffMember) && hUserId === user?.id) return true;
+
+      return false;
+    });
+  }, [handovers, user, isCurrentUser]);
 
   const navigateWeek = (direction) => {
     setCurrentWeekStart(prev => addDays(prev, direction * 7));
@@ -160,15 +214,9 @@ export default function StaffHandoverPage() {
   };
 
   const handleCellClick = (staffMember, date) => {
-    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-    const staffEmail = (staffMember.email || staffMember.user_email || "").toLowerCase();
+    if (!isCurrentUser(staffMember)) return;
 
-    // Only allow editing own row (Check ID or Email)
-    const isOwnRow = staffMember.id === user?.id || (userEmail && staffEmail && userEmail === staffEmail);
-
-    if (!isOwnRow) return;
-
-    const existing = getHandover(staffMember.id, date);
+    const existing = getHandover(staffMember, date);
 
     // Restriction: Only allow editing for "Today" OR future dates if reason is "Annual Leave"
     const today = startOfDay(new Date());
@@ -186,16 +234,16 @@ export default function StaffHandoverPage() {
   };
 
   const handleSaveHandover = async () => {
-    if (!selectedCell || !supabase) return;
+    if (!selectedCell || !supabase || !user) return;
 
     setIsSubmitting(true);
     try {
       const dateStr = format(selectedCell.date, 'yyyy-MM-dd');
-      const existing = getHandover(selectedCell.user.id, selectedCell.date);
+      const existing = getHandover(selectedCell.user, selectedCell.date);
 
       const payload = {
-        "User ID": selectedCell.user.id,
-        "User Email": user?.primaryEmailAddress?.emailAddress,
+        "User ID": user.id, // Use Clerk ID for RLS and uniqueness
+        "User Email": user.primaryEmailAddress?.emailAddress || (selectedCell.user.email || selectedCell.user.Email),
         "Handover Date": dateStr,
         "Content": handoverContent,
         "Late Reason": lateReason || null,
@@ -286,14 +334,11 @@ export default function StaffHandoverPage() {
           <Button
             className="bg-purple-600 hover:bg-purple-700 shadow-sm"
             onClick={() => {
-              const me = users.find(u =>
-                u.id === user?.id ||
-                (u.email || "").toLowerCase() === user?.primaryEmailAddress?.emailAddress?.toLowerCase()
-              );
+              const me = users.find(u => isCurrentUser(u));
               if (me) {
                 handleCellClick(me, new Date());
               } else {
-                alert("Could not identify your staff record. Please ensure your email is linked to a staff account.");
+                alert(`Could not identify your staff record. Logged in as: ${user?.primaryEmailAddress?.emailAddress || 'Unknown'}. Please ensure your email matches a record in the staff list.`);
               }
             }}
           >
@@ -320,40 +365,38 @@ export default function StaffHandoverPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((staffMember) => (
-                <TableRow key={staffMember.id} className="hover:bg-slate-50/50 transition-colors">
+              {users.map((staffMember) => {
+                const isMe = isCurrentUser(staffMember);
+                const staffEmail = staffMember.email || staffMember.Email || "";
+
+                return (
+                <TableRow key={staffMember.id || staffMember.ID} className="hover:bg-slate-50/50 transition-colors">
                   <TableCell className={`font-semibold text-slate-900 sticky left-0 z-10 border-r ${
-                    (staffMember.id === user?.id || (user?.primaryEmailAddress?.emailAddress?.toLowerCase() === (staffMember.email || "").toLowerCase()))
-                      ? 'bg-purple-50 ring-1 ring-inset ring-purple-200'
-                      : 'bg-white'
+                    isMe ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : 'bg-white'
                   }`}>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-600 font-bold uppercase">
-                        {getEmailUsername(staffMember.email).substring(0, 2)}
+                        {getEmailUsername(staffEmail).substring(0, 2)}
                       </div>
                       <div className="flex flex-col">
-                        <span className="capitalize">{getEmailUsername(staffMember.email)}</span>
-                        {(staffMember.id === user?.id || (user?.primaryEmailAddress?.emailAddress?.toLowerCase() === (staffMember.email || "").toLowerCase())) && (
+                        <span className="capitalize">{getEmailUsername(staffEmail)}</span>
+                        {isMe && (
                           <span className="text-[10px] text-purple-600 font-bold uppercase tracking-tighter">You</span>
                         )}
                       </div>
                     </div>
                   </TableCell>
                   {weekDates.map((date, i) => {
-                    const handover = getHandover(staffMember.id, date);
-                    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-                    const staffEmail = (staffMember.email || staffMember.user_email || "").toLowerCase();
-                    const isCurrentUser = staffMember.id === user?.id || (userEmail && staffEmail && userEmail === staffEmail);
+                    const handover = getHandover(staffMember, date);
+                    const canEdit = isMe && (isSameDay(new Date(), date) || isAfter(startOfDay(date), startOfDay(new Date())));
 
                     const isPast = isBefore(startOfDay(date), startOfDay(new Date()));
                     const isToday = isSameDay(new Date(), date);
-                    const isFuture = isAfter(startOfDay(date), startOfDay(new Date()));
-                    const canEdit = isCurrentUser && (isToday || isFuture);
 
                     return (
                       <TableCell
                         key={i}
-                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEdit ? 'cursor-pointer hover:bg-slate-50 transition-colors group' : ''} ${isCurrentUser ? 'bg-purple-50/30' : ''}`}
+                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEdit ? 'cursor-pointer hover:bg-slate-50 transition-colors group' : ''} ${isMe ? 'bg-purple-50/30' : ''}`}
                         onClick={() => handleCellClick(staffMember, date)}
                       >
                         <div className="p-3 h-full flex flex-col">
@@ -391,7 +434,8 @@ export default function StaffHandoverPage() {
                     );
                   })}
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
