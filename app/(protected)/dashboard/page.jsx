@@ -231,7 +231,17 @@ export default function Dashboard() {
           orgReferralsResult,
           selfReferralsResult,
           propertiesResult,
-          landlordEnquiriesResult
+          landlordEnquiriesResult,
+          workBookingsResult,
+          propertyOnboardingResult,
+          propertyPurchasesResult,
+          utilitiesResult,
+          allocatedSupportNotesResult,
+          supportNotesResult,
+          weeklySWDocLogsResult,
+          landlordPortalResult,
+          customSectionDataResult,
+          allocatedQuarterlyReviewsResult
         ] = await Promise.all([
           retryApiCall(() => supabase.from('residents').select('*').or('Deleted.is.null,Deleted.eq.false').order('Created Date', { ascending: false })),
           retryApiCall(() => supabase.from('incidents').select('*').or('Deleted.is.null,Deleted.eq.false').order('Incident Date', { ascending: false })),
@@ -253,7 +263,17 @@ export default function Dashboard() {
           retryApiCall(() => supabase.from('organisation_referrals').select('*').or('Deleted.is.null,Deleted.eq.false').order('Referral Date', { ascending: false })),
           retryApiCall(() => supabase.from('self_referrals').select('*').or('Deleted.is.null,Deleted.eq.false').order('Referral Date', { ascending: false })),
           retryApiCall(() => supabase.from('properties').select('*').or('Deleted.is.null,Deleted.eq.false')),
-          retryApiCall(() => supabase.from('landlord_enquiries').select('*').or('Deleted.is.null,Deleted.eq.false'))
+          retryApiCall(() => supabase.from('landlord_enquiries').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('work_bookings').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('property_onboarding').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('property_purchases').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('Utilities').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('allocated_support_notes').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('support_notes').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('weekly_sw_doc_logs').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('landlord_portal').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('custom_section_data').select('*').or('Deleted.is.null,Deleted.eq.false')),
+          retryApiCall(() => supabase.from('allocated_quarterly_reviews').select('*').or('Deleted.is.null,Deleted.eq.false'))
         ]);
 
         console.log("[Dashboard] ✅ All data loaded successfully from Supabase");
@@ -278,6 +298,16 @@ export default function Dashboard() {
         const allReferrals = [...(orgReferralsResult.data || []), ...(selfReferralsResult.data || [])];
         const allProperties = propertiesResult.data || [];
         const landlordEnquiries = landlordEnquiriesResult.data || [];
+        const workBookings = workBookingsResult.data || [];
+        const propertyOnboarding = propertyOnboardingResult.data || [];
+        const propertyPurchases = propertyPurchasesResult.data || [];
+        const utilities = utilitiesResult.data || [];
+        const allocatedSupportNotes = allocatedSupportNotesResult.data || [];
+        const supportNotes = supportNotesResult.data || [];
+        const weeklySWDocLogs = weeklySWDocLogsResult.data || [];
+        const landlordPortal = landlordPortalResult.data || [];
+        const customSectionData = customSectionDataResult.data || [];
+        const allocatedQuarterlyReviews = allocatedQuarterlyReviewsResult.data || [];
 
         setProperties(allProperties);
         setResidents(residentsData);
@@ -694,77 +724,64 @@ export default function Dashboard() {
           });
         };
 
-        if (!isSCStaff) {
-          // 1. Tasks
-          addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed');
+        // 1. Tasks
+        addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed');
 
-          // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated)
-          const allBenefitLogs = [...benefitLogs, ...ucLogs, ...pipLogs, ...wcaLogs, ...allocatedHbLogs, ...allocatedUcLogs, ...allocatedPipLogs, ...allocatedWcaLogs];
-          addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed');
+        // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated)
+        const allBenefitLogs = [...benefitLogs, ...ucLogs, ...pipLogs, ...wcaLogs, ...allocatedHbLogs, ...allocatedUcLogs, ...allocatedPipLogs, ...allocatedWcaLogs];
+        addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed');
 
-          // 3. Office Logs
-          const officeLogsWithActions = officeLogs.filter(log => log["Action Required"] || log.action_required);
-          addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed');
+        // 3. Office Logs
+        const officeLogsWithActions = officeLogs.filter(log => log["Action Required"] || log.action_required);
+        addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed');
 
-          // 4. Compliance
-          addDeadlines(complianceLogs.filter(c => !c.Actioned), 'Expiry Date', 'Certificate Name', 'Compliance');
+        // 4. Compliance
+        addDeadlines(complianceLogs.filter(c => !c.Actioned), 'Expiry Date', 'Certificate Name', 'Compliance');
 
-          // 5. Quarterly Reviews
-          addDeadlines(quarterlyReviewsData, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed');
+        // 5. Quarterly Reviews
+        const allQuarterlyReviews = [...quarterlyReviewsData, ...allocatedQuarterlyReviews];
+        addDeadlines(allQuarterlyReviews, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed');
 
-          // 6. Repairs
-          addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed');
-          addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid');
+        // 6. Generic Deadline Date checks for all CRM pages
+        // This fulfills the requirement to search all pages for literal "Deadline Date"
+        addDeadlines(allIncidents, 'Deadline Date', 'Title', 'Incident', 'Status', 'resolved');
+        const allSupportNotes = [...supportNotes, ...allocatedSupportNotes];
+        addDeadlines(allSupportNotes, 'Deadline Date', 'Title', 'Support Note', 'Status', 'completed');
+        addDeadlines(weeklySWDocLogs, 'Deadline Date', 'Title', 'Weekly SW Doc', 'Status', 'completed');
+        addDeadlines(workBookings, 'Deadline Date', 'Title', 'Work Booking', 'Status', 'completed');
+        addDeadlines(propertyOnboarding, 'Deadline Date', 'Landlord Name', 'Property Onboarding', 'Onboarding Status', 'live');
+        addDeadlines(propertyPurchases, 'Deadline Date', 'Item Name', 'Property Purchase', 'Status', 'delivered');
+        addDeadlines(utilities, 'Deadline Date', 'Company Name', 'Utility');
+        addDeadlines(landlordPortal, 'Deadline Date', 'Title', 'Landlord Portal', 'Status', 'completed');
 
-          // 7. Landlord Enquiries
-          addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed');
-
-          // 8. Referrals
-          addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted'); // accepted as a proxy for completed
-        }
-
-        // 9. Service Charges
-        activeResidents.forEach(resident => {
-          const residentId = resident.ID;
-          const residentCharges = serviceCharges.filter(p => p["Resident ID"] === residentId);
-
-          financialYearMonths.forEach(monthStartDate => {
-            const chargeForMonth = residentCharges.find(p => {
-              const dueDate = p["Due Date"];
-              if (!dueDate) return false;
-              return format(new Date(dueDate), 'yyyy-MM') === format(monthStartDate, 'yyyy-MM');
-            });
-
-            if (!chargeForMonth || (chargeForMonth["Payment Status"] !== 'Paid' && !chargeForMonth.Exempt)) {
-              let expectedPaymentDay = 1;
-              const benefits = resident.Benefits || [];
-              const ucBenefit = benefits.find(b => b.benefit_type === 'universal_credit' && b.payment_day);
-              if (ucBenefit) expectedPaymentDay = ucBenefit.payment_day;
-
-              let dayOfMonth = Math.min(expectedPaymentDay, new Date(monthStartDate.getFullYear(), monthStartDate.getMonth() + 1, 0).getDate());
-              const dueDate = new Date(monthStartDate.getFullYear(), monthStartDate.getMonth(), dayOfMonth);
-
-              if (chargeForMonth?.["Due Date"]) {
-                const actualDueDate = new Date(chargeForMonth["Due Date"]);
+        // 6a. Custom Section Deadlines
+        customSectionData.forEach(entry => {
+          if (entry.data && typeof entry.data === 'object') {
+            const deadlineKey = Object.keys(entry.data).find(k => k.toLowerCase().replace(/ /g, '_') === 'deadline_date');
+            if (deadlineKey && entry.data[deadlineKey]) {
+              const date = new Date(entry.data[deadlineKey]);
+              if (!isNaN(date.getTime())) {
                 allDeadlines.push({
-                  id: chargeForMonth.ID,
-                  title: `Service Charge: ${resident["First Name"]} ${resident["Last Name"]}`,
-                  date: actualDueDate,
-                  source: 'Service Charge',
-                  item: chargeForMonth
-                });
-              } else if (dueDate < addDays(now, 14)) {
-                 allDeadlines.push({
-                  id: `sc-${residentId}-${format(monthStartDate, 'yyyy-MM')}`,
-                  title: `Service Charge: ${resident["First Name"]} ${resident["Last Name"]}`,
-                  date: dueDate,
-                  source: 'Service Charge',
-                  item: resident
+                  id: entry.ID || entry.id,
+                  title: entry.Title || entry.title || 'Untitled Custom Entry',
+                  date: date,
+                  source: 'Custom Section',
+                  item: entry
                 });
               }
             }
-          });
+          }
         });
+
+        // 7. Repairs
+        addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed');
+        addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid');
+
+        // 8. Landlord Enquiries
+        addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed');
+
+        // 9. Referrals
+        addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted'); // accepted as a proxy for completed
 
         // Categorize and Sort
         const endOfToday = new Date(now);
