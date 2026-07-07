@@ -160,8 +160,13 @@ export default function StaffHandoverPage() {
   };
 
   const handleCellClick = (staffMember, date) => {
-    // Only allow editing own row
-    if (staffMember.id !== user?.id) return;
+    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+    const staffEmail = (staffMember.email || staffMember.user_email || "").toLowerCase();
+
+    // Only allow editing own row (Check ID or Email)
+    const isOwnRow = staffMember.id === user?.id || (userEmail && staffEmail && userEmail === staffEmail);
+
+    if (!isOwnRow) return;
 
     const existing = getHandover(staffMember.id, date);
 
@@ -260,20 +265,40 @@ export default function StaffHandoverPage() {
           <p className="text-slate-500">Weekly handover logs for all staff members</p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
-          <Button variant="ghost" size="icon" onClick={() => navigateWeek(-1)}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="px-4 py-2 font-medium flex items-center gap-2 text-sm">
-            <CalendarIcon className="w-4 h-4 text-slate-400" />
-            {format(currentWeekStart, 'MMM d')} - {format(addDays(currentWeekStart, 4), 'MMM d, yyyy')}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
+            <Button variant="ghost" size="icon" onClick={() => navigateWeek(-1)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="px-4 py-2 font-medium flex items-center gap-2 text-sm">
+              <CalendarIcon className="w-4 h-4 text-slate-400" />
+              {format(currentWeekStart, 'MMM d')} - {format(addDays(currentWeekStart, 4), 'MMM d, yyyy')}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => navigateWeek(1)}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <div className="h-4 w-[1px] bg-slate-200 mx-1" />
+            <Button variant="ghost" size="sm" onClick={resetToCurrentWeek}>
+              Today
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigateWeek(1)}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <div className="h-4 w-[1px] bg-slate-200 mx-1" />
-          <Button variant="ghost" size="sm" onClick={resetToCurrentWeek}>
-            Today
+
+          <Button
+            className="bg-purple-600 hover:bg-purple-700 shadow-sm"
+            onClick={() => {
+              const me = users.find(u =>
+                u.id === user?.id ||
+                (u.email || "").toLowerCase() === user?.primaryEmailAddress?.emailAddress?.toLowerCase()
+              );
+              if (me) {
+                handleCellClick(me, new Date());
+              } else {
+                alert("Could not identify your staff record. Please ensure your email is linked to a staff account.");
+              }
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Today's Handover
           </Button>
         </div>
       </div>
@@ -297,17 +322,29 @@ export default function StaffHandoverPage() {
             <TableBody>
               {users.map((staffMember) => (
                 <TableRow key={staffMember.id} className="hover:bg-slate-50/50 transition-colors">
-                  <TableCell className="font-semibold text-slate-900 bg-white sticky left-0 z-10 border-r">
+                  <TableCell className={`font-semibold text-slate-900 sticky left-0 z-10 border-r ${
+                    (staffMember.id === user?.id || (user?.primaryEmailAddress?.emailAddress?.toLowerCase() === (staffMember.email || "").toLowerCase()))
+                      ? 'bg-purple-50 ring-1 ring-inset ring-purple-200'
+                      : 'bg-white'
+                  }`}>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-600 font-bold uppercase">
                         {getEmailUsername(staffMember.email).substring(0, 2)}
                       </div>
-                      <span className="capitalize">{getEmailUsername(staffMember.email)}</span>
+                      <div className="flex flex-col">
+                        <span className="capitalize">{getEmailUsername(staffMember.email)}</span>
+                        {(staffMember.id === user?.id || (user?.primaryEmailAddress?.emailAddress?.toLowerCase() === (staffMember.email || "").toLowerCase())) && (
+                          <span className="text-[10px] text-purple-600 font-bold uppercase tracking-tighter">You</span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   {weekDates.map((date, i) => {
                     const handover = getHandover(staffMember.id, date);
-                    const isCurrentUser = staffMember.id === user?.id;
+                    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+                    const staffEmail = (staffMember.email || staffMember.user_email || "").toLowerCase();
+                    const isCurrentUser = staffMember.id === user?.id || (userEmail && staffEmail && userEmail === staffEmail);
+
                     const isPast = isBefore(startOfDay(date), startOfDay(new Date()));
                     const isToday = isSameDay(new Date(), date);
                     const isFuture = isAfter(startOfDay(date), startOfDay(new Date()));
@@ -316,7 +353,7 @@ export default function StaffHandoverPage() {
                     return (
                       <TableCell
                         key={i}
-                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEdit ? 'cursor-pointer hover:bg-slate-50 group' : ''}`}
+                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEdit ? 'cursor-pointer hover:bg-slate-50 transition-colors group' : ''} ${isCurrentUser ? 'bg-purple-50/30' : ''}`}
                         onClick={() => handleCellClick(staffMember, date)}
                       >
                         <div className="p-3 h-full flex flex-col">
@@ -337,8 +374,8 @@ export default function StaffHandoverPage() {
                                 {isPast ? (
                                     <span className="text-xs italic">No entry</span>
                                 ) : canEdit ? (
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center gap-1">
-                                        <Plus className="w-5 h-5" />
+                                    <div className={`${isToday ? 'opacity-100 text-purple-400' : 'opacity-0'} group-hover:opacity-100 transition-opacity flex flex-col items-center gap-1`}>
+                                        <Plus className={`w-5 h-5 ${isToday ? 'animate-pulse' : ''}`} />
                                         <span className="text-[10px] font-medium uppercase tracking-wider">Add Entry</span>
                                     </div>
                                 ) : null}
