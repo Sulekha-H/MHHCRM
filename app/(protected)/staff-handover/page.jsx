@@ -434,7 +434,8 @@ export default function StaffHandoverPage() {
                     );
                   })}
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </div>
