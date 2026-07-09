@@ -20,8 +20,7 @@ const PROPERTIES_CONFIG = [
   { name: "APARTMENT 94", rooms: 2 },
   { name: "SUTTON", rooms: 6 },
   { name: "APARTMENT 108", rooms: 2 },
-  { name: "FLAT 3", rooms: 2 },
-  { name: "FLAT 4", rooms: 0, isNA: true } // Handled specially
+  { name: "FLAT 3", rooms: 2 }
 ];
 
 const KEYCODES = [
@@ -229,7 +228,6 @@ export default function RoomBreakdownPage() {
   };
 
   const calculateFraction = (propertyName, roomsCount) => {
-    if (propertyName === "FLAT 4") return "n/a";
     let count = 0;
     for (let i = 1; i <= roomsCount; i++) {
       const assignment = getLatestAssignment(propertyName, `R${i}`, "Residing");
@@ -290,13 +288,6 @@ export default function RoomBreakdownPage() {
                       </TableRow>
                     );
                   })}
-                  {prop.name === "FLAT 4" && (
-                     <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-slate-400 italic">
-                            No rooms currently defined for Flat 4.
-                        </TableCell>
-                     </TableRow>
-                  )}
                   <TableRow className="bg-slate-50 font-bold">
                     <TableCell colSpan={2} className="text-right border"></TableCell>
                     <TableCell className="text-center border py-2">
