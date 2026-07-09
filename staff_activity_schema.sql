@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS "staff_activity" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "Date Time" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "User ID" TEXT,
     "User Name" TEXT,
     "User Email" TEXT,
     "Action Type" TEXT,
@@ -23,6 +24,9 @@ TO authenticated
 WITH CHECK (true);
 
 -- Allow only Sulekha and Amaani to view logs
+-- We check for both explicit emails and their presence in the 'users' table if needed,
+-- but for simplicity and immediate fix, we use the auth.jwt() email claim.
+-- NOTE: Ensure Clerk is configured to include the 'email' claim in the Supabase JWT template.
 CREATE POLICY "Allow admin view only"
 ON "staff_activity"
 FOR SELECT

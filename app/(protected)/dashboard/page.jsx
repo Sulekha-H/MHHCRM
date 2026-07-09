@@ -876,6 +876,7 @@ export default function Dashboard() {
           logActivity(supabase, {
             userName: user.fullName || user.username || "Unknown",
             userEmail: user.primaryEmailAddress?.emailAddress,
+            userId: user.id,
             actionType: ACTIONS.LOGIN,
             description: `User logged in to the dashboard`
           });

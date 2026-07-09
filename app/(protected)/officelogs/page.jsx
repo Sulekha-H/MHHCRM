@@ -281,6 +281,7 @@ useEffect(() => {
         logActivity(supabase, {
           userName: user.fullName || user.username || "Unknown",
           userEmail: user.primaryEmailAddress?.emailAddress,
+          userId: user.id,
           actionType: ACTIONS.UPDATE,
           entityType: ENTITIES.OFFICE_LOG,
           entityId: editingLog["ID"] || editingLog.id,
@@ -303,6 +304,7 @@ useEffect(() => {
         logActivity(supabase, {
           userName: user.fullName || user.username || "Unknown",
           userEmail: user.primaryEmailAddress?.emailAddress,
+          userId: user.id,
           actionType: ACTIONS.CREATE,
           entityType: ENTITIES.OFFICE_LOG,
           entityId: formattedLogData.ID,
@@ -360,6 +362,7 @@ useEffect(() => {
       logActivity(supabase, {
         userName: user.fullName || user.username || "Unknown",
         userEmail: user.primaryEmailAddress?.emailAddress,
+        userId: user.id,
         actionType: ACTIONS.DELETE,
         entityType: ENTITIES.OFFICE_LOG,
         entityId: log["ID"] || log.id,
@@ -505,6 +508,7 @@ useEffect(() => {
     logActivity(supabase, {
       userName: user.fullName || user.username || "Unknown",
       userEmail: user.primaryEmailAddress?.emailAddress,
+      userId: user.id,
       actionType: ACTIONS.EXPORT,
       entityType: ENTITIES.OFFICE_LOG,
       description: `Exported office logs to CSV`
