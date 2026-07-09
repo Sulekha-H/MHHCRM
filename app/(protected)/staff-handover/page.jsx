@@ -314,8 +314,8 @@ export default function StaffHandoverPage() {
         "Content": handoverContent,
         "Late Reason": lateReason || null,
         "Updated At": new Date().toISOString(),
-        "Assigned To ID": targetAssigneeId,
-        "Assigned To Email": targetAssigneeEmail
+        "Assigned To ID": targetAssigneeId || user.id,
+        "Assigned To Email": targetAssigneeEmail || user.primaryEmailAddress?.emailAddress
       };
 
       let error;
