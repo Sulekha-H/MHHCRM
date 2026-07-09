@@ -90,6 +90,11 @@ const DeadlineGroup = ({ title, deadlines, colorClass, icon: Icon }) => {
               <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 min-h-[40px]">
                 {d.title}
               </h4>
+              {d.assignedTo && (
+                <div className="mt-1 text-[10px] text-slate-600 font-medium truncate">
+                  For: {d.assignedTo}
+                </div>
+              )}
               <div className="mt-3 flex items-center justify-between">
                 <div className="text-[10px] text-slate-500 italic">
                   <CountdownDisplay deadline={d.date} />
@@ -392,6 +397,8 @@ export default function Dashboard() {
 
         // Find current user's name from Clerk
         const currentUserName = user?.fullName?.trim().toLowerCase();
+        const currentUserEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+        const currentUserPrefix = currentUserEmail?.split('@')[0];
         
         const myOverdueTasks = overdueTasks.filter(t => {
           const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id)?.trim().toLowerCase();
@@ -698,7 +705,7 @@ export default function Dashboard() {
         const allDeadlines = [];
 
         // Helper to add deadlines with robustness for field names
-        const addDeadlines = (items, dateField, titleField, source, statusField = null, completedStatus = 'completed') => {
+        const addDeadlines = (items, dateField, titleField, source, statusField = null, completedStatus = 'completed', userFields = []) => {
           const altDateField = dateField.toLowerCase().replace(/ /g, '_');
           const altTitleField = titleField.toLowerCase().replace(/ /g, '_');
           const altStatusField = statusField ? statusField.toLowerCase().replace(/ /g, '_') : null;
@@ -714,45 +721,65 @@ export default function Dashboard() {
 
             if (statusField && status === completedStatus.toLowerCase().replace(/ /g, '_')) return;
 
-            allDeadlines.push({
-              id: item.ID || item.id || `${source}-${Math.random()}`,
-              title: item[titleField] || item[altTitleField] || item.Title || item.title || 'Untitled',
-              date: date,
-              source: source,
-              item: item
-            });
+            // Filtering logic: Visible if Compliance, or if one of the userFields matches current user
+            let isVisible = source === 'Compliance';
+            let assignedToName = '';
+
+            // Try to find the person this deadline belongs to from the userFields
+            for (const field of userFields) {
+              const altField = field.toLowerCase().replace(/ /g, '_');
+              const val = (item[field] || item[altField] || '').toString().trim();
+              if (val) {
+                assignedToName = val;
+                const valLower = val.toLowerCase();
+                if (valLower === currentUserName || valLower === currentUserEmail || valLower === currentUserPrefix) {
+                  isVisible = true;
+                }
+              }
+            }
+
+            if (isVisible) {
+              allDeadlines.push({
+                id: item.ID || item.id || `${source}-${Math.random()}`,
+                title: item[titleField] || item[altTitleField] || item.Title || item.title || 'Untitled',
+                date: date,
+                source: source,
+                item: item,
+                assignedTo: assignedToName
+              });
+            }
           });
         };
 
-        // 1. Tasks
-        addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed');
+        // 1. Tasks - Filtered by Assigned To
+        addDeadlines(tasks, 'Due Date', 'Title', 'Task', 'Status', 'completed', ['Assigned to (User ID)']);
 
-        // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated)
+        // 2. Benefit Logs (HB, UC, PIP, WCA + Allocated) - Filtered by Creator
         const allBenefitLogs = [...benefitLogs, ...ucLogs, ...pipLogs, ...wcaLogs, ...allocatedHbLogs, ...allocatedUcLogs, ...allocatedPipLogs, ...allocatedWcaLogs];
-        addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed');
+        addDeadlines(allBenefitLogs, 'Deadline Date', 'Title', 'Benefit', 'Status', 'completed', ['Logged By', 'Created By', 'Staff Member']);
 
-        // 3. Office Logs
+        // 3. Office Logs - Filtered by Creator
         const officeLogsWithActions = officeLogs.filter(log => log["Action Required"] || log.action_required);
-        addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed');
+        addDeadlines(officeLogsWithActions, 'Action Due Date', 'Title', 'Office Log', 'Status', 'completed', ['Staff Member', 'Created By']);
 
-        // 4. Compliance
+        // 4. Compliance - Visible to ALL
         addDeadlines(complianceLogs.filter(c => !c.Actioned), 'Expiry Date', 'Certificate Name', 'Compliance');
 
-        // 5. Quarterly Reviews
+        // 5. Quarterly Reviews - Filtered by Creator/Key Worker
         const allQuarterlyReviews = [...quarterlyReviewsData, ...allocatedQuarterlyReviews];
-        addDeadlines(allQuarterlyReviews, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed');
+        addDeadlines(allQuarterlyReviews, 'Next Review Date', 'Title', 'Quarterly Review', 'Status', 'completed', ['Created By', 'Logged By', 'Key Worker']);
 
         // 6. Generic Deadline Date checks for all CRM pages
         // This fulfills the requirement to search all pages for literal "Deadline Date"
-        addDeadlines(allIncidents, 'Deadline Date', 'Title', 'Incident', 'Status', 'resolved');
+        addDeadlines(allIncidents, 'Deadline Date', 'Title', 'Incident', 'Status', 'resolved', ['Logged By', 'Created By']);
         const allSupportNotes = [...supportNotes, ...allocatedSupportNotes];
-        addDeadlines(allSupportNotes, 'Deadline Date', 'Title', 'Support Note', 'Status', 'completed');
-        addDeadlines(weeklySWDocLogs, 'Deadline Date', 'Title', 'Weekly SW Doc', 'Status', 'completed');
-        addDeadlines(workBookings, 'Deadline Date', 'Title', 'Work Booking', 'Status', 'completed');
-        addDeadlines(propertyOnboarding, 'Deadline Date', 'Landlord Name', 'Property Onboarding', 'Onboarding Status', 'live');
-        addDeadlines(propertyPurchases, 'Deadline Date', 'Item Name', 'Property Purchase', 'Status', 'delivered');
-        addDeadlines(utilities, 'Deadline Date', 'Company Name', 'Utility');
-        addDeadlines(landlordPortal, 'Deadline Date', 'Title', 'Landlord Portal', 'Status', 'completed');
+        addDeadlines(allSupportNotes, 'Deadline Date', 'Title', 'Support Note', 'Status', 'completed', ['Created By', 'Logged By']);
+        addDeadlines(weeklySWDocLogs, 'Deadline Date', 'Title', 'Weekly SW Doc', 'Status', 'completed', ['Created By', 'Logged By']);
+        addDeadlines(workBookings, 'Deadline Date', 'Title', 'Work Booking', 'Status', 'completed', ['Logged By', 'Created By']);
+        addDeadlines(propertyOnboarding, 'Deadline Date', 'Landlord Name', 'Property Onboarding', 'Onboarding Status', 'live', ['Created By', 'Logged By']);
+        addDeadlines(propertyPurchases, 'Deadline Date', 'Item Name', 'Property Purchase', 'Status', 'delivered', ['Logged By', 'Created By']);
+        addDeadlines(utilities, 'Deadline Date', 'Company Name', 'Utility', null, 'completed', ['Created By']);
+        addDeadlines(landlordPortal, 'Deadline Date', 'Title', 'Landlord Portal', 'Status', 'completed', ['Created By']);
 
         // 6a. Custom Section Deadlines
         customSectionData.forEach(entry => {
@@ -761,27 +788,32 @@ export default function Dashboard() {
             if (deadlineKey && entry.data[deadlineKey]) {
               const date = new Date(entry.data[deadlineKey]);
               if (!isNaN(date.getTime())) {
-                allDeadlines.push({
-                  id: entry.ID || entry.id,
-                  title: entry.Title || entry.title || 'Untitled Custom Entry',
-                  date: date,
-                  source: 'Custom Section',
-                  item: entry
-                });
+                const creator = entry["Created By"] || entry.created_by || '';
+                const creatorLower = creator.toLowerCase();
+                if (creatorLower === currentUserName || creatorLower === currentUserEmail || creatorLower === currentUserPrefix) {
+                  allDeadlines.push({
+                    id: entry.ID || entry.id,
+                    title: entry.Title || entry.title || 'Untitled Custom Entry',
+                    date: date,
+                    source: 'Custom Section',
+                    item: entry,
+                    assignedTo: creator
+                  });
+                }
               }
             }
           }
         });
 
-        // 7. Repairs
-        addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed');
-        addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid');
+        // 7. Repairs - Filtered by Creator
+        addDeadlines(repairs, 'Scheduled Date', 'Title', 'Repair', 'Status', 'completed', ['Logged By', 'Created By']);
+        addDeadlines(repairs, 'Payment Due Date', 'Title', 'Repair Payment', 'Invoice Payment Status', 'paid', ['Logged By', 'Created By']);
 
-        // 8. Landlord Enquiries
-        addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed');
+        // 8. Landlord Enquiries - Filtered by Creator
+        addDeadlines(landlordEnquiries, 'Next Action Date', 'Applicant Name', 'Landlord Enquiry', 'Status', 'completed', ['Created By']);
 
-        // 9. Referrals
-        addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted'); // accepted as a proxy for completed
+        // 9. Referrals - Filtered by Creator
+        addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted', ['Created By']); // accepted as a proxy for completed
 
         // Categorize and Sort
         const endOfToday = new Date(now);
