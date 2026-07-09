@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, History, Filter, Download, User as UserIcon, Calendar as CalendarIcon, ShieldAlert } from "lucide-react";
+import { Search, History, Filter, Download, User as UserIcon, Calendar as CalendarIcon, ShieldAlert, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ACTIONS, ENTITIES, logActivity } from "@/lib/activityUtils";
 import { cn } from "@/lib/utils";
@@ -49,29 +49,65 @@ export default function StaffActivityPage() {
     return authorizedEmails.includes(userEmail);
   }, [user]);
 
+  const [error, setError] = useState(null);
+
   const loadActivities = useCallback(async () => {
-    if (!supabase || !isAuthorized()) return;
+    if (!supabase || !isAuthorized()) {
+      console.log("Staff Activity: Not authorized or Supabase not ready", {
+        hasSupabase: !!supabase,
+        isAuthorized: isAuthorized(),
+        email: user?.primaryEmailAddress?.emailAddress
+      });
+      return;
+    }
 
     setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
+      console.log("Staff Activity: Fetching logs...");
+
+      const { data, error: fetchError, count } = await supabase
         .from('staff_activity')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('"Date Time"', { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) {
+        console.error("Staff Activity: Supabase fetch error:", fetchError);
+        setError(`Failed to fetch logs: ${fetchError.message}`);
 
+        // Try without ordering as a fallback
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('staff_activity')
+          .select('*');
+
+        if (fallbackError) {
+          console.error("Staff Activity: Fallback fetch also failed:", fallbackError);
+        } else {
+          console.log("Staff Activity: Fallback fetch succeeded, ordering might be the issue.", fallbackData?.length);
+          setActivities(fallbackData || []);
+
+          // Extract unique users for filtering
+          const users = [...new Set((fallbackData || []).map(a => a["User Name"] || a["User Email"]))].filter(Boolean).sort();
+          setUniqueUsers(users);
+
+          setError(null);
+          return;
+        }
+        throw fetchError;
+      }
+
+      console.log(`Staff Activity: Successfully retrieved ${data?.length || 0} records. Total count: ${count}`);
       setActivities(data || []);
 
       // Extract unique users for filtering
       const users = [...new Set((data || []).map(a => a["User Name"] || a["User Email"]))].filter(Boolean).sort();
       setUniqueUsers(users);
-    } catch (error) {
-      console.error("Error loading activities:", error);
+    } catch (err) {
+      console.error("Error loading activities:", err);
     } finally {
       setLoading(false);
     }
-  }, [supabase, isAuthorized]);
+  }, [supabase, isAuthorized, user]);
 
   useEffect(() => {
     loadActivities();
@@ -107,13 +143,22 @@ export default function StaffActivityPage() {
 
   const exportToCSV = () => {
     const headers = ["Date Time", "User", "Action", "Entity", "Description"];
-    const rows = filteredActivities.map(a => [
-      format(new Date(a["Date Time"]), 'yyyy-MM-dd HH:mm:ss'),
-      a["User Name"] || a["User Email"] || "Unknown",
-      a["Action Type"],
-      a["Entity Type"] || "N/A",
-      a.Description || ""
-    ]);
+    const rows = filteredActivities.map(a => {
+      let formattedDate = "";
+      try {
+        formattedDate = a["Date Time"] ? format(new Date(a["Date Time"]), 'yyyy-MM-dd HH:mm:ss') : "N/A";
+      } catch (e) {
+        formattedDate = "Invalid Date";
+      }
+
+      return [
+        formattedDate,
+        a["User Name"] || a["User Email"] || "Unknown",
+        a["Action Type"],
+        a["Entity Type"] || "N/A",
+        a.Description || ""
+      ];
+    });
 
     const escape = (v) => {
       const s = String(v ?? "");
@@ -250,13 +295,31 @@ export default function StaffActivityPage() {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12 text-slate-500">
-                      Loading staff activity...
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <span>Loading staff activity...</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-red-500">
+                      <div className="flex flex-col items-center gap-2">
+                        <AlertTriangle className="w-8 h-8" />
+                        <span className="font-semibold">Error Loading Activity</span>
+                        <p className="text-sm max-w-md mx-auto">{error}</p>
+                        <Button variant="outline" size="sm" onClick={loadActivities} className="mt-2">
+                          Retry
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredActivities.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12 text-slate-500 italic">
-                      No activity found matching your filters.
+                      {activities.length === 0
+                        ? "No activity has been logged yet."
+                        : "No activity found matching your filters."}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -264,8 +327,28 @@ export default function StaffActivityPage() {
                     <TableRow key={activity.ID}>
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
-                          <span className="text-sm">{format(new Date(activity["Date Time"]), 'dd MMM yyyy')}</span>
-                          <span className="text-xs text-slate-500">{format(new Date(activity["Date Time"]), 'HH:mm:ss')}</span>
+                          <span className="text-sm">
+                            {activity["Date Time"] ? (
+                              (() => {
+                                try {
+                                  return format(new Date(activity["Date Time"]), 'dd MMM yyyy');
+                                } catch (e) {
+                                  return 'Invalid Date';
+                                }
+                              })()
+                            ) : 'N/A'}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {activity["Date Time"] ? (
+                              (() => {
+                                try {
+                                  return format(new Date(activity["Date Time"]), 'HH:mm:ss');
+                                } catch (e) {
+                                  return '';
+                                }
+                              })()
+                            ) : ''}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
