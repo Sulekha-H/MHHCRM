@@ -176,6 +176,7 @@ export default function Dashboard() {
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState({
+    overdue: [],
     next7Days: [],
     next14Days: []
   });
@@ -395,19 +396,28 @@ export default function Dashboard() {
           return status !== 'completed' && dueDate && dueDate >= now && dueDate <= threeDaysFromNow;
         });
 
-        // Find current user's name from Clerk
-        const currentUserName = user?.fullName?.trim().toLowerCase();
+        // Find current user's details from Clerk
+        const currentUserName = (user?.fullName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || '').toLowerCase();
         const currentUserEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
         const currentUserPrefix = currentUserEmail?.split('@')[0];
         
+        const isMatch = (val) => {
+          if (!val) return false;
+          const v = val.toLowerCase().trim();
+          return v === currentUserName ||
+                 v === currentUserEmail ||
+                 v === currentUserPrefix ||
+                 (currentUserName && (v.includes(currentUserName) || currentUserName.includes(v)));
+        };
+
         const myOverdueTasks = overdueTasks.filter(t => {
-          const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id)?.trim().toLowerCase();
-          return assignedTo && currentUserName && assignedTo === currentUserName;
+          const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id);
+          return isMatch(assignedTo);
         });
         
         const myDueSoonTasks = dueSoonTasks.filter(t => {
-          const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id)?.trim().toLowerCase();
-          return assignedTo && currentUserName && assignedTo === currentUserName;
+          const assignedTo = (t["Assigned to (User ID)"] || t.assigned_to_user_id);
+          return isMatch(assignedTo);
         });
 
         setTaskSummary({
@@ -731,21 +741,37 @@ export default function Dashboard() {
               const val = (item[field] || item[altField] || '').toString().trim();
               if (val) {
                 assignedToName = val;
-                const valLower = val.toLowerCase();
-                if (valLower === currentUserName || valLower === currentUserEmail || valLower === currentUserPrefix) {
+                if (isMatch(val)) {
                   isVisible = true;
                 }
               }
             }
 
             if (isVisible) {
+              // Resolve subject (Property or Resident) for better "who the deadline is for" context
+              const propertyId = item["Property ID"] || item.property_id;
+              const residentId = item["Resident ID"] || item.resident_id;
+
+              let subjectName = '';
+              if (propertyId) {
+                const prop = allProperties.find(p => (p.ID || p.id) === propertyId);
+                if (prop) subjectName = prop.Name || prop.name;
+              } else if (residentId) {
+                const res = residentsData.find(r => (r.ID || r.id) === residentId);
+                if (res) subjectName = `${res["First Name"] || res.first_name} ${res["Last Name"] || res.last_name}`;
+              }
+
+              const finalAssignedTo = assignedToName && subjectName
+                ? `${assignedToName} (${subjectName})`
+                : (assignedToName || subjectName);
+
               allDeadlines.push({
                 id: item.ID || item.id || `${source}-${Math.random()}`,
                 title: item[titleField] || item[altTitleField] || item.Title || item.title || 'Untitled',
                 date: date,
                 source: source,
                 item: item,
-                assignedTo: assignedToName
+                assignedTo: finalAssignedTo
               });
             }
           });
@@ -822,10 +848,19 @@ export default function Dashboard() {
         const sevenDaysFromNow = addDays(endOfToday, 7);
         const fourteenDaysFromNow = addDays(endOfToday, 14);
 
-        const next7Days = allDeadlines.filter(d => d.date >= now && d.date <= sevenDaysFromNow).sort((a, b) => a.date - b.date);
+        const overdue = allDeadlines.filter(d => {
+          const target = new Date(d.date);
+          target.setHours(23, 59, 59, 999);
+          return target < now;
+        }).sort((a, b) => a.date - b.date);
+        const next7Days = allDeadlines.filter(d => {
+          const target = new Date(d.date);
+          target.setHours(23, 59, 59, 999);
+          return target >= now && d.date <= sevenDaysFromNow;
+        }).sort((a, b) => a.date - b.date);
         const next14Days = allDeadlines.filter(d => d.date > sevenDaysFromNow && d.date <= fourteenDaysFromNow).sort((a, b) => a.date - b.date);
 
-        setUpcomingDeadlines({ next7Days, next14Days });
+        setUpcomingDeadlines({ overdue, next7Days, next14Days });
 
         setLoadingReminders(false);
       } catch (error) {
@@ -904,7 +939,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Upcoming Deadlines Section */}
-      {(upcomingDeadlines.next7Days.length > 0 || upcomingDeadlines.next14Days.length > 0) && (
+      {(upcomingDeadlines.overdue.length > 0 || upcomingDeadlines.next7Days.length > 0 || upcomingDeadlines.next14Days.length > 0) && (
         <Card className="mb-8 border-0 shadow-sm bg-white overflow-hidden">
           <CardHeader className="bg-slate-50 border-b py-4">
             <CardTitle className="text-xl flex items-center gap-2 text-slate-800">
@@ -913,6 +948,12 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-8">
+            <DeadlineGroup
+              title="Overdue"
+              deadlines={upcomingDeadlines.overdue}
+              colorClass="text-red-600"
+              icon={AlertTriangle}
+            />
             <DeadlineGroup
               title="Next 7 Days"
               deadlines={upcomingDeadlines.next7Days}
