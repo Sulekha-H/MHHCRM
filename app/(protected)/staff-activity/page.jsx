@@ -25,6 +25,7 @@ import {
 import { Search, History, Filter, Download, User as UserIcon, Calendar as CalendarIcon, ShieldAlert } from "lucide-react";
 import { format } from "date-fns";
 import { ACTIONS, ENTITIES, logActivity } from "@/lib/activityUtils";
+import { cn } from "@/lib/utils";
 
 export default function StaffActivityPage() {
   const { user } = useUser();
@@ -56,7 +57,7 @@ export default function StaffActivityPage() {
       const { data, error } = await supabase
         .from('staff_activity')
         .select('*')
-        .order('Date Time', { ascending: false });
+        .order('"Date Time"', { ascending: false });
 
       if (error) throw error;
 
