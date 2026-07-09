@@ -176,7 +176,6 @@ export default function Dashboard() {
   const [properties, setProperties] = useState([]);
   const [residents, setResidents] = useState([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState({
-    overdue: [],
     next7Days: [],
     next14Days: []
   });
@@ -848,11 +847,6 @@ export default function Dashboard() {
         const sevenDaysFromNow = addDays(endOfToday, 7);
         const fourteenDaysFromNow = addDays(endOfToday, 14);
 
-        const overdue = allDeadlines.filter(d => {
-          const target = new Date(d.date);
-          target.setHours(23, 59, 59, 999);
-          return target < now;
-        }).sort((a, b) => a.date - b.date);
         const next7Days = allDeadlines.filter(d => {
           const target = new Date(d.date);
           target.setHours(23, 59, 59, 999);
@@ -860,7 +854,7 @@ export default function Dashboard() {
         }).sort((a, b) => a.date - b.date);
         const next14Days = allDeadlines.filter(d => d.date > sevenDaysFromNow && d.date <= fourteenDaysFromNow).sort((a, b) => a.date - b.date);
 
-        setUpcomingDeadlines({ overdue, next7Days, next14Days });
+        setUpcomingDeadlines({ next7Days, next14Days });
 
         setLoadingReminders(false);
       } catch (error) {
@@ -939,7 +933,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Upcoming Deadlines Section */}
-      {(upcomingDeadlines.overdue.length > 0 || upcomingDeadlines.next7Days.length > 0 || upcomingDeadlines.next14Days.length > 0) && (
+      {(upcomingDeadlines.next7Days.length > 0 || upcomingDeadlines.next14Days.length > 0) && (
         <Card className="mb-8 border-0 shadow-sm bg-white overflow-hidden">
           <CardHeader className="bg-slate-50 border-b py-4">
             <CardTitle className="text-xl flex items-center gap-2 text-slate-800">
@@ -948,12 +942,6 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-8">
-            <DeadlineGroup
-              title="Overdue"
-              deadlines={upcomingDeadlines.overdue}
-              colorClass="text-red-600"
-              icon={AlertTriangle}
-            />
             <DeadlineGroup
               title="Next 7 Days"
               deadlines={upcomingDeadlines.next7Days}
