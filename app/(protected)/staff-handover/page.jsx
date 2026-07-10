@@ -55,19 +55,18 @@ const STAFF_GROUPS = {
   SW_OFFICE: {
     name: "SW + Office",
     color: "#4B6F44", // Bogey Green
-    members: ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"]
+    members: ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca"]
   }
 };
 
 const STAFF_COLORS = {
   "amaani": "#AF8FE3",
   "burton": "#42A5F5",
-  "francesca": "#FFC107",
-  "hasib": "#3F51B5",
-  "jessica": "#FF7043",
+  "francesca": "#4B6F44", // Support Worker -> Bogey Green
+  "hasib": "#4B6F44",      // Support Worker -> Bogey Green
+  "jessica": "#4B6F44",    // Support Worker -> Bogey Green
   "leticia": "#E91E63",
   "sulekha": "#26A69A",
-  "jess": "#FF7043", // Alias for jessica
 };
 
 const normalizeUser = (user) => {
@@ -98,19 +97,42 @@ const normalizeHandover = (handover) => {
     }
   });
 
-  // Extract Assignment Metadata from Content if present
-  if (normalized.content && typeof normalized.content === 'string' && normalized.content.startsWith('---ASSIGNMENT:')) {
+  // New multi-entry format: ---JSON_ENTRIES:[{id, content, type, recipients}]---
+  if (normalized.content && typeof normalized.content === 'string' && normalized.content.startsWith('---JSON_ENTRIES:')) {
+    const match = normalized.content.match(/^---JSON_ENTRIES:([\s\S]*?)---/);
+    if (match) {
+      try {
+        normalized.entries = JSON.parse(match[1]);
+      } catch (e) {
+        console.error("Failed to parse handover entries", e);
+        normalized.entries = [];
+      }
+    }
+  } else if (normalized.content && typeof normalized.content === 'string' && normalized.content.startsWith('---ASSIGNMENT:')) {
+    // Fallback for legacy assignment format
     const match = normalized.content.match(/^---ASSIGNMENT:([\s\S]*?)---\n([\s\S]*)$/);
     if (match) {
       try {
         const metadata = JSON.parse(match[1]);
-        normalized.assignment_type = metadata.type;
-        normalized.recipients = metadata.recipients || [];
-        normalized.content = match[2];
+        normalized.entries = [{
+            id: normalized.id || normalized.ID,
+            type: metadata.type,
+            recipients: metadata.recipients || [],
+            content: match[2]
+        }];
       } catch (e) {
-        console.error("Failed to parse handover metadata", e);
+        console.error("Failed to parse legacy handover metadata", e);
+        normalized.entries = [];
       }
     }
+  } else {
+    // Pure legacy content
+    normalized.entries = [{
+        id: normalized.id || normalized.ID,
+        type: 'SPECIFIC',
+        recipients: [(normalized.user_id || normalized['User ID']).toString()],
+        content: normalized.content
+    }];
   }
 
   return normalized;
@@ -148,21 +170,38 @@ export default function StaffHandoverPage() {
 
       if (error) throw error;
 
-      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"];
+      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca"];
+      const existingPrefixes = new Set();
 
       const normalizedUsers = (data || [])
         .map(normalizeUser)
         .filter(u => {
           const emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
-          return exhaustiveStaff.includes(emailPrefix);
-        })
-        .sort((a, b) => {
-          const nameA = (a.full_name || a['Full Name'] || a.email || a.Email || "").toLowerCase();
-          const nameB = (b.full_name || b['Full Name'] || b.email || b.Email || "").toLowerCase();
-          return nameA.localeCompare(nameB);
+          if (exhaustiveStaff.includes(emailPrefix)) {
+              existingPrefixes.add(emailPrefix);
+              return true;
+          }
+          return false;
         });
 
-      console.log("Fetched users for handover:", normalizedUsers.length);
+      // Synthesize missing users
+      exhaustiveStaff.forEach(prefix => {
+          if (!existingPrefixes.has(prefix)) {
+              normalizedUsers.push({
+                  id: `synth-${prefix}`,
+                  email: `${prefix}@myhopehousing.org.uk`,
+                  full_name: prefix.charAt(0).toUpperCase() + prefix.slice(1)
+              });
+          }
+      });
+
+      normalizedUsers.sort((a, b) => {
+        const nameA = (a.full_name || a['Full Name'] || a.email || a.Email || "").toLowerCase();
+        const nameB = (b.full_name || b['Full Name'] || b.email || b.Email || "").toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      console.log("Final users for handover table:", normalizedUsers.length);
       setUsers(normalizedUsers);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -234,39 +273,35 @@ export default function StaffHandoverPage() {
     const staffEmailPrefix = getEmailUsername(staffMember.email || staffMember.Email).toLowerCase();
     const staffId = (staffMember.id || staffMember.ID || "").toString();
 
-    return handovers.filter(h => {
-      if (h.handover_date !== dateStr) return false;
+    const results = [];
+    handovers.forEach(h => {
+      if (h.handover_date !== dateStr) return;
 
       const hCreatorId = (h.user_id || h['User ID'] || "").toString();
       const isCreator = hCreatorId === staffId;
 
-      // New Assignment logic
-      if (h.assignment_type) {
-        let isRecipient = false;
-        if (h.assignment_type === 'OFFICE') {
-          isRecipient = STAFF_GROUPS.OFFICE.members.includes(staffEmailPrefix);
-        } else if (h.assignment_type === 'SW_OFFICE') {
-          isRecipient = STAFF_GROUPS.SW_OFFICE.members.includes(staffEmailPrefix);
-        } else if (h.assignment_type === 'SPECIFIC') {
-          isRecipient = h.recipients?.includes(staffId);
-        }
-        return isCreator || isRecipient;
+      if (h.entries && Array.isArray(h.entries)) {
+          h.entries.forEach(entry => {
+              let isRecipient = false;
+              if (entry.type === 'OFFICE') {
+                isRecipient = STAFF_GROUPS.OFFICE.members.includes(staffEmailPrefix);
+              } else if (entry.type === 'SW_OFFICE') {
+                isRecipient = STAFF_GROUPS.SW_OFFICE.members.includes(staffEmailPrefix);
+              } else if (entry.type === 'SPECIFIC') {
+                isRecipient = entry.recipients?.includes(staffId);
+              }
+
+              if (isCreator || isRecipient) {
+                  results.push({
+                      ...h,
+                      entry: entry, // Attach the specific entry
+                      isCreator
+                  });
+              }
+          });
       }
-
-      // Legacy logic
-      const assignedToId = (h.assigned_to_id || h['Assigned To ID'] || "").toString();
-      const assignedToEmail = (h.assigned_to_email || h['Assigned To Email'] || "").toLowerCase();
-      const staffEmail = (staffMember.email || staffMember.Email || "").toLowerCase();
-
-      if (assignedToId || assignedToEmail) {
-        if (assignedToId && staffId && assignedToId === staffId) return true;
-        if (assignedToEmail && staffEmail && assignedToEmail === staffEmail) return true;
-        return isCreator; // Creator also sees it
-      }
-
-      // Default: creator only
-      return isCreator;
     });
+    return results;
   }, [handovers]);
 
   const navigateWeek = (direction) => {
@@ -324,7 +359,7 @@ export default function StaffHandoverPage() {
     }
 
     setSelectedCell({ user: staffMember, date, handover: existing });
-    setHandoverContent(existing?.content || "");
+    setHandoverContent("");
     setAssignmentType(null);
     setSelectedSpecificStaff([]);
     setQueuedEntries([]);
@@ -364,52 +399,66 @@ export default function StaffHandoverPage() {
     setIsSubmitting(true);
     try {
       const dateStr = format(selectedCell.date, 'yyyy-MM-dd');
-      const existing = selectedCell.handover;
+      const existing = handovers.find(h =>
+        (h.user_id || h['User ID']) === user.id &&
+        h.handover_date === dateStr
+      );
 
-      // 1. Process Update if editing existing
+      // Collect all entries (existing + new queued + current form)
+      let allEntries = existing?.entries ? [...existing.entries] : [];
+
+      // Add queued entries
+      queuedEntries.forEach(q => {
+          allEntries.push({
+              id: q.id,
+              content: q.content,
+              type: q.type,
+              recipients: q.specificStaff
+          });
+      });
+
+      // Add current form content if valid
+      if (handoverContent.trim() && assignmentType) {
+          allEntries.push({
+              id: generateUUID(),
+              content: handoverContent,
+              type: assignmentType,
+              recipients: assignmentType === 'SPECIFIC' ? [...selectedSpecificStaff] : []
+          });
+      }
+
+      if (allEntries.length === 0) {
+          alert("Please add at least one handover note.");
+          setIsSubmitting(false);
+          return;
+      }
+
+      const combinedContent = `---JSON_ENTRIES:${JSON.stringify(allEntries)}---`;
+
       if (existing) {
-        if (existing.user_id !== user.id) {
-          throw new Error("Only the creator can edit this handover.");
-        }
         const { error } = await supabase
           .from('staff_handover')
           .update({
-            "Content": existing.assignment_type ?
-              `---ASSIGNMENT:${JSON.stringify({ type: existing.assignment_type, recipients: existing.recipients })}---\n${handoverContent}` :
-              handoverContent,
+            "Content": combinedContent,
+            "Late Reason": "", // Fix NOT NULL constraint
             "Updated At": new Date().toISOString()
           })
           .eq('"ID"', existing.id || existing.ID);
 
         if (error) throw error;
-      }
-
-      // 2. Process New/Queued entries
-      const newEntriesToSave = [...queuedEntries];
-      // Only include the current form content as a NEW entry if we are NOT editing an existing one
-      if (!existing && handoverContent.trim() && assignmentType) {
-        newEntriesToSave.push({
-          id: generateUUID(),
-          content: handoverContent,
-          type: assignmentType,
-          specificStaff: [...selectedSpecificStaff]
-        });
-      }
-
-      if (newEntriesToSave.length > 0) {
-        const insertPayloads = newEntriesToSave.map(entry => ({
-          "ID": generateUUID(),
-          "User ID": user.id,
-          "User Email": user.primaryEmailAddress?.emailAddress,
-          "Handover Date": dateStr,
-          "Content": `---ASSIGNMENT:${JSON.stringify({ type: entry.type, recipients: entry.specificStaff })}---\n${entry.content}`,
-          "Created At": new Date().toISOString(),
-          "Updated At": new Date().toISOString()
-        }));
-
+      } else {
         const { error } = await supabase
           .from('staff_handover')
-          .insert(insertPayloads);
+          .insert([{
+            "ID": generateUUID(),
+            "User ID": user.id,
+            "User Email": user.primaryEmailAddress?.emailAddress,
+            "Handover Date": dateStr,
+            "Content": combinedContent,
+            "Late Reason": "", // Fix NOT NULL constraint
+            "Created At": new Date().toISOString(),
+            "Updated At": new Date().toISOString()
+          }]);
 
         if (error) throw error;
       }
@@ -420,12 +469,15 @@ export default function StaffHandoverPage() {
         userEmail: user?.primaryEmailAddress?.emailAddress,
         actionType: existing ? ACTIONS.UPDATE : ACTIONS.CREATE,
         entityType: ENTITIES.STAFF_HANDOVER,
-        description: existing ? `Updated handover for ${dateStr}` : `Created ${newEntriesToSave.length} handover entries for ${dateStr}`
+        description: `Handover entries saved for ${dateStr}. Total notes: ${allEntries.length}`
       });
 
       await fetchHandovers();
       setIsDialogOpen(false);
       setQueuedEntries([]);
+      setHandoverContent("");
+      setAssignmentType(null);
+      setSelectedSpecificStaff([]);
     } catch (err) {
       console.error("Error saving handover:", err);
       alert("Failed to save handover: " + err.message);
@@ -577,27 +629,29 @@ export default function StaffHandoverPage() {
                       >
                         <div className="h-full flex flex-col overflow-y-auto max-h-32 scrollbar-hide">
                           {handoversInCell.length > 0 ? (
-                            handoversInCell.map((h, idx) => {
-                                const isCreator = h.user_id === user?.id;
+                                    handoversInCell.map((cellItem, idx) => {
+                                        const h = cellItem;
+                                        const entry = cellItem.entry;
+                                        const isCreator = cellItem.isCreator;
                                 let cellColor = 'white';
                                 let textColor = 'slate-900';
 
-                                if (h.assignment_type === 'OFFICE') {
+                                        if (entry.type === 'OFFICE') {
                                     cellColor = STAFF_GROUPS.OFFICE.color;
                                     textColor = 'white';
-                                } else if (h.assignment_type === 'SW_OFFICE') {
+                                        } else if (entry.type === 'SW_OFFICE') {
                                     cellColor = STAFF_GROUPS.SW_OFFICE.color;
                                     textColor = 'white';
                                 } else {
-                                    // SPECIFIC staff or legacy
+                                            // SPECIFIC staff: get the color of the row it's in
                                     cellColor = STAFF_COLORS[staffEmailPrefix] || '#94a3b8';
                                     textColor = 'white';
                                 }
 
                                 return (
                                     <div
-                                        key={h.id || h.ID}
-                                        className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col"
+                                                key={`${h.id || h.ID}-${idx}`}
+                                                className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col border-b last:border-b-0 border-white/20"
                                         style={{ backgroundColor: cellColor, color: textColor }}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -607,7 +661,7 @@ export default function StaffHandoverPage() {
                                         <div className="flex justify-between items-start mb-1">
                                           {!isCreator && (
                                               <div className="text-[9px] font-black uppercase opacity-80">
-                                                  From: {getStaffNameById(h.user_id)}
+                                                          From: {getStaffNameById(h.user_id || h['User ID'])}
                                               </div>
                                           )}
                                           {isCreator && canEditRow && (
@@ -615,7 +669,7 @@ export default function StaffHandoverPage() {
                                           )}
                                         </div>
                                         <p className="line-clamp-3 leading-tight font-medium">
-                                            {h.content}
+                                                    {entry.content}
                                         </p>
                                     </div>
                                 );
@@ -796,12 +850,82 @@ export default function StaffHandoverPage() {
               </div>
             )}
 
-            {selectedCell?.handover && selectedCell.handover.user_id !== user?.id && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Daily Summary</label>
-                <div className="p-4 bg-slate-50 rounded-lg border text-sm text-slate-700 whitespace-pre-wrap">
-                  {selectedCell.handover.content}
-                </div>
+            {selectedCell?.handover && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    {selectedCell.handover.user_id === user?.id ? "Existing Entries" : "Handover Notes"}
+                </h4>
+                {selectedCell.handover.entries?.map((entry, idx) => {
+                    const isRecipient = entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.members.includes(getEmailUsername(selectedCell.user.email || selectedCell.user.Email).toLowerCase()) :
+                                        entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.members.includes(getEmailUsername(selectedCell.user.email || selectedCell.user.Email).toLowerCase()) :
+                                        entry.recipients?.includes((selectedCell.user.id || selectedCell.user.ID || "").toString());
+
+                    // If viewing someone else's row, only show entries assigned to them
+                    if (selectedCell.handover.user_id !== user?.id && !isRecipient) return null;
+
+                    return (
+                        <div key={entry.id || idx} className="p-3 bg-white rounded-lg border shadow-sm relative group">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Badge
+                                    className="text-[10px]"
+                                    style={{
+                                        backgroundColor: entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.color :
+                                                       entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.color : '#64748b'
+                                    }}
+                                >
+                                    {entry.type === 'OFFICE' ? 'Office' : entry.type === 'SW_OFFICE' ? 'SW + Office' : 'Specific'}
+                                </Badge>
+                                {entry.type === 'SPECIFIC' && (
+                                    <span className="text-[10px] text-slate-500 italic">
+                                        Assigned to {entry.recipients?.length} staff
+                                    </span>
+                                )}
+                                {selectedCell.handover.user_id === user?.id && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-red-500"
+                                        onClick={async () => {
+                                            if (!confirm("Are you sure you want to delete this entry?")) return;
+                                            const remainingEntries = selectedCell.handover.entries.filter(e => (e.id || e.ID) !== (entry.id || entry.ID));
+
+                                            try {
+                                                const combinedContent = remainingEntries.length > 0 ?
+                                                    `---JSON_ENTRIES:${JSON.stringify(remainingEntries)}---` : "";
+
+                                                if (remainingEntries.length > 0) {
+                                                    await supabase
+                                                        .from('staff_handover')
+                                                        .update({ "Content": combinedContent })
+                                                        .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
+                                                } else {
+                                                    await supabase
+                                                        .from('staff_handover')
+                                                        .delete()
+                                                        .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
+                                                    setIsDialogOpen(false);
+                                                }
+                                                await fetchHandovers();
+                                                // Refresh local state if possible
+                                                if (remainingEntries.length > 0) {
+                                                    setSelectedCell(prev => ({
+                                                        ...prev,
+                                                        handover: { ...prev.handover, entries: remainingEntries, content: combinedContent }
+                                                    }));
+                                                }
+                                            } catch (err) {
+                                                console.error("Delete failed", err);
+                                            }
+                                        }}
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                )}
+                            </div>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{entry.content}</p>
+                        </div>
+                    );
+                })}
               </div>
             )}
 
