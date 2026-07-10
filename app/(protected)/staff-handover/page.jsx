@@ -59,12 +59,24 @@ const STAFF_GROUPS = {
   }
 };
 
-const STAFF_COLORS = {
-  "amaani": "#AF8FE3",
+const TEAMSUP_COLORS = {
+  "amaani": "#B388EB",
   "burton": "#42A5F5",
-  "francesca": "#4B6F44", // Support Worker -> Bogey Green
-  "hasib": "#4B6F44",      // Support Worker -> Bogey Green
-  "jessica": "#4B6F44",    // Support Worker -> Bogey Green
+  "francesca": "#FFC107",
+  "hasib": "#3F51B5",
+  "jessica": "#FF7043",
+  "jess": "#FF7043",
+  "leticia": "#E91E63",
+  "sulekha": "#26A69A",
+};
+
+const STAFF_COLORS = {
+  "amaani": "#B388EB",
+  "burton": "#42A5F5",
+  "francesca": "#4B6F44", // SW -> Bogey Green
+  "hasib": "#4B6F44",      // SW -> Bogey Green
+  "jessica": "#4B6F44",    // SW -> Bogey Green
+  "jess": "#4B6F44",       // SW -> Bogey Green
   "leticia": "#E91E63",
   "sulekha": "#26A69A",
 };
@@ -170,7 +182,7 @@ export default function StaffHandoverPage() {
 
       if (error) throw error;
 
-      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca"];
+      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"];
       const existingPrefixes = new Set();
 
       const normalizedUsers = (data || [])
@@ -238,32 +250,51 @@ export default function StaffHandoverPage() {
 
   const weekDates = DAYS_OF_WEEK.map((_, index) => addDays(currentWeekStart, index));
 
+  const findStaffByAny = useCallback((id, email) => {
+    if (!id && !email) return null;
+    const prefix = email ? getEmailUsername(email).toLowerCase().trim() : null;
+
+    // Also consider the current user as a source of truth
+    if (user) {
+        const clerkId = user.id;
+        const clerkEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase().trim();
+        const clerkPrefix = clerkEmail?.split('@')[0];
+
+        if ((id && id.toString() === clerkId) || (prefix && prefix === clerkPrefix)) {
+            return {
+                id: clerkId,
+                email: clerkEmail,
+                full_name: user.fullName || (clerkPrefix ? clerkPrefix.charAt(0).toUpperCase() + clerkPrefix.slice(1) : "Me")
+            };
+        }
+    }
+
+    return users.find(u => {
+        const uId = (u.id || u.ID || "").toString();
+        const uEmail = (u.email || u.Email || "").toLowerCase().trim();
+        const uPrefix = uEmail.split('@')[0].toLowerCase();
+
+        if (id && uId === id.toString()) return true;
+        if (prefix && uPrefix === prefix) return true;
+        return false;
+    });
+  }, [users, user]);
+
   const isCurrentUser = useCallback((staffMember) => {
     if (!user) return false;
 
     const clerkEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase();
     const clerkId = user.id;
-    const clerkName = user.fullName?.toLowerCase();
 
-    const staffEmail = (staffMember.email || staffMember.Email || staffMember.user_email || "").toLowerCase();
+    const staffEmail = (staffMember.email || staffMember.Email || "").toLowerCase();
     const staffId = (staffMember.id || staffMember.ID || "").toString();
-    const staffName = (staffMember.full_name || staffMember['Full Name'] || "").toLowerCase();
 
-    // 1. Try matching by Clerk ID
     if (clerkId && staffId && clerkId === staffId) return true;
-
-    // 2. Try matching by Exact Email
-    if (clerkEmail && staffEmail && clerkEmail === staffEmail) return true;
-
-    // 3. Try matching by Email Prefix (e.g. sulekha@...)
     if (clerkEmail && staffEmail) {
         const clerkPrefix = clerkEmail.split('@')[0];
         const staffPrefix = staffEmail.split('@')[0];
-        if (clerkPrefix === staffPrefix && clerkPrefix.length > 2) return true;
+        if (clerkPrefix === staffPrefix && clerkPrefix.length > 1) return true;
     }
-
-    // 4. Try matching by Name
-    if (clerkName && staffName && clerkName === staffName && clerkName.length > 2) return true;
 
     return false;
   }, [user]);
@@ -278,7 +309,14 @@ export default function StaffHandoverPage() {
       if (h.handover_date !== dateStr) return;
 
       const hCreatorId = (h.user_id || h['User ID'] || "").toString();
-      const isCreator = hCreatorId === staffId;
+      const hCreatorEmail = (h.user_email || h['User Email'] || "");
+
+      // Use robust matching for creator
+      const creatorStaff = findStaffByAny(hCreatorId, hCreatorEmail);
+      const isCreator = creatorStaff && (
+          (creatorStaff.id || creatorStaff.ID)?.toString() === staffId ||
+          getEmailUsername(creatorStaff.email || creatorStaff.Email).toLowerCase() === staffEmailPrefix
+      );
 
       if (h.entries && Array.isArray(h.entries)) {
           h.entries.forEach(entry => {
@@ -288,13 +326,17 @@ export default function StaffHandoverPage() {
               } else if (entry.type === 'SW_OFFICE') {
                 isRecipient = STAFF_GROUPS.SW_OFFICE.members.includes(staffEmailPrefix);
               } else if (entry.type === 'SPECIFIC') {
-                isRecipient = entry.recipients?.includes(staffId);
+                // Specific recipients are stored by ID, but we should also check synthesis compatibility
+                isRecipient = entry.recipients?.some(rid => {
+                    const rStaff = findStaffByAny(rid, null);
+                    return rStaff && getEmailUsername(rStaff.email || rStaff.Email).toLowerCase() === staffEmailPrefix;
+                });
               }
 
               if (isCreator || isRecipient) {
                   results.push({
                       ...h,
-                      entry: entry, // Attach the specific entry
+                      entry: entry,
                       isCreator
                   });
               }
@@ -302,7 +344,7 @@ export default function StaffHandoverPage() {
       }
     });
     return results;
-  }, [handovers]);
+  }, [handovers, findStaffByAny]);
 
   const navigateWeek = (direction) => {
     setCurrentWeekStart(prev => addDays(prev, direction * 7));
@@ -435,12 +477,14 @@ export default function StaffHandoverPage() {
 
       const combinedContent = `---JSON_ENTRIES:${JSON.stringify(allEntries)}---`;
 
+      const userEmail = user.primaryEmailAddress?.emailAddress;
       if (existing) {
         const { error } = await supabase
           .from('staff_handover')
           .update({
             "Content": combinedContent,
-            "Late Reason": "", // Fix NOT NULL constraint
+            "User Email": userEmail,
+            "Late Reason": "",
             "Updated At": new Date().toISOString()
           })
           .eq('"ID"', existing.id || existing.ID);
@@ -452,10 +496,10 @@ export default function StaffHandoverPage() {
           .insert([{
             "ID": generateUUID(),
             "User ID": user.id,
-            "User Email": user.primaryEmailAddress?.emailAddress,
+            "User Email": userEmail,
             "Handover Date": dateStr,
             "Content": combinedContent,
-            "Late Reason": "", // Fix NOT NULL constraint
+            "Late Reason": "",
             "Created At": new Date().toISOString(),
             "Updated At": new Date().toISOString()
           }]);
@@ -514,9 +558,21 @@ export default function StaffHandoverPage() {
     }
   };
 
-  const getStaffNameById = (id) => {
-    const u = users.find(u => (u.id || u.ID)?.toString() === id?.toString());
-    if (u) return u.full_name || u['Full Name'] || getEmailUsername(u.email || u.Email);
+  const getStaffNameById = (id, email = null) => {
+    const s = findStaffByAny(id, email);
+    if (s) return s.full_name || s['Full Name'] || getEmailUsername(s.email || s.Email);
+
+    if (email) {
+        const prefix = getEmailUsername(email);
+        if (prefix && prefix !== "Unknown") {
+            return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+        }
+    }
+
+    if (user && id?.toString() === user.id?.toString()) {
+        return user.fullName || getEmailUsername(user.primaryEmailAddress?.emailAddress);
+    }
+
     return "Unknown Staff";
   };
 
@@ -605,7 +661,9 @@ export default function StaffHandoverPage() {
                           {getEmailUsername(staffEmail).substring(0, 2)}
                         </div>
                         <div className="flex flex-col">
-                          <span className="capitalize">{getEmailUsername(staffEmail)}</span>
+                          <span className="capitalize font-bold" style={{ color: TEAMSUP_COLORS[staffEmailPrefix] || 'inherit' }}>
+                            {getEmailUsername(staffEmail)}
+                          </span>
                           {isMe && (
                             <span className="text-[10px] text-purple-600 font-bold uppercase tracking-tighter">You</span>
                           )}
@@ -661,7 +719,7 @@ export default function StaffHandoverPage() {
                                         <div className="flex justify-between items-start mb-1">
                                           {!isCreator && (
                                               <div className="text-[9px] font-black uppercase opacity-80">
-                                                          From: {getStaffNameById(h.user_id || h['User ID'])}
+                                                          From: {getStaffNameById(h.user_id || h['User ID'] || h.User_ID, h.user_email || h['User Email'] || h.User_Email)}
                                               </div>
                                           )}
                                           {isCreator && canEditRow && (
@@ -710,7 +768,7 @@ export default function StaffHandoverPage() {
             {selectedCell?.handover && selectedCell.handover.user_id !== user?.id && (
                 <div className="p-3 bg-purple-50 rounded-lg border border-purple-100 text-sm">
                     <span className="font-bold text-purple-700">From: </span>
-                    <span className="text-slate-700">{getStaffNameById(selectedCell.handover.user_id)}</span>
+                    <span className="text-slate-700">{getStaffNameById(selectedCell.handover.user_id, selectedCell.handover.user_email || selectedCell.handover['User Email'] || selectedCell.handover.User_Email)}</span>
                 </div>
             )}
 
@@ -796,17 +854,17 @@ export default function StaffHandoverPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {users.map((u) => {
                         const emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
-                        const staffColor = STAFF_COLORS[emailPrefix] || '#94a3b8';
+                        const teamsupColor = TEAMSUP_COLORS[emailPrefix] || '#94a3b8';
                         const isSelected = selectedSpecificStaff.includes((u.id || u.ID || "").toString());
-                        const isOffice = STAFF_GROUPS.OFFICE.members.includes(emailPrefix);
 
                         return (
                           <div
                             key={u.id || u.ID}
-                            className={`flex items-center space-x-2 p-2 rounded border bg-white cursor-pointer transition-all ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
+                            className={`flex items-center space-x-2 p-2 rounded border transition-all cursor-pointer ${isSelected ? 'ring-2 ring-offset-1' : 'bg-white'}`}
                             style={{
-                              borderColor: isSelected ? staffColor : '#e2e8f0',
-                              boxShadow: isSelected ? `0 0 0 2px ${staffColor}44` : 'none'
+                              borderColor: isSelected ? teamsupColor : '#e2e8f0',
+                              backgroundColor: isSelected ? `${teamsupColor}15` : 'white',
+                              boxShadow: isSelected ? `0 0 0 2px ${teamsupColor}33` : 'none'
                             }}
                             onClick={() => {
                               const id = (u.id || u.ID || "").toString();
@@ -816,7 +874,7 @@ export default function StaffHandoverPage() {
                             }}
                           >
                             <Checkbox checked={isSelected} />
-                            <span className="text-xs font-semibold truncate" style={{ color: isSelected ? staffColor : (isOffice ? STAFF_GROUPS.OFFICE.color : STAFF_GROUPS.SW_OFFICE.color) }}>
+                            <span className="text-xs font-bold truncate" style={{ color: teamsupColor }}>
                               {u.full_name || u['Full Name'] || getEmailUsername(u.email || u.Email)}
                             </span>
                           </div>
