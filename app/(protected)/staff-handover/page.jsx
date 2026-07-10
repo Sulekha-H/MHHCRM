@@ -99,7 +99,7 @@ const normalizeHandover = (handover) => {
   });
 
   // Extract Assignment Metadata from Content if present
-  if (normalized.content && normalized.content.startsWith('---ASSIGNMENT:')) {
+  if (normalized.content && typeof normalized.content === 'string' && normalized.content.startsWith('---ASSIGNMENT:')) {
     const match = normalized.content.match(/^---ASSIGNMENT:([\s\S]*?)---\n([\s\S]*)$/);
     if (match) {
       try {
@@ -419,7 +419,7 @@ export default function StaffHandoverPage() {
         userName: user?.fullName || "Unknown",
         userEmail: user?.primaryEmailAddress?.emailAddress,
         actionType: existing ? ACTIONS.UPDATE : ACTIONS.CREATE,
-        entityType: 'STAFF_HANDOVER',
+        entityType: ENTITIES.STAFF_HANDOVER,
         description: existing ? `Updated handover for ${dateStr}` : `Created ${newEntriesToSave.length} handover entries for ${dateStr}`
       });
 
@@ -540,6 +540,7 @@ export default function StaffHandoverPage() {
               {users.map((staffMember) => {
                 const isMe = isCurrentUser(staffMember);
                 const staffEmail = staffMember.email || staffMember.Email || "";
+                const staffEmailPrefix = getEmailUsername(staffEmail).toLowerCase();
 
                 return (
                 <TableRow key={staffMember.id || staffMember.ID} className="hover:bg-slate-50/50 transition-colors">
@@ -596,7 +597,7 @@ export default function StaffHandoverPage() {
                                 return (
                                     <div
                                         key={h.id || h.ID}
-                                        className={`p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col`}
+                                        className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col"
                                         style={{ backgroundColor: cellColor, color: textColor }}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -742,16 +743,19 @@ export default function StaffHandoverPage() {
                       {users.map((u) => {
                         const emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
                         const staffColor = STAFF_COLORS[emailPrefix] || '#94a3b8';
-                        const isSelected = selectedSpecificStaff.includes((u.id || u.ID).toString());
+                        const isSelected = selectedSpecificStaff.includes((u.id || u.ID || "").toString());
                         const isOffice = STAFF_GROUPS.OFFICE.members.includes(emailPrefix);
 
                         return (
                           <div
                             key={u.id || u.ID}
                             className={`flex items-center space-x-2 p-2 rounded border bg-white cursor-pointer transition-all ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
-                            style={{ borderColor: isSelected ? staffColor : '#e2e8f0', ringColor: staffColor }}
+                            style={{
+                              borderColor: isSelected ? staffColor : '#e2e8f0',
+                              boxShadow: isSelected ? `0 0 0 2px ${staffColor}44` : 'none'
+                            }}
                             onClick={() => {
-                              const id = (u.id || u.ID).toString();
+                              const id = (u.id || u.ID || "").toString();
                               setSelectedSpecificStaff(prev =>
                                 prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
                               );
@@ -829,7 +833,10 @@ export default function StaffHandoverPage() {
                                         {comment.content || comment.Content}
                                     </div>
                                     <div className="text-[9px] text-slate-400 mt-1">
-                                        {format(new Date(comment.created_at || comment['Created At']), 'MMM d, HH:mm')}
+                                        {(() => {
+                                          const d = new Date(comment.created_at || comment['Created At']);
+                                          return isNaN(d.getTime()) ? 'Recently' : format(d, 'MMM d, HH:mm');
+                                        })()}
                                     </div>
                                 </div>
                             ))
