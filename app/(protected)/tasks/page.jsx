@@ -144,6 +144,20 @@ export default function TasksPage() {
       );
     }
 
+    // Filter out orphaned system routine tasks (tasks created by System Routine that are no longer in WEEKLY_ROUTINES)
+    const allRoutineTitles = new Set(ROUTINE_TITLES.map(t => t.toLowerCase()));
+
+    filtered = filtered.filter(t => {
+      const loggedBy = (t["Logged By"] || t.logged_by || "").toLowerCase().trim();
+      const createdBy = (t["Created By"] || t.created_by || "").toLowerCase().trim();
+      const isSystemRoutine = loggedBy === "system routine" || createdBy === "system routine";
+
+      if (isSystemRoutine) {
+        return allRoutineTitles.has((t.Title || "").trim().toLowerCase());
+      }
+      return true;
+    });
+
     setFilteredTasks(filtered);
   }, [tasks, selectedDate, filters]);
 
