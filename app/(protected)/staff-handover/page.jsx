@@ -16,7 +16,9 @@ import {
   Loader2,
   Clock,
   AlertCircle,
-  FileText
+  FileText,
+  CheckCircle2,
+  Trash2
 } from "lucide-react";
 import { generateUUID } from "@/lib/utils";
 import {
@@ -39,16 +41,34 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+const STAFF_GROUPS = {
+  OFFICE: {
+    name: "Office only",
+    color: "#673AB7", // Deep Purple
+    members: ["sulekha", "amaani", "leticia", "burton"]
+  },
+  SW_OFFICE: {
+    name: "SW + Office",
+    color: "#4B6F44", // Bogey Green
+    members: ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"]
+  }
+};
+
+const STAFF_COLORS = {
+  "amaani": "#AF8FE3",
+  "burton": "#42A5F5",
+  "francesca": "#FFC107",
+  "hasib": "#3F51B5",
+  "jessica": "#FF7043",
+  "leticia": "#E91E63",
+  "sulekha": "#26A69A",
+  "jess": "#FF7043", // Alias for jessica
+};
 
 const normalizeUser = (user) => {
   if (!user) return user;
@@ -63,6 +83,11 @@ const normalizeUser = (user) => {
   return normalized;
 };
 
+const getEmailUsername = (email) => {
+  if (!email) return "Unknown";
+  return email.split('@')[0];
+};
+
 const normalizeHandover = (handover) => {
   if (!handover) return handover;
   const normalized = { ...handover };
@@ -72,6 +97,22 @@ const normalizeHandover = (handover) => {
       normalized[normalizedKey] = handover[key];
     }
   });
+
+  // Extract Assignment Metadata from Content if present
+  if (normalized.content && normalized.content.startsWith('---ASSIGNMENT:')) {
+    const match = normalized.content.match(/^---ASSIGNMENT:([\s\S]*?)---\n([\s\S]*)$/);
+    if (match) {
+      try {
+        const metadata = JSON.parse(match[1]);
+        normalized.assignment_type = metadata.type;
+        normalized.recipients = metadata.recipients || [];
+        normalized.content = match[2];
+      } catch (e) {
+        console.error("Failed to parse handover metadata", e);
+      }
+    }
+  }
+
   return normalized;
 };
 
@@ -88,23 +129,15 @@ export default function StaffHandoverPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null); // { user, date, handover }
   const [handoverContent, setHandoverContent] = useState("");
-  const [lateReason, setLateReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assignee, setAssignee] = useState(null); // { id, email, name }
+  const [queuedEntries, setQueuedEntries] = useState([]);
+  const [assignmentType, setAssignmentType] = useState(null); // 'OFFICE', 'SW_OFFICE', 'SPECIFIC'
+  const [selectedSpecificStaff, setSelectedSpecificStaff] = useState([]); // Array of IDs
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [isFetchingComments, setIsFetchingComments] = useState(false);
 
-  // Initialize assignee to self when user is loaded
-  useEffect(() => {
-    if (user && !assignee) {
-      setAssignee({
-        id: user.id,
-        email: user.primaryEmailAddress?.emailAddress,
-        name: user.fullName
-      });
-    }
-  }, [user, assignee]);
 
   const fetchUsers = useCallback(async () => {
     if (!supabase) return;
@@ -115,14 +148,13 @@ export default function StaffHandoverPage() {
 
       if (error) throw error;
 
+      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"];
+
       const normalizedUsers = (data || [])
         .map(normalizeUser)
         .filter(u => {
-          // Normalize active status - default to true if null/undefined
-          const isActive = u.is_active !== false && u.is_active !== 'FALSE' && u['Is Active'] !== false;
-          const name = (u.full_name || u['Full Name'] || u.email || u.Email || "").toLowerCase();
-          const isTest = name.includes('test') || name.includes('demo');
-          return isActive && !isTest && name.trim() !== "";
+          const emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
+          return exhaustiveStaff.includes(emailPrefix);
         })
         .sort((a, b) => {
           const nameA = (a.full_name || a['Full Name'] || a.email || a.Email || "").toLowerCase();
@@ -199,33 +231,43 @@ export default function StaffHandoverPage() {
 
   const getHandoversForCell = useCallback((staffMember, date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const staffEmail = (staffMember.email || staffMember.Email || staffMember.user_email || "").toLowerCase();
+    const staffEmailPrefix = getEmailUsername(staffMember.email || staffMember.Email).toLowerCase();
     const staffId = (staffMember.id || staffMember.ID || "").toString();
 
     return handovers.filter(h => {
       if (h.handover_date !== dateStr) return false;
 
+      const hCreatorId = (h.user_id || h['User ID'] || "").toString();
+      const isCreator = hCreatorId === staffId;
+
+      // New Assignment logic
+      if (h.assignment_type) {
+        let isRecipient = false;
+        if (h.assignment_type === 'OFFICE') {
+          isRecipient = STAFF_GROUPS.OFFICE.members.includes(staffEmailPrefix);
+        } else if (h.assignment_type === 'SW_OFFICE') {
+          isRecipient = STAFF_GROUPS.SW_OFFICE.members.includes(staffEmailPrefix);
+        } else if (h.assignment_type === 'SPECIFIC') {
+          isRecipient = h.recipients?.includes(staffId);
+        }
+        return isCreator || isRecipient;
+      }
+
+      // Legacy logic
       const assignedToId = (h.assigned_to_id || h['Assigned To ID'] || "").toString();
       const assignedToEmail = (h.assigned_to_email || h['Assigned To Email'] || "").toLowerCase();
+      const staffEmail = (staffMember.email || staffMember.Email || "").toLowerCase();
 
-      // If the record has explicit assignment columns, use them
       if (assignedToId || assignedToEmail) {
         if (assignedToId && staffId && assignedToId === staffId) return true;
         if (assignedToEmail && staffEmail && assignedToEmail === staffEmail) return true;
-        return false;
+        return isCreator; // Creator also sees it
       }
 
-      // Fallback for old records (before migration): use User ID/Email as both creator and assignee
-      const hEmail = (h.user_email || "").toLowerCase();
-      const hUserId = (h.user_id || "").toString();
-
-      if (hEmail && staffEmail && hEmail === staffEmail) return true;
-      if (hUserId && staffId && hUserId === staffId) return true;
-      if (isCurrentUser(staffMember) && hUserId === user?.id) return true;
-
-      return false;
+      // Default: creator only
+      return isCreator;
     });
-  }, [handovers, user, isCurrentUser]);
+  }, [handovers]);
 
   const navigateWeek = (direction) => {
     setCurrentWeekStart(prev => addDays(prev, direction * 7));
@@ -283,7 +325,9 @@ export default function StaffHandoverPage() {
 
     setSelectedCell({ user: staffMember, date, handover: existing });
     setHandoverContent(existing?.content || "");
-    setLateReason(existing?.late_reason || "");
+    setAssignmentType(null);
+    setSelectedSpecificStaff([]);
+    setQueuedEntries([]);
     setComments([]);
     setNewComment("");
     setIsDialogOpen(true);
@@ -291,6 +335,27 @@ export default function StaffHandoverPage() {
     if (existing) {
       fetchComments(existing.id || existing.ID);
     }
+  };
+
+  const handleQueueEntry = () => {
+    if (!handoverContent.trim() || !assignmentType) return;
+    if (assignmentType === 'SPECIFIC' && selectedSpecificStaff.length === 0) return;
+
+    const newEntry = {
+      id: generateUUID(),
+      content: handoverContent,
+      type: assignmentType,
+      specificStaff: [...selectedSpecificStaff]
+    };
+
+    setQueuedEntries(prev => [...prev, newEntry]);
+    setHandoverContent("");
+    setAssignmentType(null);
+    setSelectedSpecificStaff([]);
+  };
+
+  const removeQueuedEntry = (id) => {
+    setQueuedEntries(prev => prev.filter(e => e.id !== id));
   };
 
   const handleSaveHandover = async () => {
@@ -301,58 +366,66 @@ export default function StaffHandoverPage() {
       const dateStr = format(selectedCell.date, 'yyyy-MM-dd');
       const existing = selectedCell.handover;
 
-      // Determine assignee - if it's a new entry, use the current dropdown selection
-      // If it's an existing entry, keep its original assignment (creator shouldn't change assignment after creation)
-      const targetAssigneeId = existing ? (existing.assigned_to_id || existing['Assigned To ID']) : assignee?.id;
-      const targetAssigneeEmail = existing ? (existing.assigned_to_email || existing['Assigned To Email']) : assignee?.email;
-      const targetAssigneeName = existing ? getStaffNameById(targetAssigneeId) : assignee?.name;
-
-      const payload = {
-        "User ID": user.id,
-        "User Email": user.primaryEmailAddress?.emailAddress,
-        "Handover Date": dateStr,
-        "Content": handoverContent,
-        "Late Reason": lateReason || null,
-        "Updated At": new Date().toISOString(),
-        "Assigned To ID": targetAssigneeId,
-        "Assigned To Email": targetAssigneeEmail
-      };
-
-      let error;
+      // 1. Process Update if editing existing
       if (existing) {
-        // Only creator can update content
         if (existing.user_id !== user.id) {
-            throw new Error("Only the creator can edit this handover.");
+          throw new Error("Only the creator can edit this handover.");
         }
-        const { error: updateError } = await supabase
+        const { error } = await supabase
           .from('staff_handover')
-          .update(payload)
+          .update({
+            "Content": existing.assignment_type ?
+              `---ASSIGNMENT:${JSON.stringify({ type: existing.assignment_type, recipients: existing.recipients })}---\n${handoverContent}` :
+              handoverContent,
+            "Updated At": new Date().toISOString()
+          })
           .eq('"ID"', existing.id || existing.ID);
-        error = updateError;
-      } else {
-        const insertPayload = {
-          ...payload,
-          "ID": generateUUID(),
-          "Created At": new Date().toISOString()
-        };
-        const { error: insertError } = await supabase
-          .from('staff_handover')
-          .insert([insertPayload]);
-        error = insertError;
+
+        if (error) throw error;
       }
 
-      if (error) throw error;
+      // 2. Process New/Queued entries
+      const newEntriesToSave = [...queuedEntries];
+      // Only include the current form content as a NEW entry if we are NOT editing an existing one
+      if (!existing && handoverContent.trim() && assignmentType) {
+        newEntriesToSave.push({
+          id: generateUUID(),
+          content: handoverContent,
+          type: assignmentType,
+          specificStaff: [...selectedSpecificStaff]
+        });
+      }
 
+      if (newEntriesToSave.length > 0) {
+        const insertPayloads = newEntriesToSave.map(entry => ({
+          "ID": generateUUID(),
+          "User ID": user.id,
+          "User Email": user.primaryEmailAddress?.emailAddress,
+          "Handover Date": dateStr,
+          "Content": `---ASSIGNMENT:${JSON.stringify({ type: entry.type, recipients: entry.specificStaff })}---\n${entry.content}`,
+          "Created At": new Date().toISOString(),
+          "Updated At": new Date().toISOString()
+        }));
+
+        const { error } = await supabase
+          .from('staff_handover')
+          .insert(insertPayloads);
+
+        if (error) throw error;
+      }
+
+      // Log activity
       await logActivity(supabase, {
         userName: user?.fullName || "Unknown",
         userEmail: user?.primaryEmailAddress?.emailAddress,
         actionType: existing ? ACTIONS.UPDATE : ACTIONS.CREATE,
         entityType: 'STAFF_HANDOVER',
-        description: `${existing ? 'Updated' : 'Created'} handover for ${dateStr}${targetAssigneeId !== user.id ? ` assigned to ${targetAssigneeName}` : ''}`
+        description: existing ? `Updated handover for ${dateStr}` : `Created ${newEntriesToSave.length} handover entries for ${dateStr}`
       });
 
       await fetchHandovers();
       setIsDialogOpen(false);
+      setQueuedEntries([]);
     } catch (err) {
       console.error("Error saving handover:", err);
       alert("Failed to save handover: " + err.message);
@@ -361,13 +434,6 @@ export default function StaffHandoverPage() {
     }
   };
 
-  const isLate = (date) => {
-    const now = new Date();
-    if (!isSameDay(now, date)) return false;
-
-    const deadline = setMinutes(setHours(startOfDay(date), 16), 0);
-    return isAfter(now, deadline);
-  };
 
   const handleAddComment = async () => {
     if (!newComment.trim() || !selectedCell?.handover || !supabase || !user) return;
@@ -394,11 +460,6 @@ export default function StaffHandoverPage() {
       console.error("Error adding comment:", err);
       alert("Failed to add comment: " + err.message);
     }
-  };
-
-  const getEmailUsername = (email) => {
-    if (!email) return "Unknown";
-    return email.split('@')[0];
   };
 
   const getStaffNameById = (id) => {
@@ -446,7 +507,8 @@ export default function StaffHandoverPage() {
             onClick={() => {
               const me = users.find(u => isCurrentUser(u));
               if (me) {
-                handleCellClick(me, new Date());
+                // Ensure we start a fresh entry when clicking the top button
+                handleCellClick(me, new Date(), null);
               } else {
                 alert(`Could not identify your staff record. Logged in as: ${user?.primaryEmailAddress?.emailAddress || 'Unknown'}. Please ensure your email matches a record in the staff list.`);
               }
@@ -497,38 +559,6 @@ export default function StaffHandoverPage() {
                         </div>
                       </div>
 
-                      <div className="mt-1">
-                        <Select
-                          disabled={!isMe}
-                          value={isMe ? (assignee?.id || "self") : "self"}
-                          onValueChange={(val) => {
-                            if (val === "self") {
-                              setAssignee({ id: user.id, email: user.primaryEmailAddress?.emailAddress, name: user.fullName });
-                            } else {
-                              const target = users.find(u => (u.id || u.ID)?.toString() === val);
-                              setAssignee({
-                                id: val,
-                                email: target.email || target.Email,
-                                name: target.full_name || target['Full Name'] || getEmailUsername(target.email || target.Email)
-                              });
-                            }
-                          }}
-                        >
-                          <SelectTrigger className={`h-8 text-[10px] ${!isMe ? 'opacity-50 cursor-not-allowed bg-transparent border-0 p-0 shadow-none' : 'bg-white'}`}>
-                            <SelectValue placeholder="Assign to..." />
-                          </SelectTrigger>
-                          {isMe && (
-                            <SelectContent>
-                              <SelectItem value="self">Self</SelectItem>
-                              {users.filter(u => !isCurrentUser(u)).map(u => (
-                                <SelectItem key={u.id || u.ID} value={(u.id || u.ID).toString()}>
-                                  {u.full_name || u['Full Name'] || getEmailUsername(u.email || u.Email)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          )}
-                        </Select>
-                      </div>
                     </div>
                   </TableCell>
                   {weekDates.map((date, i) => {
@@ -541,40 +571,56 @@ export default function StaffHandoverPage() {
                     return (
                       <TableCell
                         key={i}
-                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEditRow ? 'cursor-pointer hover:bg-slate-50 transition-colors group' : ''} ${isMe ? 'bg-purple-50/30' : ''}`}
+                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEditRow ? 'cursor-pointer hover:opacity-90 transition-all group' : ''} ${isMe ? 'bg-purple-50/20' : ''}`}
                         onClick={() => handleCellClick(staffMember, date)}
                       >
-                        <div className="p-2 h-full flex flex-col gap-2 overflow-y-auto max-h-32 scrollbar-hide">
+                        <div className="h-full flex flex-col overflow-y-auto max-h-32 scrollbar-hide">
                           {handoversInCell.length > 0 ? (
                             handoversInCell.map((h, idx) => {
                                 const isCreator = h.user_id === user?.id;
+                                let cellColor = 'white';
+                                let textColor = 'slate-900';
+
+                                if (h.assignment_type === 'OFFICE') {
+                                    cellColor = STAFF_GROUPS.OFFICE.color;
+                                    textColor = 'white';
+                                } else if (h.assignment_type === 'SW_OFFICE') {
+                                    cellColor = STAFF_GROUPS.SW_OFFICE.color;
+                                    textColor = 'white';
+                                } else {
+                                    // SPECIFIC staff or legacy
+                                    cellColor = STAFF_COLORS[staffEmailPrefix] || '#94a3b8';
+                                    textColor = 'white';
+                                }
+
                                 return (
                                     <div
                                         key={h.id || h.ID}
-                                        className={`p-2 rounded border text-xs bg-white shadow-sm hover:ring-1 hover:ring-purple-200 transition-all ${idx > 0 ? 'mt-1' : ''}`}
+                                        className={`p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col`}
+                                        style={{ backgroundColor: cellColor, color: textColor }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleCellClick(staffMember, date, h);
                                         }}
                                     >
-                                        {!isCreator && (
-                                            <div className="text-[9px] font-bold text-purple-600 uppercase mb-1">
-                                                From: {getStaffNameById(h.user_id)}
-                                            </div>
-                                        )}
-                                        <p className="text-slate-600 line-clamp-2 leading-tight">
+                                        <div className="flex justify-between items-start mb-1">
+                                          {!isCreator && (
+                                              <div className="text-[9px] font-black uppercase opacity-80">
+                                                  From: {getStaffNameById(h.user_id)}
+                                              </div>
+                                          )}
+                                          {isCreator && canEditRow && (
+                                            <Edit2 className="w-3 h-3 opacity-50 ml-auto" />
+                                          )}
+                                        </div>
+                                        <p className="line-clamp-3 leading-tight font-medium">
                                             {h.content}
                                         </p>
-                                        {h.late_reason && (
-                                            <Badge variant="outline" className="mt-1 text-[8px] bg-amber-50 text-amber-700 border-amber-200 px-1 py-0 h-4">
-                                                {h.late_reason}
-                                            </Badge>
-                                        )}
                                     </div>
                                 );
                             })
                           ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-300 p-2">
                                 {isPast ? (
                                     <span className="text-[10px] italic">No entry</span>
                                 ) : canEditRow ? (
@@ -583,11 +629,6 @@ export default function StaffHandoverPage() {
                                         <span className="text-[9px] font-medium uppercase tracking-wider">Add Entry</span>
                                     </div>
                                 ) : null}
-                            </div>
-                          )}
-                          {canEditRow && handoversInCell.some(h => h.user_id === user?.id) && (
-                            <div className="mt-auto flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Edit2 className="w-3 h-3 text-slate-400" />
                             </div>
                           )}
                         </div>
@@ -618,36 +659,145 @@ export default function StaffHandoverPage() {
                 </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Daily Summary</label>
-              <Textarea
-                placeholder="Write your handover notes for today..."
-                className="min-h-[150px] resize-none"
-                value={handoverContent}
-                onChange={(e) => setHandoverContent(e.target.value)}
-                readOnly={selectedCell?.handover && selectedCell.handover.user_id !== user?.id}
-              />
-            </div>
+            {/* Queued Entries Display */}
+            {queuedEntries.length > 0 && (
+              <div className="space-y-2 border rounded-lg p-3 bg-slate-50">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Queued Handovers</h4>
+                {queuedEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-start justify-between gap-2 p-2 bg-white rounded border shadow-sm">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge
+                          className="text-[10px]"
+                          style={{
+                            backgroundColor: entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.color :
+                                           entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.color : '#64748b'
+                          }}
+                        >
+                          {entry.type === 'OFFICE' ? 'Office' : entry.type === 'SW_OFFICE' ? 'SW + Office' : 'Specific'}
+                        </Badge>
+                        {entry.type === 'SPECIFIC' && (
+                          <span className="text-[10px] text-slate-500">
+                            {entry.specificStaff.length} staff
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 line-clamp-2">{entry.content}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-slate-400 hover:text-red-500"
+                      onClick={() => removeQueuedEntry(entry.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {selectedCell && isLate(selectedCell.date) && (!selectedCell.handover || selectedCell.handover.user_id === user?.id) && (
-              <div className="space-y-2 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                <div className="flex items-center gap-2 text-amber-800 text-sm font-semibold mb-1">
-                  <Clock className="w-4 h-4" />
-                  Late Submission (After 4 PM)
+            {/* Form Section */}
+            {(!selectedCell?.handover || selectedCell.handover.user_id === user?.id) && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-slate-700">Assign Handover To:</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div
+                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${assignmentType === 'OFFICE' ? 'bg-purple-50 border-purple-200' : 'hover:bg-slate-50'}`}
+                      onClick={() => setAssignmentType('OFFICE')}
+                    >
+                      <Checkbox checked={assignmentType === 'OFFICE'} onCheckedChange={() => setAssignmentType('OFFICE')} />
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STAFF_GROUPS.OFFICE.color }} />
+                        <span className="text-sm font-medium">Office Only</span>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${assignmentType === 'SW_OFFICE' ? 'bg-green-50 border-green-200' : 'hover:bg-slate-50'}`}
+                      onClick={() => setAssignmentType('SW_OFFICE')}
+                    >
+                      <Checkbox checked={assignmentType === 'SW_OFFICE'} onCheckedChange={() => setAssignmentType('SW_OFFICE')} />
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STAFF_GROUPS.SW_OFFICE.color }} />
+                        <span className="text-sm font-medium">SW + Office</span>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer ${assignmentType === 'SPECIFIC' ? 'bg-blue-50 border-blue-200' : 'hover:bg-slate-50'}`}
+                      onClick={() => setAssignmentType('SPECIFIC')}
+                    >
+                      <Checkbox checked={assignmentType === 'SPECIFIC'} onCheckedChange={() => setAssignmentType('SPECIFIC')} />
+                      <span className="text-sm font-medium">Specific Staff</span>
+                    </div>
+                  </div>
                 </div>
-                <label className="text-xs text-amber-700">Please provide a reason for the late entry:</label>
-                <Select value={lateReason} onValueChange={setLateReason}>
-                  <SelectTrigger className="bg-white border-amber-200">
-                    <SelectValue placeholder="Select a reason..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Illness">Illness</SelectItem>
-                    <SelectItem value="Annual Leave">Annual Leave</SelectItem>
-                    <SelectItem value="Heavy Workload">Heavy Workload</SelectItem>
-                    <SelectItem value="Emergency">Emergency</SelectItem>
-                    <SelectItem value="Meeting">Meeting</SelectItem>
-                  </SelectContent>
-                </Select>
+
+                {assignmentType === 'SPECIFIC' && (
+                  <div className="space-y-2 p-3 bg-slate-50 rounded-lg border animate-in fade-in slide-in-from-top-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase">Select Staff Members:</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {users.map((u) => {
+                        const emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
+                        const staffColor = STAFF_COLORS[emailPrefix] || '#94a3b8';
+                        const isSelected = selectedSpecificStaff.includes((u.id || u.ID).toString());
+                        const isOffice = STAFF_GROUPS.OFFICE.members.includes(emailPrefix);
+
+                        return (
+                          <div
+                            key={u.id || u.ID}
+                            className={`flex items-center space-x-2 p-2 rounded border bg-white cursor-pointer transition-all ${isSelected ? 'ring-2 ring-offset-1' : ''}`}
+                            style={{ borderColor: isSelected ? staffColor : '#e2e8f0', ringColor: staffColor }}
+                            onClick={() => {
+                              const id = (u.id || u.ID).toString();
+                              setSelectedSpecificStaff(prev =>
+                                prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                              );
+                            }}
+                          >
+                            <Checkbox checked={isSelected} />
+                            <span className="text-xs font-semibold truncate" style={{ color: isSelected ? staffColor : (isOffice ? STAFF_GROUPS.OFFICE.color : STAFF_GROUPS.SW_OFFICE.color) }}>
+                              {u.full_name || u['Full Name'] || getEmailUsername(u.email || u.Email)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {assignmentType && (
+                  <div className="space-y-2 animate-in fade-in duration-300">
+                    <label className="text-sm font-medium text-slate-700">Handover Notes</label>
+                    <Textarea
+                      placeholder="Write your handover notes here..."
+                      className="min-h-[120px] resize-none"
+                      value={handoverContent}
+                      onChange={(e) => setHandoverContent(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-dashed border-2 hover:border-purple-400 hover:bg-purple-50 text-slate-500 hover:text-purple-600"
+                      onClick={handleQueueEntry}
+                      disabled={!handoverContent.trim() || (assignmentType === 'SPECIFIC' && selectedSpecificStaff.length === 0)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Another Handover Note
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedCell?.handover && selectedCell.handover.user_id !== user?.id && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Daily Summary</label>
+                <div className="p-4 bg-slate-50 rounded-lg border text-sm text-slate-700 whitespace-pre-wrap">
+                  {selectedCell.handover.content}
+                </div>
               </div>
             )}
 
@@ -714,7 +864,7 @@ export default function StaffHandoverPage() {
             {(!selectedCell?.handover || selectedCell.handover.user_id === user?.id) && (
               <Button
                   onClick={handleSaveHandover}
-                  disabled={isSubmitting || !handoverContent.trim() || (selectedCell && isLate(selectedCell.date) && !lateReason)}
+                  disabled={isSubmitting || (queuedEntries.length === 0 && !handoverContent.trim())}
                   className="bg-purple-600 hover:bg-purple-700"
               >
                 {isSubmitting ? (
@@ -723,7 +873,7 @@ export default function StaffHandoverPage() {
                     Saving...
                   </>
                 ) : (
-                  'Save Handover'
+                  queuedEntries.length > 0 ? `Save All (${queuedEntries.length + (handoverContent.trim() ? 1 : 0)})` : 'Save Handover'
                 )}
               </Button>
             )}
