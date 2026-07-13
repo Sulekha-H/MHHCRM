@@ -14,6 +14,7 @@ import {
   Edit2,
   Plus,
   Loader2,
+  Eye,
   Clock,
   AlertCircle,
   FileText,
@@ -172,6 +173,8 @@ export default function StaffHandoverPage() {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [isFetchingComments, setIsFetchingComments] = useState(false);
+  const [previewData, setPreviewData] = useState(null); // { entry, handover, date, staffMember }
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
 
   const fetchUsers = useCallback(async () => {
@@ -745,7 +748,7 @@ export default function StaffHandoverPage() {
                                 return (
                                     <div
                                                 key={`${h.id || h.ID}-${idx}`}
-                                                className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col border-b last:border-b-0 border-white/20"
+                                                className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col border-b last:border-b-0 border-white/20 group/cell"
                                         style={{ backgroundColor: cellColor, color: textColor }}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -753,14 +756,31 @@ export default function StaffHandoverPage() {
                                         }}
                                     >
                                         <div className="flex justify-between items-start mb-1">
-                                          {!isCreator && (
+                                          {!isCreator ? (
                                               <div className="text-[9px] font-black uppercase opacity-80">
                                                           From: {getStaffNameById(h.user_id || h['User ID'] || h.User_ID, h.user_email || h['User Email'] || h.User_Email)}
                                               </div>
+                                          ) : (
+                                              <div className="text-[9px] font-black uppercase opacity-80">
+                                                  My Entry
+                                              </div>
                                           )}
-                                          {isCreator && canEditRow && (
-                                            <Edit2 className="w-3 h-3 opacity-50 ml-auto" />
-                                          )}
+                                          <div className="flex items-center gap-1 ml-auto">
+                                              <button
+                                                  className="p-1 rounded hover:bg-white/20 transition-colors opacity-0 group-hover/cell:opacity-100"
+                                                  onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setPreviewData({ entry, handover: h, date, staffMember });
+                                                      setIsPreviewOpen(true);
+                                                  }}
+                                                  title="Preview Handover"
+                                              >
+                                                  <Eye className="w-3 h-3" />
+                                              </button>
+                                              {isCreator && canEditRow && (
+                                                <Edit2 className="w-3 h-3 opacity-50" />
+                                              )}
+                                          </div>
                                         </div>
                                         <p className="line-clamp-3 leading-tight font-medium">
                                                     {entry.content}
@@ -1131,6 +1151,93 @@ export default function StaffHandoverPage() {
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Screen Read-Only Preview Modal */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl">
+          {previewData && (
+              <>
+                  <div
+                      className="p-6 text-white"
+                      style={{
+                          backgroundColor: previewData.entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.color :
+                                         previewData.entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.color :
+                                         STAFF_COLORS[getEmailUsername(previewData.staffMember.email || previewData.staffMember.Email).toLowerCase()] || '#94a3b8'
+                      }}
+                  >
+                      <div className="flex justify-between items-start mb-4">
+                          <div>
+                              <Badge className="bg-white/20 hover:bg-white/30 text-white border-none mb-2 px-3 py-1">
+                                  {previewData.entry.type === 'OFFICE' ? 'Office Only' :
+                                   previewData.entry.type === 'SW_OFFICE' ? 'SW + Office' : 'Specific Staff'}
+                              </Badge>
+                              <h2 className="text-3xl font-bold tracking-tight">Handover Preview</h2>
+                              <p className="opacity-90 font-medium">
+                                  {format(previewData.date, 'EEEE, MMMM do, yyyy')}
+                              </p>
+                          </div>
+                          <Eye className="w-12 h-12 opacity-20" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6 py-4 border-t border-white/20 mt-4">
+                          <div className="space-y-1">
+                              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">From (Sender)</p>
+                              <p className="font-bold text-lg">
+                                  {getStaffNameById(previewData.handover.user_id, previewData.handover.user_email || previewData.handover['User Email'])}
+                              </p>
+                          </div>
+                          <div className="space-y-1">
+                              <p className="text-[10px] font-black uppercase tracking-widest opacity-70">To (Recipient Row)</p>
+                              <p className="font-bold text-lg">
+                                  {previewData.staffMember.full_name || getStaffNameById(previewData.staffMember.id, previewData.staffMember.email)}
+                              </p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+                      <div className="max-w-2xl mx-auto space-y-6">
+                          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                              <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-6">Handover Content</p>
+                              <div className="text-xl text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
+                                  {previewData.entry.content}
+                              </div>
+                          </div>
+
+                          {previewData.entry.type === 'SPECIFIC' && previewData.entry.recipients?.length > 0 && (
+                              <div className="space-y-3">
+                                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Assigned Recipients</p>
+                                  <div className="flex flex-wrap gap-2">
+                                      {previewData.entry.recipients.map(rid => (
+                                          <Badge key={rid} variant="outline" className="bg-white py-1.5 px-3 text-slate-600 font-bold border-slate-200">
+                                              {getStaffNameById(rid)}
+                                          </Badge>
+                                      ))}
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+
+                  <div className="p-4 bg-white border-t flex justify-end gap-3">
+                      <Button
+                          variant="ghost"
+                          onClick={() => setIsPreviewOpen(false)}
+                          className="font-bold text-slate-500"
+                      >
+                          Close Preview
+                      </Button>
+                      <Button
+                          className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-8"
+                          onClick={() => setIsPreviewOpen(false)}
+                      >
+                          Done Reading
+                      </Button>
+                  </div>
+              </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
