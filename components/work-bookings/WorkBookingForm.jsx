@@ -22,6 +22,7 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
     payment_status: "Pending",
     work_status: "Scheduled",
     invoice_number: "",
+    invoice_file_url: "",
     description_of_work: "",
     notes: ""
   });
@@ -46,6 +47,7 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
         payment_status: booking["Payment Status"] || booking.payment_status || "Pending",
         work_status: booking["Work Status"] || booking.work_status || "Scheduled",
         invoice_number: booking["Invoice Number"] || booking.invoice_number || "",
+        invoice_file_url: booking["Invoice File URL"] || booking.invoice_file_url || "",
         description_of_work: booking["Description of Work"] || booking.description_of_work || "",
         notes: booking.Notes || booking.notes || ""
       });
@@ -261,7 +263,7 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="payment_status">Payment Status</Label>
               <Select
@@ -286,6 +288,16 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
                 value={formData.invoice_number}
                 onChange={handleChange}
                 placeholder="INV-XXXX"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="invoice_file_url">Invoice Document Link</Label>
+              <Input
+                id="invoice_file_url"
+                name="invoice_file_url"
+                value={formData.invoice_file_url}
+                onChange={handleChange}
+                placeholder="https://drive.google.com/..."
               />
             </div>
           </div>
