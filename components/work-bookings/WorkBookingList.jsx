@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Calendar, MapPin, Clock, PoundSterling, FileText } from "lucide-react";
+import { Edit, Trash2, Calendar, MapPin, Clock, PoundSterling, FileText, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 
 export default function WorkBookingList({ bookings, providers, properties, accommodations, onEdit, onDelete, canEdit }) {
@@ -105,9 +105,34 @@ export default function WorkBookingList({ bookings, providers, properties, accom
                   {parseFloat(booking["Total Pay"] || booking.total_pay || 0).toFixed(2)}
                 </div>
                 {booking["Invoice Number"] && (
-                  <div className="text-[10px] text-slate-400 flex items-center gap-0.5">
-                    <FileText className="w-2 h-2" />
-                    {booking["Invoice Number"]}
+                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <FileText className="w-2.5 h-2.5" />
+                    <span>{booking["Invoice Number"]}</span>
+                    {(booking["Invoice File URL"] || booking.invoice_file_url) && (
+                      <a
+                        href={booking["Invoice File URL"] || booking.invoice_file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-orange-600 hover:text-orange-700 hover:underline"
+                        title="View Invoice Document"
+                      >
+                        <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                      </a>
+                    )}
+                  </div>
+                )}
+                {!booking["Invoice Number"] && (booking["Invoice File URL"] || booking.invoice_file_url) && (
+                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <a
+                      href={booking["Invoice File URL"] || booking.invoice_file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-orange-600 hover:text-orange-700 hover:underline font-medium"
+                      title="View Invoice Document"
+                    >
+                      <span>View Invoice</span>
+                      <ExternalLink className="w-2.5 h-2.5 ml-0.5" />
+                    </a>
                   </div>
                 )}
               </TableCell>

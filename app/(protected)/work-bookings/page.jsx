@@ -97,6 +97,7 @@ export default function WorkBookingsPage() {
         "Payment Status": formData.payment_status,
         "Work Status": formData.work_status,
         "Invoice Number": formData.invoice_number,
+        "Invoice File URL": formData.invoice_file_url || null,
         "Description of Work": formData.description_of_work,
         "Notes": formData.notes,
         "Logged By": user.fullName || user.username,
@@ -167,7 +168,7 @@ export default function WorkBookingsPage() {
   });
 
   const exportToCSV = () => {
-    const headers = ["Date", "Provider", "Property", "Area", "Duration", "Total Pay", "Payment Status", "Work Status"];
+    const headers = ["Date", "Provider", "Property", "Area", "Duration", "Total Pay", "Payment Status", "Work Status", "Invoice Number", "Invoice Document Link"];
 
     const escapeCSV = (val) => {
       if (val === null || val === undefined) return '';
@@ -189,7 +190,9 @@ export default function WorkBookingsPage() {
         escapeCSV(`${b["Duration Hours"] || 0}h ${b["Duration Minutes"] || 0}m`),
         escapeCSV(b["Total Pay"] || 0),
         escapeCSV(b["Payment Status"] || "Pending"),
-        escapeCSV(b["Work Status"] || "Scheduled")
+        escapeCSV(b["Work Status"] || "Scheduled"),
+        escapeCSV(b["Invoice Number"] || b.invoice_number || ""),
+        escapeCSV(b["Invoice File URL"] || b.invoice_file_url || "")
       ];
     });
 

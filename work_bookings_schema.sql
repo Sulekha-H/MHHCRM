@@ -14,6 +14,7 @@ CREATE TABLE work_bookings (
     "Payment Status" TEXT DEFAULT 'Pending', -- Paid, Pending
     "Work Status" TEXT DEFAULT 'Scheduled', -- Scheduled, Completed, Cancelled
     "Invoice Number" TEXT,
+    "Invoice File URL" TEXT,
     "Description of Work" TEXT,
     "Notes" TEXT,
     "Logged By" TEXT,
