@@ -20,6 +20,7 @@ export default function ServiceProviderList({ providers, onEdit, onDelete, canEd
       case 'cleaner': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'tradesman': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'gardener': return 'bg-green-100 text-green-800 border-green-200';
+      case 'translator': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
       default: return 'bg-slate-100 text-slate-800 border-slate-200';
     }
   };

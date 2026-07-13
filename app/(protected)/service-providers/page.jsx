@@ -143,7 +143,7 @@ export default function ServiceProvidersPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Service Providers</h1>
-            <p className="text-sm text-slate-600">Manage cleaners, tradesmen, and gardeners</p>
+            <p className="text-sm text-slate-600">Manage cleaners, tradesmen, gardeners, and translators</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -184,6 +184,7 @@ export default function ServiceProvidersPage() {
             <SelectItem value="Cleaner">Cleaner</SelectItem>
             <SelectItem value="Tradesman">Tradesman</SelectItem>
             <SelectItem value="Gardener">Gardener</SelectItem>
+            <SelectItem value="Translator">Translator</SelectItem>
             <SelectItem value="Other">Other</SelectItem>
           </SelectContent>
         </Select>
