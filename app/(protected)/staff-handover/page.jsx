@@ -62,10 +62,10 @@ const STAFF_GROUPS = {
 const TEAMSUP_COLORS = {
   "amaani": "#B388EB",
   "burton": "#42A5F5",
-  "francesca": "#FFC107",
-  "hasib": "#3F51B5",
-  "jessica": "#FF7043",
-  "jess": "#FF7043",
+  "francesca": "#4B6F44", // SW -> Bogey Green
+  "hasib": "#4B6F44",      // SW -> Bogey Green
+  "jessica": "#4B6F44",    // SW -> Bogey Green
+  "jess": "#4B6F44",       // SW -> Bogey Green
   "leticia": "#E91E63",
   "sulekha": "#26A69A",
 };
@@ -79,6 +79,7 @@ const STAFF_COLORS = {
   "jess": "#4B6F44",       // SW -> Bogey Green
   "leticia": "#E91E63",
   "sulekha": "#26A69A",
+  "office": "#673AB7",     // Deep Purple for group blocks
 };
 
 const normalizeUser = (user) => {
@@ -182,13 +183,15 @@ export default function StaffHandoverPage() {
 
       if (error) throw error;
 
-      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"];
+      const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca"];
       const existingPrefixes = new Set();
 
       const normalizedUsers = (data || [])
         .map(normalizeUser)
         .filter(u => {
-          const emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
+          let emailPrefix = getEmailUsername(u.email || u.Email).toLowerCase();
+          if (emailPrefix === 'jess') emailPrefix = 'jessica';
+
           if (exhaustiveStaff.includes(emailPrefix)) {
               existingPrefixes.add(emailPrefix);
               return true;
@@ -252,15 +255,30 @@ export default function StaffHandoverPage() {
 
   const findStaffByAny = useCallback((id, email) => {
     if (!id && !email) return null;
-    const prefix = email ? getEmailUsername(email).toLowerCase().trim() : null;
+
+    let searchId = id ? id.toString().trim() : null;
+    let searchEmail = email ? email.toLowerCase().trim() : null;
+    let searchPrefix = searchEmail ? getEmailUsername(searchEmail) : null;
+
+    // If searchId looks like an email, use it as email
+    if (searchId && searchId.includes('@')) {
+        searchEmail = searchId.toLowerCase();
+        searchPrefix = getEmailUsername(searchEmail);
+    }
+
+    // Handle aliases
+    if (searchPrefix === 'jess') searchPrefix = 'jessica';
 
     // Also consider the current user as a source of truth
     if (user) {
         const clerkId = user.id;
         const clerkEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase().trim();
         const clerkPrefix = clerkEmail?.split('@')[0];
+        const normalizedClerkPrefix = clerkPrefix === 'jess' ? 'jessica' : clerkPrefix;
 
-        if ((id && id.toString() === clerkId) || (prefix && prefix === clerkPrefix)) {
+        if ((searchId && searchId === clerkId) ||
+            (searchPrefix && searchPrefix === normalizedClerkPrefix) ||
+            (searchEmail && searchEmail === clerkEmail)) {
             return {
                 id: clerkId,
                 email: clerkEmail,
@@ -270,12 +288,17 @@ export default function StaffHandoverPage() {
     }
 
     return users.find(u => {
-        const uId = (u.id || u.ID || "").toString();
+        const uId = (u.id || u.ID || "").toString().trim();
         const uEmail = (u.email || u.Email || "").toLowerCase().trim();
         const uPrefix = uEmail.split('@')[0].toLowerCase();
+        const normalizedUPrefix = uPrefix === 'jess' ? 'jessica' : uPrefix;
 
-        if (id && uId === id.toString()) return true;
-        if (prefix && uPrefix === prefix) return true;
+        if (searchId && uId === searchId) return true;
+        if (searchPrefix && normalizedUPrefix === searchPrefix) return true;
+        if (searchEmail && uEmail === searchEmail) return true;
+        // Legacy: ID might be the prefix
+        if (searchId && searchId.toLowerCase() === normalizedUPrefix) return true;
+
         return false;
     });
   }, [users, user]);
@@ -379,16 +402,15 @@ export default function StaffHandoverPage() {
     // 2. Or if there's an existing handover to view/comment on
     if (!isCurrentUser(staffMember) && !existingHandover) return;
 
-    // If it's the current user's row, they might be creating a new one (possibly assigned to someone else)
-    const creatorId = user?.id;
-    const currentAssigneeId = assignee?.id;
+    const dateStr = format(date, 'yyyy-MM-dd');
 
-    // Find if the current user already has an entry for this date with the CURRENTLY SELECTED assignee
+    // Find if the current user already has an entry for this date
     const existing = existingHandover || handovers.find(h => {
-        const hDate = h.handover_date;
-        const hCreatorId = h.user_id;
-        const hAssigneeId = h.assigned_to_id || h['Assigned To ID'];
-        return hDate === format(date, 'yyyy-MM-dd') && hCreatorId === creatorId && hAssigneeId === currentAssigneeId;
+        if (h.handover_date !== dateStr) return false;
+        const hCreatorId = h.user_id || h['User ID'];
+        if (hCreatorId === user?.id) return true;
+        const staff = findStaffByAny(hCreatorId);
+        return staff && staff.id === user?.id;
     });
 
     // Restriction: Only allow creating/editing for "Today" OR future dates
@@ -441,10 +463,13 @@ export default function StaffHandoverPage() {
     setIsSubmitting(true);
     try {
       const dateStr = format(selectedCell.date, 'yyyy-MM-dd');
-      const existing = handovers.find(h =>
-        (h.user_id || h['User ID']) === user.id &&
-        h.handover_date === dateStr
-      );
+      const existing = handovers.find(h => {
+          if (h.handover_date !== dateStr) return false;
+          const hCreatorId = h.user_id || h['User ID'];
+          if (hCreatorId === user.id) return true;
+          const staff = findStaffByAny(hCreatorId);
+          return staff && staff.id === user.id;
+      });
 
       // Collect all entries (existing + new queued + current form)
       let allEntries = existing?.entries ? [...existing.entries] : [];
@@ -560,17 +585,28 @@ export default function StaffHandoverPage() {
 
   const getStaffNameById = (id, email = null) => {
     const s = findStaffByAny(id, email);
-    if (s) return s.full_name || s['Full Name'] || getEmailUsername(s.email || s.Email);
+    if (s) {
+        const name = s.full_name || s['Full Name'];
+        if (name && name !== "Me") return name;
+        const prefix = getEmailUsername(s.email || s.Email);
+        return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    }
 
-    if (email) {
-        const prefix = getEmailUsername(email);
+    const effectiveEmail = email || (id && id.includes('@') ? id : null);
+    if (effectiveEmail) {
+        const prefix = getEmailUsername(effectiveEmail);
         if (prefix && prefix !== "Unknown") {
             return prefix.charAt(0).toUpperCase() + prefix.slice(1);
         }
     }
 
-    if (user && id?.toString() === user.id?.toString()) {
-        return user.fullName || getEmailUsername(user.primaryEmailAddress?.emailAddress);
+    if (id) {
+        const idStr = id.toString().toLowerCase();
+        const exhaustiveStaff = ["sulekha", "amaani", "leticia", "burton", "hasib", "jessica", "francesca", "jess"];
+        if (exhaustiveStaff.includes(idStr)) {
+            const prefix = idStr === 'jess' ? 'Jessica' : idStr.charAt(0).toUpperCase() + idStr.slice(1);
+            return prefix;
+        }
     }
 
     return "Unknown Staff";
@@ -765,12 +801,17 @@ export default function StaffHandoverPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-            {selectedCell?.handover && selectedCell.handover.user_id !== user?.id && (
-                <div className="p-3 bg-purple-50 rounded-lg border border-purple-100 text-sm">
-                    <span className="font-bold text-purple-700">From: </span>
-                    <span className="text-slate-700">{getStaffNameById(selectedCell.handover.user_id, selectedCell.handover.user_email || selectedCell.handover['User Email'] || selectedCell.handover.User_Email)}</span>
-                </div>
-            )}
+            {selectedCell?.handover && (() => {
+                const hCreatorId = selectedCell.handover.user_id || selectedCell.handover['User ID'];
+                const isMine = hCreatorId === user?.id || findStaffByAny(hCreatorId)?.id === user?.id;
+                if (isMine) return null;
+                return (
+                    <div className="p-3 bg-purple-50 rounded-lg border border-purple-100 text-sm">
+                        <span className="font-bold text-purple-700">From: </span>
+                        <span className="text-slate-700">{getStaffNameById(hCreatorId, selectedCell.handover.user_email || selectedCell.handover['User Email'])}</span>
+                    </div>
+                );
+            })()}
 
             {/* Queued Entries Display */}
             {queuedEntries.length > 0 && (
@@ -811,7 +852,10 @@ export default function StaffHandoverPage() {
             )}
 
             {/* Form Section */}
-            {(!selectedCell?.handover || selectedCell.handover.user_id === user?.id) && (
+            {(!selectedCell?.handover || (() => {
+                const hCreatorId = selectedCell.handover.user_id || selectedCell.handover['User ID'];
+                return hCreatorId === user?.id || findStaffByAny(hCreatorId)?.id === user?.id;
+            })()) && (
               <div className="space-y-4 border-t pt-4">
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-slate-700">Assign Handover To:</label>
@@ -914,12 +958,26 @@ export default function StaffHandoverPage() {
                     {selectedCell.handover.user_id === user?.id ? "Existing Entries" : "Handover Notes"}
                 </h4>
                 {selectedCell.handover.entries?.map((entry, idx) => {
-                    const isRecipient = entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.members.includes(getEmailUsername(selectedCell.user.email || selectedCell.user.Email).toLowerCase()) :
-                                        entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.members.includes(getEmailUsername(selectedCell.user.email || selectedCell.user.Email).toLowerCase()) :
-                                        entry.recipients?.includes((selectedCell.user.id || selectedCell.user.ID || "").toString());
+                    const staffEmailPrefix = getEmailUsername(selectedCell.user.email || selectedCell.user.Email).toLowerCase();
+                    const staffId = (selectedCell.user.id || selectedCell.user.ID || "").toString();
+
+                    let isRecipient = false;
+                    if (entry.type === 'OFFICE') {
+                      isRecipient = STAFF_GROUPS.OFFICE.members.includes(staffEmailPrefix);
+                    } else if (entry.type === 'SW_OFFICE') {
+                      isRecipient = STAFF_GROUPS.SW_OFFICE.members.includes(staffEmailPrefix);
+                    } else if (entry.type === 'SPECIFIC') {
+                      isRecipient = entry.recipients?.some(rid => {
+                          const rStaff = findStaffByAny(rid);
+                          return rStaff && getEmailUsername(rStaff.email || rStaff.Email).toLowerCase() === staffEmailPrefix;
+                      });
+                    }
+
+                    const hCreatorId = selectedCell.handover.user_id || selectedCell.handover['User ID'];
+                    const isMine = hCreatorId === user?.id || findStaffByAny(hCreatorId)?.id === user?.id;
 
                     // If viewing someone else's row, only show entries assigned to them
-                    if (selectedCell.handover.user_id !== user?.id && !isRecipient) return null;
+                    if (!isMine && !isRecipient) return null;
 
                     return (
                         <div key={entry.id || idx} className="p-3 bg-white rounded-lg border shadow-sm relative group">
@@ -938,11 +996,11 @@ export default function StaffHandoverPage() {
                                         Assigned to {entry.recipients?.length} staff
                                     </span>
                                 )}
-                                {selectedCell.handover.user_id === user?.id && (
+                                {isMine && (
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 ml-auto opacity-0 group-hover:opacity-100 transition-opacity text-red-500"
+                                        className="h-6 w-6 ml-auto text-red-500 hover:bg-red-50 transition-colors"
                                         onClick={async () => {
                                             if (!confirm("Are you sure you want to delete this entry?")) return;
                                             const remainingEntries = selectedCell.handover.entries.filter(e => (e.id || e.ID) !== (entry.id || entry.ID));
@@ -987,7 +1045,10 @@ export default function StaffHandoverPage() {
               </div>
             )}
 
-            {selectedCell && isAfter(startOfDay(selectedCell.date), startOfDay(new Date())) && (!selectedCell.handover || selectedCell.handover.user_id === user?.id) && (
+            {selectedCell && isAfter(startOfDay(selectedCell.date), startOfDay(new Date())) && (!selectedCell.handover || (() => {
+                const hCreatorId = selectedCell.handover.user_id || selectedCell.handover['User ID'];
+                return hCreatorId === user?.id || findStaffByAny(hCreatorId)?.id === user?.id;
+            })()) && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs text-blue-700 flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span>You are logging an entry for a future date. This is typically used for planned Annual Leave.</span>
@@ -1050,7 +1111,10 @@ export default function StaffHandoverPage() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
               Close
             </Button>
-            {(!selectedCell?.handover || selectedCell.handover.user_id === user?.id) && (
+            {(!selectedCell?.handover || (() => {
+                const hCreatorId = selectedCell.handover.user_id || selectedCell.handover['User ID'];
+                return hCreatorId === user?.id || findStaffByAny(hCreatorId)?.id === user?.id;
+            })()) && (
               <Button
                   onClick={handleSaveHandover}
                   disabled={isSubmitting || (queuedEntries.length === 0 && !handoverContent.trim())}
