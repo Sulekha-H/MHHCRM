@@ -78,6 +78,7 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
                   <SelectItem value="Cleaner">Cleaner</SelectItem>
                   <SelectItem value="Tradesman">Tradesman</SelectItem>
                   <SelectItem value="Gardener">Gardener</SelectItem>
+                  <SelectItem value="Translator">Translator</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
