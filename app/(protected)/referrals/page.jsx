@@ -144,7 +144,8 @@ const { data: usersData } = await supabase.from('users').select('*');
         logged_by: ref['Logged By'],
         deleted: ref.Deleted,
         deleted_date: ref['Deleted Date'],
-        deleted_by: ref['Deleted By']
+        deleted_by: ref['Deleted By'],
+        form_data: ref['Form Data'] // make sure custom JSONB Form Data is mapped
       }));
 
       console.log(`✅ Loaded ${normalizedReferrals.length} referrals from ${tableName}`);
@@ -275,7 +276,8 @@ const { data: usersData } = await supabase.from('users').select('*');
   };
 
   const exportToCSV = () => {
-    const headers = [
+    // Standard basic headers
+    const standardHeaders = [
       'ID',
       'Referral Type',
       'Referral Date',
@@ -296,8 +298,37 @@ const { data: usersData } = await supabase.from('users').select('*');
       'Logged By'
     ];
 
+    // Expanded headers list specifically for Self-Referral detailed fields
+    const extraHeaders = [
+      'Title', 'NI Number', 'Gender', 'Pronouns', 'Contact Number', 'Email',
+      'Marital Status', 'Ethnic Origin', 'Religion', 'Sexual Orientation',
+      'NoK Name', 'NoK Relationship', 'NoK Contact Phone', 'NoK Address',
+      'Address History', 'GP Name', 'GP Surgery', 'GP Contact', 'Medical Conditions',
+      'Prescribed Medication', 'Medication Storage Needs', 'Mental Health Diagnosis',
+      'Care Coordinator', 'Mental Health Team', 'Substance Drugs Misuse', 'Drug Details',
+      'Substance Alcohol Misuse', 'Alcohol Details', 'Substance Treatment Agency',
+      'Substance Worker Name', 'Substance Worker Contact', 'Has Convictions',
+      'Conviction Details', 'On Probation', 'Probation Officer Name', 'Probation Office',
+      'On Multi-Agency Register', 'Register Details', 'Support Needs Selected',
+      'Risk re Children', 'Risk to Children Concern', 'Parenting Abilities Reduced',
+      'Children known to Social Services', 'Safeguarding Concerns', 'Risk of Self Harm',
+      'Risk of Neglect', 'Potential Harm from others', 'Risk of Domestic Abuse',
+      'Risk of Suicide', 'Risk of Police involvement', 'Risk from MH Diagnosis',
+      'Risk from Medical Condition', 'Vulnerabilities', 'Physical Disabilities',
+      'Risk of Violence', 'Risk of Social Isolation', 'Accidental Fire Setting',
+      'Arson', 'Ex Offender', 'Sex Offender', 'Violent Offender', 'Risk of Substance Misuse',
+      'Eligibility Agreement', 'GDPR Data Storage Consent', 'Pronouns Consent',
+      'Ongoing Contact Consent', 'Information Sharing Consent', 'Applicant Signature',
+      'Signature Date'
+    ];
+
+    // Only append extra headers if the current active page is self-referrals
+    const headers = referralTypeTab === 'self-referral'
+      ? [...standardHeaders, ...extraHeaders]
+      : standardHeaders;
+
     const rows = referrals.map(referral => {
-      return [
+      const basicRow = [
         referral.id || '',
         referral.referral_type || 'organisation',
         referral.referral_date ? format(new Date(referral.referral_date), 'yyyy-MM-dd HH:mm:ss') : '',
@@ -317,6 +348,97 @@ const { data: usersData } = await supabase.from('users').select('*');
         referral.created_date ? format(new Date(referral.created_date), 'yyyy-MM-dd HH:mm:ss') : '',
         getLoggedByName(referral)
       ];
+
+      if (referralTypeTab === 'self-referral') {
+        let fd = {};
+        if (referral.form_data) {
+          fd = typeof referral.form_data === 'string' ? JSON.parse(referral.form_data) : referral.form_data;
+        }
+
+        // Format address history list into a clean printable string
+        const addressHistoryStr = (fd.address_history || [])
+          .map((row, i) => `#${i+1}: ${row.address || ''} (${row.dates_from || ''} to ${row.dates_to || ''}), Tenure: ${row.tenure || ''}, Reason for leaving: ${row.reason_for_leaving || ''}`)
+          .join('; ');
+
+        // Support needs list
+        const supportNeedsStr = (fd.support_needs || []).join(', ');
+
+        const extraRowValues = [
+          fd.title || '',
+          fd.ni_number || '',
+          fd.gender || '',
+          fd.pronouns || '',
+          fd.contact_number || '',
+          fd.email || '',
+          fd.martial_status || '',
+          fd.ethnic_origin || '',
+          fd.religion || '',
+          fd.sexual_orientation || '',
+          fd.nok_name || '',
+          fd.nok_relationship || '',
+          fd.nok_phone || '',
+          fd.nok_address || '',
+          addressHistoryStr,
+          fd.gp_name || '',
+          fd.gp_surgery || '',
+          fd.gp_contact || '',
+          fd.medical_conditions || '',
+          fd.prescribed_medication || '',
+          fd.needs_medication_storage || '',
+          fd.mental_health_diagnosis || '',
+          fd.mental_health_care_coordinator || '',
+          fd.mental_health_team || '',
+          fd.uses_drugs || '',
+          fd.drug_types_frequency || '',
+          fd.uses_alcohol || '',
+          fd.alcohol_units_frequency || '',
+          fd.substance_misuse_treatment_agency || '',
+          fd.substance_misuse_worker_name || '',
+          fd.substance_misuse_worker_contact || '',
+          fd.has_convictions || '',
+          fd.conviction_details || '',
+          fd.on_probation || '',
+          fd.probation_officer_name || '',
+          fd.probation_office || '',
+          fd.is_on_multi_agency_register || '',
+          fd.register_details || '',
+          supportNeedsStr,
+          fd.risk_children || '',
+          fd.concern_risk_to_children || '',
+          fd.abilities_reduced || '',
+          fd.known_to_social_services || '',
+          fd.safeguarding_concerns || '',
+          fd.risk_self_harm || '',
+          fd.risk_neglect || '',
+          fd.risk_harm_from_others || '',
+          fd.risk_domestic_abuse || '',
+          fd.risk_suicide || '',
+          fd.risk_law_enforcement || '',
+          fd.risk_mental_health_diagnosis || '',
+          fd.risk_medical_condition || '',
+          fd.risk_vulnerabilities || '',
+          fd.risk_physical_disabilities || '',
+          fd.risk_violence || '',
+          fd.risk_social_isolation || '',
+          fd.risk_accidental_fire || '',
+          fd.risk_arson || '',
+          fd.risk_ex_offender || '',
+          fd.risk_sex_offender || '',
+          fd.risk_violent_offender || '',
+          fd.risk_substance_misuse || '',
+          fd.eligibility_benefits || '',
+          fd.consent_personal_info || '',
+          fd.consent_pronouns || '',
+          fd.consent_ongoing_contact || '',
+          fd.information_sharing_consent || '',
+          fd.applicant_signature || '',
+          fd.signature_date || ''
+        ];
+
+        return [...basicRow, ...extraRowValues];
+      }
+
+      return basicRow;
     });
 
     const escapeCSV = (value) => {
@@ -339,7 +461,7 @@ const { data: usersData } = await supabase.from('users').select('*');
     const timestamp = format(new Date(), 'yyyy-MM-dd_HHmmss');
 
     link.setAttribute('href', url);
-    link.setAttribute('download', `referrals_export_${timestamp}.csv`);
+    link.setAttribute('download', `${referralTypeTab}_referrals_export_${timestamp}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -350,7 +472,7 @@ const { data: usersData } = await supabase.from('users').select('*');
       userEmail: user.primaryEmailAddress?.emailAddress,
       actionType: ACTIONS.EXPORT,
       entityType: ENTITIES.REFERRAL,
-      description: `Exported ${referrals.length} referrals to CSV`
+      description: `Exported ${referrals.length} ${referralTypeTab} referrals to CSV`
     });
   };
 
@@ -374,7 +496,7 @@ const { data: usersData } = await supabase.from('users').select('*');
             <Download className="w-4 h-4" />
             Export to CSV
           </Button>
-          <Button onClick={() => { setEditingReferral(null); setShowForm(true); }} className="bg-fuchsia-600 hover:bg-fuchsia-700">
+          <Button onClick={() => { setEditingReferral(null); setShowForm(true); }} className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-medium">
             <Plus className="w-4 h-4 mr-2" />
             Log New Referral
           </Button>
