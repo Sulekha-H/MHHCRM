@@ -20,15 +20,68 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     return now.toISOString().slice(0, 16);
   };
 
+  const getNormalizedBenefitType = () => {
+    const raw = log ? (log["Benefit Type"] || log.benefit_type || log.Benefit_Type) : null;
+    if (!raw) return activeBenefitType || "housing_benefit";
+    const lower = raw.toLowerCase().replace(/ /g, '_');
+    if (lower === 'housing_benefit') return 'housing_benefit';
+    if (lower === 'universal_credit') return 'universal_credit';
+    if (lower === 'pip') return 'pip';
+    if (lower === 'wca') return 'wca';
+    if (lower === 'landlord_portal') return 'landlord_portal';
+    return lower;
+  };
+
+  const getNormalizedLogType = (benefitType) => {
+    const raw = log ? (log["Log Type"] || log.log_type || log.Log_Type) : null;
+    if (!raw) {
+      return (benefitType === "universal_credit" || benefitType === "pip" || benefitType === "wca") ? "application_log" : (benefitType === "landlord_portal" ? "portal_check" : "application_log");
+    }
+    const lower = raw.toLowerCase().replace(/ /g, '_');
+    return lower;
+  };
+
+  const getNormalizedStatus = (benefitType) => {
+    const raw = log ? (log.Status || log.status) : null;
+    if (!raw) return benefitType === "landlord_portal" ? "No Updates Found" : "pending";
+    if (benefitType === 'landlord_portal') return raw; // keep original capitalization for landlord portal options
+
+    const lower = raw.toLowerCase().replace(/ /g, '_').replace(/-/g, '_');
+    if (lower === 'pending') return 'pending';
+    if (lower === 'in_progress') return 'in_progress';
+    if (lower === 'completed') return 'completed';
+    if (lower === 'issue_raised' || lower === 'issue_found') return 'issue_raised';
+    if (lower === 'closed') return 'closed';
+    if (lower === 'application_to_be_completed') return 'application_to_be_completed';
+    if (lower === 'application_saved_not_submitted') return 'application_saved_not_submitted';
+    if (lower === 'completed_application_submitted') return 'completed_application_submitted';
+    if (lower === 'requested') return 'requested';
+    if (lower === 'awaiting_activation') return 'awaiting_activation';
+    if (lower === 'activated') return 'activated';
+    if (lower === 'payment_missing') return 'payment_missing';
+    if (lower === 'payment_in_processing') return 'payment_in_processing';
+    if (lower === 'payment_received') return 'payment_received';
+    if (lower === 'to_complete') return 'to_complete';
+    if (lower === 'outstanding') return 'outstanding';
+    if (lower === 'to_do') return 'to_do';
+    if (lower === 'query') return 'query';
+    if (lower === 'resolved') return 'resolved';
+    return lower;
+  };
+
+  const initialBenefitType = getNormalizedBenefitType();
+  const initialLogType = getNormalizedLogType(initialBenefitType);
+  const initialStatus = getNormalizedStatus(initialBenefitType);
+
   const [formData, setFormData] = useState(log ? {
     id: log.ID || log.id || "",
     resident_id: log["Resident ID"] || log.resident_id || log.Resident_ID || "",
-    benefit_type: log["Benefit Type"] || log.benefit_type || log.Benefit_Type || activeBenefitType || "housing_benefit",
-    log_type: log["Log Type"] || log.log_type || log.Log_Type || "application_log",
+    benefit_type: initialBenefitType,
+    log_type: initialLogType,
     title: log.Title || log.title || "",
     description: log.Description || log.description || "",
     log_date: getInitialDateTime(),
-    status: log.Status || log.status || "pending",
+    status: initialStatus,
     logged_by: log["Logged By"] || log.logged_by || log.Logged_By || currentUser?.["Full Name"] || currentUser?.full_name || "",
     notes: log.Notes || log.notes || "",
     date_application_started: log["Date Application Started"] || log.date_application_started || "",
