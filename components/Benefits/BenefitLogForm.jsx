@@ -39,8 +39,16 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     authorisation_form_uploaded: log["Authorisation Form Uploaded"] !== null && log["Authorisation Form Uploaded"] !== undefined ? log["Authorisation Form Uploaded"] : (log.authorisation_form_uploaded || false),
     proof_of_income_uploaded: log["Proof of Income Uploaded"] !== null && log["Proof of Income Uploaded"] !== undefined ? log["Proof of Income Uploaded"] : (log.proof_of_income_uploaded || false),
     date_uploaded: log["Date Uploaded"] || log.date_uploaded || "",
-    action_to_follow: log["Action to Follow"] || log.action_to_follow || "",
-    action_to_follow_completed: log["Action to Follow Completed"] !== null && log["Action to Follow Completed"] !== undefined ? log["Action to Follow Completed"] : (log.action_to_follow_completed || false),
+    action_to_follow: log["Action to Follow"] || log.action_to_follow || log["Follow Up Action"] || log.follow_up_action || "",
+    action_to_follow_completed: log["Action to Follow Completed"] !== null && log["Action to Follow Completed"] !== undefined
+      ? log["Action to Follow Completed"]
+      : log.action_to_follow_completed !== null && log.action_to_follow_completed !== undefined
+        ? log.action_to_follow_completed
+        : log["Follow Up Completed"] !== null && log["Follow Up Completed"] !== undefined
+          ? log["Follow Up Completed"]
+          : log.follow_up_completed !== null && log.follow_up_completed !== undefined
+            ? log.follow_up_completed
+            : false,
     // Requested Support Notes fields
     date_of_request: log["Date of Request"] || log.date_of_request || "",
     support_notes_requested_dates: log["Support Notes Requested Dates"] || log.support_notes_requested_dates || "",
