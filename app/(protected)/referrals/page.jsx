@@ -126,6 +126,7 @@ const { data: usersData } = await supabase.from('users').select('*');
         created_date: ref['Created Date'],
         updated_date: ref['Updated Date'],
         created_by: ref['Created By'],
+        updated_by: ref['Updated By'],
         referral_date: ref['Referral Date'],
         referral_type: ref['Referral Type'],
         referred_by_agency: ref['Referred By Agency'],
@@ -160,14 +161,19 @@ const { data: usersData } = await supabase.from('users').select('*');
 
   const handleSubmit = async (referralData) => {
     try {
-      if (!referralData['Logged By'] && currentUser?.full_name) {
-        referralData['Logged By'] = currentUser.full_name;
+      const currentUserName = user?.fullName || user?.username || currentUser?.fullName || currentUser?.username || currentUser?.full_name || "Unknown";
+
+      if (!referralData['Logged By']) {
+        referralData['Logged By'] = currentUserName;
       }
 
       // Determine table based on the actual referral type in the data, not the tab
       const tableName = referralData['Referral Type'] === 'Organisation' ? 'organisation_referrals' : 'self_referrals';
 
       if (editingReferral) {
+        referralData['Updated By'] = currentUserName;
+        referralData['Updated Date'] = new Date().toISOString();
+
         const { error } = await supabase
           .from(tableName)
           .update(referralData)
@@ -185,10 +191,12 @@ const { data: usersData } = await supabase.from('users').select('*');
       } else {
         // Ensure ID exists for new records
         const newId = referralData.ID || crypto.randomUUID();
-        if (!referralData.ID) {
-          referralData.ID = newId;
-          referralData["Created Date"] = new Date().toISOString();
-        }
+        referralData.ID = newId;
+        referralData["Created Date"] = new Date().toISOString();
+        referralData["Created By"] = currentUserName;
+        referralData["Logged By"] = currentUserName;
+        referralData["Updated Date"] = new Date().toISOString();
+        referralData["Updated By"] = currentUserName;
         
         const { error } = await supabase
           .from(tableName)

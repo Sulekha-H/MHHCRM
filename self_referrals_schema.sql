@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS "self_referrals" (
     "Created Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     "Created By" TEXT,
     "Updated Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "Updated By" TEXT,
     "Deleted" BOOLEAN DEFAULT FALSE,
     "Deleted Date" TIMESTAMP WITH TIME ZONE,
     "Deleted By" TEXT,
