@@ -91,7 +91,7 @@ export default function ReferralForm({ referral, users, currentUser, onSubmit, o
       decision_reason: "",
       accommodation_type_needed: "single_room",
       notes: "",
-      logged_by: referral?.Logged_By || referral?.logged_by || (currentUser?.full_name || "")
+      logged_by: referral?.Logged_By || referral?.logged_by || (currentUser?.fullName || currentUser?.username || currentUser?.full_name || "")
     };
     if (referral) {
       return {
@@ -110,7 +110,7 @@ export default function ReferralForm({ referral, users, currentUser, onSubmit, o
         decision_reason: referral.Decision_Reason || referral.decision_reason || "",
         accommodation_type_needed: referral.Accommodation_Type_Needed || referral.accommodation_type_needed || "single_room",
         notes: referral.Notes || referral.notes || "",
-        logged_by: referral.Logged_By || referral.logged_by || (currentUser?.full_name || "")
+        logged_by: referral.Logged_By || referral.logged_by || (currentUser?.fullName || currentUser?.username || currentUser?.full_name || "")
       };
     }
     return defaultCore;
@@ -263,8 +263,9 @@ export default function ReferralForm({ referral, users, currentUser, onSubmit, o
   };
 
   useEffect(() => {
-    if (!referral && currentUser?.full_name && coreData.logged_by === "") {
-      setCoreData(prev => ({ ...prev, logged_by: currentUser.full_name }));
+    const currentName = currentUser?.fullName || currentUser?.username || currentUser?.full_name || "";
+    if (!referral && currentName && coreData.logged_by === "") {
+      setCoreData(prev => ({ ...prev, logged_by: currentName }));
     }
   }, [currentUser, referral, coreData.logged_by]);
 
@@ -491,7 +492,7 @@ export default function ReferralForm({ referral, users, currentUser, onSubmit, o
                   </div>
                   <div>
                     <Label htmlFor="logged_by">Logged By</Label>
-                    <Input id="logged_by" value={coreData.logged_by} onChange={e => handleCoreChange("logged_by", e.target.value)} />
+                    <Input id="logged_by" value={coreData.logged_by} disabled={true} className="bg-slate-50 cursor-not-allowed" />
                   </div>
                 </div>
               </div>
@@ -1227,7 +1228,7 @@ export default function ReferralForm({ referral, users, currentUser, onSubmit, o
                 </div>
                 <div>
                   <Label htmlFor="logged_by">Logged By</Label>
-                  <Input id="logged_by" value={coreData.logged_by} onChange={e => handleCoreChange("logged_by", e.target.value)} />
+                  <Input id="logged_by" value={coreData.logged_by} disabled={true} className="bg-slate-50 cursor-not-allowed" />
                 </div>
                 <div>
                   <Label htmlFor="status">Status *</Label>

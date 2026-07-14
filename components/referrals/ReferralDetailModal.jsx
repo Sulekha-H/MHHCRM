@@ -31,6 +31,15 @@ const DetailItem = ({ icon, label, children }) => (
   </div>
 );
 
+const formatDateSafe = (dateString, formatStr = 'dd MMMM yyyy, HH:mm') => {
+  if (!dateString) return null;
+  try {
+    return format(new Date(dateString), formatStr);
+  } catch (e) {
+    return dateString;
+  }
+};
+
 export default function ReferralDetailModal({ 
   referral, 
   getStatusColor, 
@@ -449,6 +458,23 @@ export default function ReferralDetailModal({
                 <p className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-2 rounded-md mt-1">{referral.notes}</p>
               </div>
             )}
+
+            <Separator className="my-6" />
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Record History & Progress</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <DetailItem icon={<User />} label="Created By">
+                {referral.created_by || 'Unknown'}
+              </DetailItem>
+              <DetailItem icon={<Calendar />} label="Created Date">
+                {formatDateSafe(referral.created_date)}
+              </DetailItem>
+              <DetailItem icon={<User />} label="Last Updated By">
+                {referral.updated_by || 'N/A'}
+              </DetailItem>
+              <DetailItem icon={<Calendar />} label="Last Updated Date">
+                {formatDateSafe(referral.updated_date)}
+              </DetailItem>
+            </div>
 
             <DialogFooter className="mt-8 flex justify-between gap-4 border-t pt-4">
               <Button 
