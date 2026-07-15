@@ -4,7 +4,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import IdleTimer from "@/components/IdleTimer";
-import { isServiceChargeStaff } from "@/lib/permissions";
+import { isRestrictedStaff } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert } from "lucide-react";
 
@@ -20,8 +20,8 @@ export default function ProtectedLayout({ children }) {
     }
   }, [isLoaded, userId, router]);
 
-  const isSCStaff = isServiceChargeStaff(user);
-  const allowedPaths = ["/dashboard", "/servicecharges", "/api/rotacloud", "/api/microsoft-calendar", "/api/webhooks/clerk", "/api/createProfile", "/api/invite"];
+  const isSCStaff = isRestrictedStaff(user);
+  const allowedPaths = ["/dashboard", "/servicecharges", "/staff-handover", "/calendar", "/api/rotacloud", "/api/microsoft-calendar", "/api/webhooks/clerk", "/api/createProfile", "/api/invite"];
 
   // Basic guard for SC staff
   const isAccessDenied = isSCStaff &&

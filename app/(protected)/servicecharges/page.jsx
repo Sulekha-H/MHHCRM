@@ -20,7 +20,7 @@ import CashLogCard from "@/components/service-charges/CashLogCard";
 import ServiceChargeDetailModal from "@/components/service-charges/ServiceChargeDetailModal";
 import CashLogDetailModal from "@/components/service-charges/CashLogDetailModal";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
-import { isServiceChargeStaff } from "@/lib/permissions";
+import { isRestrictedStaff } from "@/lib/permissions";
 import {
   Table,
   TableBody,
@@ -32,7 +32,7 @@ import {
 
 export default function ServiceChargesSupabase() {
   const { user } = useUser();
-  const isSCStaff = isServiceChargeStaff(user);
+  const isSCStaff = isRestrictedStaff(user);
   const supabase = useClerkSupabaseClient()
   const [serviceCharges, setServiceCharges] = useState([]);
   const [cashLogs, setCashLogs] = useState([]);

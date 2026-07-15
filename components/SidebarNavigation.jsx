@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { isAdmin, isOfficeStaff, isServiceChargeStaff } from "@/lib/permissions";
+import { isAdmin, isOfficeStaff, isRestrictedStaff } from "@/lib/permissions";
 import {
   Home,
   Calendar as CalendarIcon,
@@ -41,7 +41,7 @@ import {
 export default function SidebarNavigation() {
   const { user, isLoaded } = useUser();
   const pathname = usePathname();
-  const isSCStaff = isServiceChargeStaff(user);
+  const isSCStaff = isRestrictedStaff(user);
 
   if (!isLoaded) {
     return (
@@ -133,7 +133,7 @@ export default function SidebarNavigation() {
         <SidebarGroupContent>
           <SidebarMenu className="gap-0.5">
             {navigation
-              .filter(item => !isSCStaff || item.name === "Dashboard")
+              .filter(item => !isSCStaff || ["Dashboard", "Staff Handover", "Staff Calendar"].includes(item.name))
               .map((item) => (
               <SidebarMenuItem key={item.name}>
                 <SidebarMenuButton asChild isActive={item.current}>

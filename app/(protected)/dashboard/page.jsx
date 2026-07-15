@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { logActivity, ACTIONS } from "@/lib/activityUtils";
-import { isServiceChargeStaff } from "@/lib/permissions";
+import { isRestrictedStaff } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,7 +110,7 @@ const DeadlineGroup = ({ title, deadlines, colorClass, icon: Icon }) => {
 
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
-  const isSCStaff = isServiceChargeStaff(user);
+  const isSCStaff = isRestrictedStaff(user);
   const supabase = useClerkSupabaseClient();
   const loginLogged = useRef(false);
   console.log(`[Dashboard] User Status - Loaded: ${isLoaded}, SignedIn: ${isSignedIn}, UserID: ${user?.id}`);
