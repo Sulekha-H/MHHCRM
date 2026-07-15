@@ -382,6 +382,10 @@ export default function Dashboard() {
 
         // Task Summary
         const now = new Date();
+        const endOfToday = new Date(now);
+        endOfToday.setHours(23, 59, 59, 999);
+        const sevenDaysFromNow = addDays(endOfToday, 7);
+        const fourteenDaysFromNow = addDays(endOfToday, 14);
         const threeDaysFromNow = addDays(now, 3);
         const overdueTasks = tasks.filter(t => {
           const status = (t.Status || '').toLowerCase().replace(/ /g, '_');
@@ -913,15 +917,83 @@ export default function Dashboard() {
               }
             }
           });
+
+          // Auto-generate placeholder service charge deadlines for active residents within 14 days
+          const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const candidateMonths = [currentMonthStart, nextMonthStart];
+          const startOfToday = new Date(now);
+          startOfToday.setHours(0, 0, 0, 0);
+
+          activeResidents.forEach(resident => {
+            let expectedPaymentDay = 1;
+            const benefits = resident.Benefits || [];
+            if (benefits && benefits.length > 0) {
+              const ucBenefit = benefits.find(b => b.benefit_type === 'universal_credit' && b.payment_day);
+              const hbBenefit = benefits.find(b => b.benefit_type === 'housing_benefit' && b.payment_day);
+              const otherBenefit = benefits.find(b => b.payment_day);
+
+              if (ucBenefit) expectedPaymentDay = ucBenefit.payment_day;
+              else if (hbBenefit) expectedPaymentDay = hbBenefit.payment_day;
+              else if (otherBenefit) expectedPaymentDay = otherBenefit.payment_day;
+            }
+
+            candidateMonths.forEach(monthStart => {
+              const monthKey = format(monthStart, 'yyyy-MM');
+              let dayOfMonth = Math.min(expectedPaymentDay, new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate());
+              const expectedDueDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), dayOfMonth);
+              expectedDueDate.setHours(0, 0, 0, 0);
+
+              if (expectedDueDate >= startOfToday && expectedDueDate <= fourteenDaysFromNow) {
+                const hasSavedRecord = serviceCharges.some(charge => {
+                  const rId = charge["Resident ID"] || charge.resident_id;
+                  if (rId !== (resident.ID || resident.id)) return false;
+                  const isDeleted = charge.Deleted || charge.deleted || false;
+                  if (isDeleted) return false;
+                  const dueDateStr = charge["Due Date"] || charge.due_date;
+                  if (!dueDateStr) return false;
+                  const chargeMonth = format(new Date(dueDateStr), 'yyyy-MM');
+                  return chargeMonth === monthKey;
+                });
+
+                if (!hasSavedRecord) {
+                  let residentName = `${resident["First Name"] || resident.first_name || ''} ${resident["Last Name"] || resident.last_name || ''}`.trim();
+                  if (!residentName) residentName = 'Unknown Resident';
+
+                  let propertyName = '';
+                  const propertyId = resident["Property ID"] || resident.property_id;
+                  if (propertyId) {
+                    const prop = allProperties.find(p => (p.ID || p.id) === propertyId);
+                    if (prop) {
+                      propertyName = prop.Name || prop.name;
+                    }
+                  }
+
+                  const forLabel = propertyName ? `${residentName} (${propertyName})` : residentName;
+
+                  allDeadlines.push({
+                    id: `placeholder-service-charge-${resident.ID || resident.id}-${monthKey}`,
+                    title: 'Service Charge Payment',
+                    date: expectedDueDate,
+                    source: 'Service Charge',
+                    item: {
+                      "Resident ID": resident.ID || resident.id,
+                      "Resident Name": residentName,
+                      "Property Name": propertyName,
+                      "Due Date": expectedDueDate.toISOString(),
+                      "Payment Status": 'Due',
+                      "Monthly Amount": 0,
+                      isPlaceholder: true
+                    },
+                    assignedTo: forLabel
+                  });
+                }
+              }
+            });
+          });
         }
 
         // Categorize and Sort
-        const endOfToday = new Date(now);
-        endOfToday.setHours(23, 59, 59, 999);
-
-        const sevenDaysFromNow = addDays(endOfToday, 7);
-        const fourteenDaysFromNow = addDays(endOfToday, 14);
-
         const next7Days = allDeadlines.filter(d => {
           const target = new Date(d.date);
           target.setHours(23, 59, 59, 999);
