@@ -840,6 +840,81 @@ export default function Dashboard() {
         // 9. Referrals - Filtered by Creator
         addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted', ['Created By']); // accepted as a proxy for completed
 
+        // 10. Service Charges - Visible to specific staff members
+        const SERVICE_CHARGE_VISIBLE_EMAILS = [
+          'leticia@myhopehousing.org.uk',
+          'amaani@myhopehousing.org.uk',
+          'hasib@myhopehousing.org.uk',
+          'jessica@myhopehousing.org.uk',
+          'francesca@myhopehousing.org.uk'
+        ].map(email => email.toLowerCase());
+
+        const SERVICE_CHARGE_VISIBLE_PREFIXES = ['leticia', 'amaani', 'hasib', 'jessica', 'jess', 'francesca'];
+
+        const isServiceChargeDeadlineVisible =
+          (currentUserEmail && SERVICE_CHARGE_VISIBLE_EMAILS.includes(currentUserEmail)) ||
+          (currentUserPrefix && SERVICE_CHARGE_VISIBLE_PREFIXES.includes(currentUserPrefix));
+
+        if (isServiceChargeDeadlineVisible) {
+          serviceCharges.forEach(charge => {
+            const isDeleted = charge.Deleted || charge.deleted || false;
+            const isExempt = charge.Exempt || charge.exempt || false;
+            const monthlyAmount = parseFloat(charge["Monthly Amount"] || charge.monthly_amount || 0);
+
+            // Only non-deleted, non-exempt, positive amount charges
+            if (!isDeleted && !isExempt && monthlyAmount > 0) {
+              const paymentStatus = (charge["Payment Status"] || charge.payment_status || '').toLowerCase().trim();
+
+              // Only 'Due' or 'Partially Paid' status types
+              if (paymentStatus === 'due' || paymentStatus === 'partially paid' || paymentStatus === 'partially_paid') {
+                const dueDateStr = charge["Due Date"] || charge.due_date;
+                if (dueDateStr) {
+                  const dueDate = new Date(dueDateStr);
+                  if (!isNaN(dueDate.getTime())) {
+                    // Resolve Resident name and Property Name
+                    const residentId = charge["Resident ID"] || charge.resident_id;
+                    const resident = residentsData.find(r => (r.ID || r.id) === residentId);
+                    let residentName = '';
+                    let propertyName = '';
+
+                    if (resident) {
+                      residentName = `${resident["First Name"] || resident.first_name} ${resident["Last Name"] || resident.last_name}`.trim();
+
+                      // Find resident's property
+                      const propertyId = resident["Property ID"] || resident.property_id;
+                      if (propertyId) {
+                        const prop = allProperties.find(p => (p.ID || p.id) === propertyId);
+                        if (prop) {
+                          propertyName = prop.Name || prop.name;
+                        }
+                      }
+                    }
+
+                    // Fallbacks for Resident Name or Property Name if not found in lookup
+                    if (!residentName) {
+                      residentName = charge["Resident Name"] || charge.resident_name || 'Unknown Resident';
+                    }
+                    if (!propertyName) {
+                      propertyName = charge["Property Name"] || charge.property_name || '';
+                    }
+
+                    const forLabel = propertyName ? `${residentName} (${propertyName})` : residentName;
+
+                    allDeadlines.push({
+                      id: charge.ID || charge.id || `service-charge-${Math.random()}`,
+                      title: 'Service Charge Payment',
+                      date: dueDate,
+                      source: 'Service Charge',
+                      item: charge,
+                      assignedTo: forLabel
+                    });
+                  }
+                }
+              }
+            }
+          });
+        }
+
         // Categorize and Sort
         const endOfToday = new Date(now);
         endOfToday.setHours(23, 59, 59, 999);
