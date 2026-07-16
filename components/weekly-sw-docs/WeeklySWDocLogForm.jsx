@@ -14,13 +14,15 @@ export default function WeeklySWDocLogForm({ log, documentName, weekDate, onSubm
     notes: log.Notes || log.notes || "",
     staff_member: log.Staff_Member || log.staff_member || currentUser?.['Full Name'] || "",
     log_date: log.Log_Date || log.log_date || new Date().toISOString(),
-    file_url: log.File_Url || log.file_url || ""
+    file_url: log.File_Url || log.file_url || "",
+    created_date: log["Created Date"] || log.Created_Date || log.created_date || ""
   } : {
     status: "incomplete",
     notes: "",
     staff_member: currentUser?.['Full Name'] || "",
     log_date: new Date().toISOString(),
-    file_url: ""
+    file_url: "",
+    created_date: ""
   });
 
   const handleSubmit = (e) => {
@@ -49,6 +51,15 @@ export default function WeeklySWDocLogForm({ log, documentName, weekDate, onSubm
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-2">
+          <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+          <Input
+            id="entry_date_time"
+            value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+            disabled
+            className="bg-slate-100 cursor-not-allowed text-slate-500"
+          />
+        </div>
         <div>
           <Label htmlFor="status">Status *</Label>
           <Select value={formData.status} onValueChange={v => handleChange("status", v)} required>

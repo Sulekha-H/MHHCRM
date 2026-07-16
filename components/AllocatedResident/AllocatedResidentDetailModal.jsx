@@ -79,6 +79,9 @@ export default function AllocatedResidentDetailModal({ resident, properties, acc
   const propertyId = resident["Property ID"] || resident.property_id;
   const accommodationId = resident["Accommodation ID"] || resident.accommodation_id;
 
+  const createdDate = resident["Created Date"] || resident.Created_Date || resident.created_date;
+  const formattedCreatedDate = createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : "N/A";
+
   const previewUrl = convertToDirectImageUrl(photoIdUrl);
 
   const getStatusColor = (status) => {
@@ -120,6 +123,7 @@ export default function AllocatedResidentDetailModal({ resident, properties, acc
 
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <DetailItem icon={<Calendar />} label="Entry Date & Time">{formattedCreatedDate}</DetailItem>
                 <DetailItem icon={<User />} label="Date of Birth">{dateOfBirth ? format(new Date(dateOfBirth), 'dd MMMM yyyy') : null}</DetailItem>
                 <DetailItem icon={<Phone />} label="Phone Number">{phoneNumber}</DetailItem>
                 <DetailItem icon={<Mail />} label="Email Address">{emailAddress}</DetailItem>

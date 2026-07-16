@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { X, Save, Shield } from "lucide-react";
+import { format } from "date-fns";
 
 export default function IncidentForm({ incident, residents, users, currentUser, onSubmit, onCancel }) {
   const getInitialDateTime = () => {
@@ -46,6 +47,7 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
       authorities_notified: incident["Authorities Notified"] || incident.Authorities_Notified || incident.authorities_notified || false,
       status: incident["Status"] || incident.Status || incident.status || "Open",
       logged_by: incident["Logged By"] || incident.Logged_By || incident.logged_by || currentUser?.["Full Name"] || currentUser?.full_name || "",
+      created_date: incident["Created Date"] || incident.Created_Date || incident.created_date || ""
     } 
     : {
       resident_id: "",
@@ -65,7 +67,8 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
       staff_members_involved: [],
       authorities_notified: false,
       status: "Open",
-      logged_by: currentUser?.["Full Name"] || currentUser?.full_name || ""
+      logged_by: currentUser?.["Full Name"] || currentUser?.full_name || "",
+      created_date: ""
     });
 
   const staffMembers = [
@@ -186,6 +189,15 @@ export default function IncidentForm({ incident, residents, users, currentUser, 
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Incident Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="incident_type">Incident Type *</Label>
                 <Select value={formData.incident_type} onValueChange={(value) => handleChange("incident_type", value)}>

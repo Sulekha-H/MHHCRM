@@ -130,8 +130,8 @@ export default function DocumentDetailModal({
               {residentName && (
                 <DetailItem icon={<User />} label="Related Resident">{residentName}</DetailItem>
               )}
-              <DetailItem icon={<Calendar />} label="Created Date">
-                {formatDate(createdDate)}
+              <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                {createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : 'N/A'}
               </DetailItem>
               <DetailItem icon={<User />} label="Created By">{createdBy}</DetailItem>
               {getLoggedByName && loggedBy && (

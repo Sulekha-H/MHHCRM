@@ -130,6 +130,9 @@ export default function BenefitLogDetailModal({
                     <Badge variant="outline">{benefitTypeLabel}</Badge>
                     {sanctions && <Badge className="bg-red-100 text-red-800">Sanctions</Badge>}
                   </div>
+                  <div className="text-xs text-slate-500 mt-2">
+                    Entry Date & Time: <span className="font-semibold">{log["Created Date"] || log.Created_Date || log.created_date ? format(new Date(log["Created Date"] || log.Created_Date || log.created_date), 'dd/MM/yyyy HH:mm') : (logDate ? format(new Date(logDate), 'dd/MM/yyyy HH:mm') : 'N/A')}</span>
+                  </div>
                 </div>
               </div>
             </DialogHeader>

@@ -98,6 +98,9 @@ export default function RepairDetailModal({
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Repair Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                {repair["Created Date"] || repair.Created_Date || repair.created_date ? format(new Date(repair["Created Date"] || repair.Created_Date || repair.created_date), 'dd/MM/yyyy HH:mm') : 'N/A'}
+              </DetailItem>
               <DetailItem icon={<MapPin />} label="Location">
                 {getPropertyName(repair.property_id)} - {getAccommodationName(repair)}
               </DetailItem>

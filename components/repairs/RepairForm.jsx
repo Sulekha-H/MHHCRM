@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, Wrench, File, CheckCircle2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { format } from "date-fns";
 
 export default function RepairForm({ repair, accommodations, properties, onSubmit, onCancel }) {
   const getInitialDateTime = () => {
@@ -64,7 +65,8 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
       invoice_file_url: repair.Invoice_File_Url || repair.invoice_file_url || "",
       notes: repair.Notes || repair.notes || "",
       images: repair.Images || repair.images || [],
-      logged_via: repair.Logged_Via || repair.logged_via || repair["Logged Via"] || null
+      logged_via: repair.Logged_Via || repair.logged_via || repair["Logged Via"] || null,
+      created_date: repair["Created Date"] || repair.Created_Date || repair.created_date || ""
     } 
     : {
       title: "",
@@ -103,7 +105,8 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
       invoice_file_url: "",
       notes: "",
       images: [],
-      logged_via: null
+      logged_via: null,
+      created_date: ""
     });
 
   const [locationType, setLocationType] = useState(() => {
@@ -235,6 +238,15 @@ export default function RepairForm({ repair, accommodations, properties, onSubmi
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-8 mt-2">Repair Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div className="md:col-span-2">
                 <Label htmlFor="title">Title *</Label>
                 <Input

@@ -215,6 +215,10 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
     
     let submissionData = { ...formData };
 
+    if (!resident && !submissionData["Created Date"]) {
+      submissionData["Created Date"] = new Date().toISOString();
+    }
+
     // Remove "UASC Info Added" from submission data as it's for frontend validation only
     // and does not exist as a column in the database.
     delete submissionData["UASC Info Added"];
@@ -555,6 +559,15 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="entry_date_time" className="mb-2 block">Entry Date & Time</Label>
+                  <Input
+                    id="entry_date_time"
+                    value={formData["Created Date"] || formData.Created_Date || formData.created_date ? format(new Date(formData["Created Date"] || formData.Created_Date || formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                    disabled
+                    className="bg-slate-100 cursor-not-allowed text-slate-500"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="first_name" className="mb-2 block">First Name *</Label>
                   <Input

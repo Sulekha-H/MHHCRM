@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Save, Shield } from "lucide-react";
+import { format } from "date-fns";
 
 export default function InsuranceForm({ insurance, properties, currentUser, onSubmit, onCancel }) {
   const normalizeStatus = (val) => {
@@ -61,7 +62,8 @@ export default function InsuranceForm({ insurance, properties, currentUser, onSu
     renewal_contact_person: insurance["Renewal Contact Person"] || insurance.Renewal_Contact_Person || insurance.renewal_contact_person || "",
     renewal_notes: insurance["Renewal Notes"] || insurance.Renewal_Notes || insurance.renewal_notes || "",
     notes: insurance.Notes || insurance.notes || "",
-    logged_by: insurance["Logged By"] || insurance.Logged_By || insurance.logged_by || currentUser?.full_name || ""
+    logged_by: insurance["Logged By"] || insurance.Logged_By || insurance.logged_by || currentUser?.full_name || "",
+    created_date: insurance["Created Date"] || insurance.Created_Date || insurance.created_date || ""
   } : {
     policy_name: "",
     insurance_type: "public_liability",
@@ -84,7 +86,8 @@ export default function InsuranceForm({ insurance, properties, currentUser, onSu
     renewal_contact_person: "",
     renewal_notes: "",
     notes: "",
-    logged_by: currentUser?.full_name || ""
+    logged_by: currentUser?.full_name || "",
+    created_date: ""
   });
 
   // Update logged_by when currentUser becomes available
@@ -186,6 +189,15 @@ export default function InsuranceForm({ insurance, properties, currentUser, onSu
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Policy Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="policy_name">Policy Name *</Label>
                 <Input

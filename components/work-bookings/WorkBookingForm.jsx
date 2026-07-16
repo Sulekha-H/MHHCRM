@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import { format } from "date-fns";
+
 export default function WorkBookingForm({ booking, providers, properties, accommodations, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     service_provider_id: "",
@@ -24,7 +26,8 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
     invoice_number: "",
     invoice_file_url: "",
     description_of_work: "",
-    notes: ""
+    notes: "",
+    created_date: ""
   });
 
   const filteredAccommodations = useMemo(() => {
@@ -49,7 +52,8 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
         invoice_number: booking["Invoice Number"] || booking.invoice_number || "",
         invoice_file_url: booking["Invoice File URL"] || booking.invoice_file_url || "",
         description_of_work: booking["Description of Work"] || booking.description_of_work || "",
-        notes: booking.Notes || booking.notes || ""
+        notes: booking.Notes || booking.notes || "",
+        created_date: booking["Created Date"] || booking.Created_Date || booking.created_date || ""
       });
     }
   }, [booking]);
@@ -102,6 +106,15 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-2 lg:col-span-3">
+              <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+              <Input
+                id="entry_date_time"
+                value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                disabled
+                className="bg-slate-100 cursor-not-allowed text-slate-500"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="service_provider_id">Service Provider</Label>
               <Select

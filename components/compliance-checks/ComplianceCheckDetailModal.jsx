@@ -60,7 +60,11 @@ export default function ComplianceCheckDetailModal({ log, isOpen, onClose }) {
           <DialogTitle className="text-2xl font-bold text-slate-900">
             {log["Property Name"]}
           </DialogTitle>
-          <DialogDescription className="flex items-center gap-4 mt-1">
+          <DialogDescription className="flex items-center gap-4 mt-1 flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4" />
+              Entry Date & Time: {log["Created Date"] || log.Created_Date || log.created_date ? format(new Date(log["Created Date"] || log.Created_Date || log.created_date), 'dd/MM/yyyy HH:mm') : 'N/A'}
+            </span>
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
               Week Ending: {weekEnding}

@@ -25,7 +25,8 @@ export default function OfficeLogForm({ log, currentUser, users, onSubmit, onCan
     status: "completed",
     follow_up_by_user_id: "",
     follow_up_completed: false,
-    follow_up_comments: ""
+    follow_up_comments: "",
+    created_date: ""
   });
 
   const [dateTimeString, setDateTimeString] = useState("");
@@ -46,7 +47,8 @@ export default function OfficeLogForm({ log, currentUser, users, onSubmit, onCan
         status: (log["Status"] || log.status || "completed").toLowerCase(),
         follow_up_by_user_id: log["Follow-up By User ID"] || log.follow_up_by_user_id || "",
         follow_up_completed: log["Follow-up Completed"] || log.follow_up_completed || false,
-        follow_up_comments: log["Follow-up Comments"] || log.follow_up_comments || ""
+        follow_up_comments: log["Follow-up Comments"] || log.follow_up_comments || "",
+        created_date: log["Created Date"] || log.Created_Date || log.created_date || ""
       };
       setFormData(logData);
       setDateTimeString(format(new Date(logData.date_time), "yyyy-MM-dd'T'HH:mm"));
@@ -93,6 +95,14 @@ export default function OfficeLogForm({ log, currentUser, users, onSubmit, onCan
             
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Entry Date & Time</Label>
+                  <Input
+                    value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                    disabled
+                    className="bg-slate-100 cursor-not-allowed text-slate-500"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label>Log Type *</Label>
                   <Select

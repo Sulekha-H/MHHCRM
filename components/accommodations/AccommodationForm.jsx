@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, Home } from "lucide-react";
+import { format } from "date-fns";
 
 export default function AccommodationForm({ accommodation, properties, residents, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(accommodation ? {
@@ -33,7 +34,8 @@ export default function AccommodationForm({ accommodation, properties, residents
     ensuite_image_link: accommodation["En-suite Image Link"] || accommodation.ensuite_image_link || "",
     alt_angle_image_link: accommodation["Alternative Angle Link"] || accommodation.alt_angle_image_link || "",
     notes: accommodation["Notes"] || accommodation.Notes || accommodation.notes || "",
-    images: accommodation["Images"] || accommodation.Images || accommodation.images || []
+    images: accommodation["Images"] || accommodation.Images || accommodation.images || [],
+    created_date: accommodation["Created Date"] || accommodation.Created_Date || accommodation.created_date || ""
   } : {
     property_id: "",
     room_number: "",
@@ -48,6 +50,7 @@ export default function AccommodationForm({ accommodation, properties, residents
     amenities: [],
     accessibility_features: "",
     condition: "good",
+    created_date: "",
     last_maintenance_date: "",
     next_maintenance_due: "",
     availability_status: "available",
@@ -184,6 +187,15 @@ export default function AccommodationForm({ accommodation, properties, residents
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-200">Location</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="property_id">Property *</Label>
                 <Select value={formData.property_id} onValueChange={(value) => handleChange("property_id", value)}>

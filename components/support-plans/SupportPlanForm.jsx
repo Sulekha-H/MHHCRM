@@ -74,10 +74,12 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
     support_worker_name: plan.Support_Worker_Name || plan.support_worker_name || "",
     goals_discussed: plan.Goals_Discussed || plan.goals_discussed || "",
     action_points: plan.Action_Points || plan.action_points || "",
-    resident_feedback: plan.Resident_Feedback || plan.resident_feedback || ""
+    resident_feedback: plan.Resident_Feedback || plan.resident_feedback || "",
+    created_date: plan["Created Date"] || plan.Created_Date || plan.created_date || ""
   } : {
     resident_id: "",
     plan_type: activePlanType,
+    created_date: "",
     title: "",
     log_date: "",
     date_logged_by_office: getInitialDateTime(),
@@ -214,6 +216,15 @@ export default function SupportPlanForm_Supabase({ plan, residents, users, curre
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-8 mt-2">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="resident_id">Resident *</Label>
                 <Select value={formData.resident_id} onValueChange={v => handleChange("resident_id", v)} required>

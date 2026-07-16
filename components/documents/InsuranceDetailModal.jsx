@@ -176,6 +176,9 @@ export default function InsuranceDetailModal({
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Policy Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                {createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : 'N/A'}
+              </DetailItem>
               <DetailItem icon={<FileText />} label="Policy Number">{policyNumber}</DetailItem>
               <DetailItem icon={<User />} label="Insurance Company">{insuranceCompany}</DetailItem>
               <DetailItem icon={<PoundSterling />} label="Coverage Amount">

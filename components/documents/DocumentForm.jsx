@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Save, Loader2, FilePlus2, Tag, Plus } from "lucide-react";
+import { format } from "date-fns";
 
 export default function DocumentForm({ document: initialDocument, residents, currentUser, onSubmit, onCancel }) {
   const normalizeDocumentType = (val) => {
@@ -43,7 +44,8 @@ export default function DocumentForm({ document: initialDocument, residents, cur
     expiry_date: initialDocument["Expiry Date"] || initialDocument.Expiry_Date || initialDocument.expiry_date || "",
     file_url: initialDocument["File URL"] || initialDocument.File_Url || initialDocument.file_url || "",
     tags: initialDocument.Tags || initialDocument.tags || [],
-    logged_by: initialDocument["Logged By"] || initialDocument.Logged_By || initialDocument.logged_by || currentUser?.full_name || ""
+    logged_by: initialDocument["Logged By"] || initialDocument.Logged_By || initialDocument.logged_by || currentUser?.full_name || "",
+    created_date: initialDocument["Created Date"] || initialDocument.Created_Date || initialDocument.created_date || ""
   } : {
     title: "",
     document_type: "other",
@@ -54,7 +56,8 @@ export default function DocumentForm({ document: initialDocument, residents, cur
     expiry_date: "",
     file_url: "",
     tags: [],
-    logged_by: currentUser?.full_name || ""
+    logged_by: currentUser?.full_name || "",
+    created_date: ""
   });
 
   const [uploading, setUploading] = useState(false);
@@ -174,6 +177,15 @@ export default function DocumentForm({ document: initialDocument, residents, cur
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+              <Input
+                id="entry_date_time"
+                value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                disabled
+                className="bg-slate-100 cursor-not-allowed text-slate-500"
+              />
+            </div>
             <div>
               <Label htmlFor="title">Document Title *</Label>
               <Input

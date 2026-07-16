@@ -88,6 +88,9 @@ export default function PropertyDetailModal({ property, accommodations, resident
   const nextInspectionDue = property["Next Inspection Due"] || property.next_inspection_due;
   const contactPhone = property["Contact Phone"] || property.contact_phone;
   const emergencyContact = property["Emergency Contact"] || property.emergency_contact;
+
+  const createdDate = property["Created Date"] || property.Created_Date || property.created_date;
+  const formattedCreatedDate = createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : "N/A";
   const googleDriveLink = property["Google Drive Link"] || property.google_drive_link;
   const bathroomImageLink = property["Bathroom Image Link"] || property.bathroom_image_link;
   const communalAreaImageLink = property["Communal Area Image Link"] || property.communal_area_image_link;
@@ -246,6 +249,7 @@ export default function PropertyDetailModal({ property, accommodations, resident
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Property Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DetailItem icon={<Calendar />} label="Entry Date & Time">{formattedCreatedDate}</DetailItem>
                 <DetailItem icon={<MapPin />} label="Address">{address}</DetailItem>
                 <DetailItem icon={<Building2 />} label="Property Type">{propertyType?.replace('_', ' ')}</DetailItem>
                 <DetailItem icon={<Users />} label="Capacity">

@@ -220,6 +220,9 @@ export default function ApplianceDetailModal({
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Appliance Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                {createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : 'N/A'}
+              </DetailItem>
               <DetailItem icon={<Package />} label="Brand">{brand}</DetailItem>
               <DetailItem icon={<Package />} label="Model Number">{modelNumber}</DetailItem>
               <DetailItem icon={<Package />} label="Serial Number">{serialNumber}</DetailItem>

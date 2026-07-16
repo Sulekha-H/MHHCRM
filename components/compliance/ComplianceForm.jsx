@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, FileCheck, CheckCircle2 } from "lucide-react";
+import { format } from "date-fns";
 
 const PRESET_CERT_NAMES = [
   "Electrical Installation Condition Report",
@@ -25,7 +26,8 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
 
   const [formData, setFormData] = useState(log ? {
     ...log,
-    logged_by: currentUser?.full_name || currentUser?.fullName || log.logged_by || ""
+    logged_by: currentUser?.full_name || currentUser?.fullName || log.logged_by || "",
+    created_date: log["Created Date"] || log.Created_Date || log.created_date || ""
   } : {
     property_id: "",
     compliance_type: "gas_safety",
@@ -43,7 +45,8 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
     logged_by: currentUser?.full_name || currentUser?.fullName || "",
     actioned: false,
     actioned_date: "",
-    actioned_notes: ""
+    actioned_notes: "",
+    created_date: ""
   });
 
   // Update logged_by whenever currentUser or log changes to ensure it's accurate
@@ -140,6 +143,15 @@ export default function ComplianceForm({ log, properties, currentUser, onSubmit,
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="property_id">Property *</Label>
                 <Select value={formData.property_id} onValueChange={v => handleChange("property_id", v)} required>

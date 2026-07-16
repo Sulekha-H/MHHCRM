@@ -208,8 +208,8 @@ export default function IncidentDetailModal({
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Additional Information</h3>
             <div className="grid grid-cols-1 gap-6">
-              <DetailItem icon={<Calendar />} label="Created Date">
-                {formatDate(createdDate, 'dd MMMM yyyy, HH:mm')}
+              <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                {formatDate(createdDate, 'dd/MM/yyyy HH:mm')}
               </DetailItem>
               <DetailItem icon={<Clock />} label="Last Updated">
                 {formatDate(updatedDate, 'dd MMMM yyyy, HH:mm')}

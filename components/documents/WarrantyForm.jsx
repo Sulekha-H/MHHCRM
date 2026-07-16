@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Save, Shield } from "lucide-react";
+import { format } from "date-fns";
 
 export default function WarrantyForm({ warranty, properties, accommodations, currentUser, onSubmit, onCancel }) {
   const normalizeStatus = (val) => {
@@ -71,7 +72,8 @@ export default function WarrantyForm({ warranty, properties, accommodations, cur
     renewal_contact_person: warranty["Renewal Contact Person"] || warranty.Renewal_Contact_Person || warranty.renewal_contact_person || "",
     renewal_notes: warranty["Renewal Notes"] || warranty.Renewal_Notes || warranty.renewal_notes || "",
     notes: warranty.Notes || warranty.notes || "",
-    logged_by: warranty["Logged By"] || warranty.Logged_By || warranty.logged_by || currentUser?.full_name || ""
+    logged_by: warranty["Logged By"] || warranty.Logged_By || warranty.logged_by || currentUser?.full_name || "",
+    created_date: warranty["Created Date"] || warranty.Created_Date || warranty.created_date || ""
   } : {
     product_name: "",
     brand: "",
@@ -102,7 +104,8 @@ export default function WarrantyForm({ warranty, properties, accommodations, cur
     renewal_contact_person: "",
     renewal_notes: "",
     notes: "",
-    logged_by: currentUser?.full_name || ""
+    logged_by: currentUser?.full_name || "",
+    created_date: ""
   });
 
   // Update logged_by when currentUser becomes available
@@ -219,6 +222,15 @@ export default function WarrantyForm({ warranty, properties, accommodations, cur
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Product Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="product_name">Product Name *</Label>
                 <Input

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
 
 export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -15,7 +16,8 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
     contact_number: "",
     email: "",
     default_hourly_rate: "",
-    notes: ""
+    notes: "",
+    created_date: ""
   });
 
   useEffect(() => {
@@ -26,7 +28,8 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
         contact_number: provider["Contact Number"] || provider.contact_number || "",
         email: provider.Email || provider.email || "",
         default_hourly_rate: provider["Default Hourly Rate"] || provider.default_hourly_rate || "",
-        notes: provider.Notes || provider.notes || ""
+        notes: provider.Notes || provider.notes || "",
+        created_date: provider["Created Date"] || provider.Created_Date || provider.created_date || ""
       });
     }
   }, [provider]);
@@ -53,6 +56,15 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+              <Input
+                id="entry_date_time"
+                value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                disabled
+                className="bg-slate-100 cursor-not-allowed text-slate-500"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input

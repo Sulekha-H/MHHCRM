@@ -102,6 +102,9 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const futureHousingType = resident["Future Housing Type"] || resident.Future_Housing_Type || resident.future_housing_type;
   const moveOnOutcome = resident["Move-on Outcome"] || resident.Move_On_Outcome || resident.move_on_outcome;
 
+  const createdDate = resident["Created Date"] || resident.Created_Date || resident.created_date;
+  const formattedCreatedDate = createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : "N/A";
+
   const previewUrl = convertToDirectImageUrl(photoIdUrl);
 
   const getStatusColor = (status) => {
@@ -164,6 +167,7 @@ export default function ResidentDetailModal({ resident, accommodations, properti
               {/* Main Details Grid */}
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Entry Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <DetailItem icon={<Calendar />} label="Entry Date & Time">{formattedCreatedDate}</DetailItem>
                 <DetailItem icon={<User />} label="Date of Birth">{dateOfBirth ? format(new Date(dateOfBirth), 'dd MMMM yyyy') : null}</DetailItem>
                 <DetailItem icon={<Phone />} label="Phone Number">{phoneNumber}</DetailItem>
                 <DetailItem icon={<Mail />} label="Email Address">{emailAddress}</DetailItem>

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, HandCoins } from "lucide-react";
+import { format } from "date-fns";
 
 export default function BenefitLogForm_Supabase({ log, residents, currentUser, activeBenefitType, onSubmit, onCancel, hideCard = false }) {
   const getInitialDateTime = () => {
@@ -84,6 +85,7 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
     status: initialStatus,
     logged_by: log["Logged By"] || log.logged_by || log.Logged_By || currentUser?.["Full Name"] || currentUser?.full_name || "",
     notes: log.Notes || log.notes || "",
+    created_date: log["Created Date"] || log.Created_Date || log.created_date || "",
     date_application_started: log["Date Application Started"] || log.date_application_started || "",
     application_saved_date: log["Application Saved Date"] || log.application_saved_date || "",
     completed_application_submitted_date: log["Completed Application Submitted Date"] || log.completed_application_submitted_date || "",
@@ -649,6 +651,18 @@ export default function BenefitLogForm_Supabase({ log, residents, currentUser, a
 
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Entry Date & Time autofield */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+              <Input
+                id="entry_date_time"
+                value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                disabled
+                className="bg-slate-100 cursor-not-allowed text-slate-500"
+              />
+            </div>
+          </div>
           {/* Top Section - Resident and Benefit Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {formData.benefit_type !== "landlord_portal" && (

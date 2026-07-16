@@ -156,9 +156,9 @@ export default function PropertyPurchaseDetailModal({
                   <div className="flex items-start gap-3">
                     <Clock className="w-4 h-4 text-slate-400 mt-1" />
                     <div className="space-y-0.5">
-                      <p className="text-xs text-slate-500 uppercase">Created On</p>
+                      <p className="text-xs text-slate-500 uppercase">Entry Date & Time</p>
                       <p className="text-sm font-medium text-slate-900">
-                        {createdDate ? format(new Date(createdDate), 'dd MMM yyyy HH:mm') : 'N/A'}
+                        {createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : 'N/A'}
                       </p>
                     </div>
                   </div>

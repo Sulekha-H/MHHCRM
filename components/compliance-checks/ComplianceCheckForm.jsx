@@ -45,14 +45,16 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
       // Default legacy records with issues to rectified=true if they have a date_fixed
       rectified: check.rectified !== undefined ? check.rectified : (!!check.date_fixed || check.no_issues),
       rectification_details: check.rectification_details || ""
-    }))
+    })),
+    created_date: log["Created Date"] || log.Created_Date || log.created_date || ""
   } : {
     property_id: "",
     week_ending_date: format(new Date(), 'yyyy-MM-dd'),
     logged_by: currentUser?.full_name || "",
     materials_required: "",
     weekly_check_not_completed: false,
-    checks: []
+    checks: [],
+    created_date: ""
   });
 
   const [propertyRooms, setPropertyRooms] = useState([]);
@@ -213,6 +215,15 @@ export default function ComplianceCheckForm({ log, properties, accommodations, c
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2 md:col-span-3">
+              <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+              <Input
+                id="entry_date_time"
+                value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                disabled
+                className="bg-slate-100 cursor-not-allowed text-slate-500"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="property_id" className="flex items-center gap-1.5">
                 <Home className="w-4 h-4 text-slate-400" /> Property *

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X, Save, Wrench } from "lucide-react";
+import { format } from "date-fns";
 
 export default function ApplianceForm({ appliance, properties, accommodations, warranties, currentUser, onSubmit, onCancel }) {
   console.log("🔧 ApplianceForm_Supabase - Received appliance:", appliance);
@@ -37,7 +38,8 @@ export default function ApplianceForm({ appliance, properties, accommodations, w
     manual_url: appliance["Manual URL"] || appliance.Manual_Url || appliance.manual_url || "",
     receipt_url: appliance["Receipt URL"] || appliance.Receipt_Url || appliance.receipt_url || "",
     notes: appliance.Notes || appliance.notes || "",
-    logged_by: appliance["Logged By"] || appliance.Logged_By || appliance.logged_by || currentUser?.full_name || ""
+    logged_by: appliance["Logged By"] || appliance.Logged_By || appliance.logged_by || currentUser?.full_name || "",
+    created_date: appliance["Created Date"] || appliance.Created_Date || appliance.created_date || ""
   } : {
     appliance_name: "",
     category: "Kitchen",
@@ -59,7 +61,8 @@ export default function ApplianceForm({ appliance, properties, accommodations, w
     manual_url: "",
     receipt_url: "",
     notes: "",
-    logged_by: currentUser?.full_name || ""
+    logged_by: currentUser?.full_name || "",
+    created_date: ""
   });
 
   console.log("🔧 ApplianceForm_Supabase - Initialized formData:", formData);
@@ -153,6 +156,15 @@ export default function ApplianceForm({ appliance, properties, accommodations, w
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Appliance Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="entry_date_time">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="appliance_name">Appliance Name *</Label>
                 <Input

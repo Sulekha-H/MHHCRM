@@ -87,6 +87,9 @@ export default function WeeklySWDocLogDetailModal({
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Check Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                {log["Created Date"] || log.Created_Date || log.created_date || log.log_date || log.Log_Date ? format(new Date(log["Created Date"] || log.Created_Date || log.created_date || log.log_date || log.Log_Date), 'dd/MM/yyyy HH:mm') : 'N/A'}
+              </DetailItem>
               <DetailItem icon={<Calendar />} label="Week Starting">
                 {log.week_start_date ? format(new Date(log.week_start_date), 'dd MMMM yyyy') : <span className="text-sm font-normal text-slate-400">Not provided</span>}
               </DetailItem>

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, ShoppingCart, Link as LinkIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from "date-fns";
 
 export default function PropertyPurchaseForm({ purchase, properties, currentUser, onSubmit, onCancel, hideCard = false }) {
   const [formData, setFormData] = useState({
@@ -19,7 +20,8 @@ export default function PropertyPurchaseForm({ purchase, properties, currentUser
     category: "",
     status: "ordered",
     receipt_link: "",
-    notes: ""
+    notes: "",
+    created_date: ""
   });
 
   const categories = [
@@ -52,7 +54,8 @@ export default function PropertyPurchaseForm({ purchase, properties, currentUser
         category: (purchase["Category"] || purchase.category || "").toLowerCase(),
         status: (purchase["Status"] || purchase.status || "ordered").toLowerCase(),
         receipt_link: purchase["Receipt Link"] || purchase.receipt_link || "",
-        notes: purchase["Notes"] || purchase.notes || ""
+        notes: purchase["Notes"] || purchase.notes || "",
+        created_date: purchase["Created Date"] || purchase.Created_Date || purchase.created_date || ""
       });
     }
   }, [purchase]);
@@ -87,6 +90,16 @@ export default function PropertyPurchaseForm({ purchase, properties, currentUser
   const formContent = (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <Label htmlFor="entry_date_time" className="mb-2 block">Entry Date & Time</Label>
+          <Input
+            id="entry_date_time"
+            value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+            disabled
+            className="bg-slate-100 cursor-not-allowed text-slate-500"
+          />
+        </div>
+
         <div className="md:col-span-2">
           <Label htmlFor="item_name" className="mb-2 block">Item/Service Name *</Label>
           <Input

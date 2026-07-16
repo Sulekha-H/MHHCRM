@@ -111,6 +111,10 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
     setUploadingFiles(true);
     try {
       let submissionData = { ...formData };
+
+      if (!resident && !submissionData["Created Date"]) {
+        submissionData["Created Date"] = new Date().toISOString();
+      }
       
       const selectedProperty = properties.find(p => p.ID === formData["Property ID"]);
       if (selectedProperty) {
@@ -214,6 +218,14 @@ export default function AllocatedResidentForm({ resident, accommodations, alloca
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Entry Date & Time</Label>
+                  <Input
+                    value={formData["Created Date"] || formData.Created_Date || formData.created_date ? format(new Date(formData["Created Date"] || formData.Created_Date || formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                    disabled
+                    className="bg-slate-100 cursor-not-allowed text-slate-500"
+                  />
+                </div>
                 <div><Label>First Name *</Label><Input value={formData["First Name"]} onChange={(e) => handleChange("First Name", e.target.value)} required /></div>
                 <div><Label>Last Name *</Label><Input value={formData["Last Name"]} onChange={(e) => handleChange("Last Name", e.target.value)} required /></div>
                 <div><Label>Date of Birth</Label><Input type="date" value={formData["Date of Birth"]} onChange={(e) => handleChange("Date of Birth", e.target.value)} /></div>

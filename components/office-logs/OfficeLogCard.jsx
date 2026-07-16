@@ -88,7 +88,13 @@ export default function OfficeLogCard({ log, onEdit, onDelete, getPriorityColor,
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="w-4 h-4 text-slate-400" />
               <span className="text-slate-600">
-                {dateTime && format(new Date(dateTime), 'PPp')}
+                Entry Date & Time: {createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : (dateTime ? format(new Date(dateTime), 'dd/MM/yyyy HH:mm') : 'N/A')}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span className="text-slate-600">
+                Activity Date: {dateTime && format(new Date(dateTime), 'PPp')}
               </span>
             </div>
             {staffMember && (
@@ -195,7 +201,11 @@ export default function OfficeLogCard({ log, onEdit, onDelete, getPriorityColor,
               <h4 className="font-semibold text-slate-900 mb-3">Log Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h5 className="font-medium text-slate-900 mb-1">Date & Time</h5>
+                  <h5 className="font-medium text-slate-900 mb-1">Entry Date & Time</h5>
+                  <p className="text-slate-600">{createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : 'N/A'}</p>
+                </div>
+                <div>
+                  <h5 className="font-medium text-slate-900 mb-1">Activity Date & Time</h5>
                   <p className="text-slate-600">{dateTime && format(new Date(dateTime), 'PPPp')}</p>
                 </div>
                 {staffMember && (

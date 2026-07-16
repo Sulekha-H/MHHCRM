@@ -75,7 +75,10 @@ export default function WorkBookingList({ bookings, providers, properties, accom
           {bookings.map((booking) => (
             <TableRow key={booking.ID || booking.id} className="hover:bg-slate-50/50">
               <TableCell className="font-medium">
-                {format(new Date(booking.Date || booking.date), 'dd/MM/yyyy')}
+                <div>{format(new Date(booking.Date || booking.date), 'dd/MM/yyyy')}</div>
+                <div className="text-[10px] text-slate-400 mt-1 whitespace-nowrap font-normal">
+                  Entry: {booking["Created Date"] || booking.Created_Date || booking.created_date ? format(new Date(booking["Created Date"] || booking.Created_Date || booking.created_date), 'dd/MM/yyyy HH:mm') : "N/A"}
+                </div>
               </TableCell>
               <TableCell>
                 <div className="font-semibold text-slate-900">{getProviderName(booking["Service Provider ID"] || booking.service_provider_id)}</div>

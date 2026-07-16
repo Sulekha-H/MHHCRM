@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Phone, Mail, User } from "lucide-react";
+import { format } from "date-fns";
 
 export default function ServiceProviderList({ providers, onEdit, onDelete, canEdit }) {
   if (providers.length === 0) {
@@ -63,11 +64,17 @@ export default function ServiceProviderList({ providers, onEdit, onDelete, canEd
                 <Mail className="w-4 h-4" />
                 <span className="truncate">{provider.Email || provider.email || "No email"}</span>
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Hourly Rate:</span>
                   <span className="font-semibold text-slate-900">
                     £{parseFloat(provider["Default Hourly Rate"] || provider.default_hourly_rate || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-slate-500 pt-1 border-t border-slate-50">
+                  <span>Entry Date & Time:</span>
+                  <span className="font-medium">
+                    {provider["Created Date"] || provider.Created_Date || provider.created_date ? format(new Date(provider["Created Date"] || provider.Created_Date || provider.created_date), 'dd/MM/yyyy HH:mm') : "N/A"}
                   </span>
                 </div>
               </div>

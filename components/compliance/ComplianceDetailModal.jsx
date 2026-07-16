@@ -130,6 +130,9 @@ export default function ComplianceDetailModal({
 
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Certificate Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DetailItem icon={<Calendar />} label="Entry Date & Time">
+                  {log["Created Date"] || log.Created_Date || log.created_date ? format(new Date(log["Created Date"] || log.Created_Date || log.created_date), 'dd/MM/yyyy HH:mm') : 'N/A'}
+                </DetailItem>
                 <DetailItem icon={<Building2 />} label="Property">{getPropertyName(log.property_id)}</DetailItem>
                 <DetailItem icon={<FileCheck />} label="Certificate Number">{log.certificate_number}</DetailItem>
                 <DetailItem icon={<Calendar />} label="Issued Date">

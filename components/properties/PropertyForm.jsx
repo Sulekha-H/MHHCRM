@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, Building2, Zap, Plus, Edit, Trash2 } from "lucide-react";
 import UtilityForm from "@/components/utilities/UtilityForm";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
+import { format } from "date-fns";
 
 export default function PropertyForm({ property, onSubmit, onCancel }) {
   const supabase = useClerkSupabaseClient();
@@ -42,7 +43,8 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
     living_room_image_link: "",
     exterior_image_link: "",
     notes: "",
-    status: "active"
+    status: "active",
+    created_date: ""
   });
 
   const facilityOptions = [
@@ -123,7 +125,8 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
         living_room_image_link: property["Living Room Image Link"] || property.living_room_image_link || "",
         exterior_image_link: property["Exterior Image Link"] || property.exterior_image_link || "",
         notes: property.Notes || property.notes || "",
-        status: statusReverseMap[property.Status] || property.status || "active"
+        status: statusReverseMap[property.Status] || property.status || "active",
+        created_date: property["Created Date"] || property.Created_Date || property.created_date || ""
       });
     }
   }, [property]);
@@ -263,6 +266,15 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="entry_date_time" className="mb-2 block">Entry Date & Time</Label>
+                <Input
+                  id="entry_date_time"
+                  value={formData.created_date ? format(new Date(formData.created_date), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')}
+                  disabled
+                  className="bg-slate-100 cursor-not-allowed text-slate-500"
+                />
+              </div>
               <div>
                 <Label htmlFor="name" className="mb-2 block">Property Name *</Label>
                 <Input
