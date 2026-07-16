@@ -8,6 +8,7 @@ CREATE TABLE service_providers (
     "Email" TEXT,
     "Default Hourly Rate" DECIMAL(10, 2) DEFAULT 0.00,
     "Notes" TEXT,
+    "Unavailable Dates" JSONB DEFAULT '[]'::jsonb, -- Array of date strings: ["YYYY-MM-DD", ...]
     "Created Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     "Updated Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     "Deleted" BOOLEAN DEFAULT FALSE,

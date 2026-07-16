@@ -72,6 +72,7 @@ export default function ServiceProvidersPage() {
         "Email": formData.email,
         "Default Hourly Rate": formData.default_hourly_rate || 0,
         "Notes": formData.notes,
+        "Unavailable Dates": formData.unavailable_dates || [],
         "Updated Date": new Date().toISOString()
       };
 

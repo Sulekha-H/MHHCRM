@@ -27,6 +27,35 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
     notes: ""
   });
 
+  const getUnavailableDates = (provider) => {
+    let unavail = provider?.["Unavailable Dates"] || provider?.unavailable_dates || [];
+    if (typeof unavail === 'string') {
+      try {
+        unavail = JSON.parse(unavail);
+      } catch (e) {
+        unavail = unavail.split(',').map(d => d.trim()).filter(Boolean);
+      }
+    }
+    return Array.isArray(unavail) ? unavail : [];
+  };
+
+  const isProviderUnavailable = (provider, dateString) => {
+    if (!provider || !dateString) return false;
+    const dates = getUnavailableDates(provider);
+    const targetDate = dateString.split('T')[0];
+    return dates.some(d => d.split('T')[0] === targetDate);
+  };
+
+  const selectedProvider = useMemo(() => {
+    return providers.find(p => (p.ID || p.id) === formData.service_provider_id);
+  }, [formData.service_provider_id, providers]);
+
+  const isCurrentProviderUnavailable = useMemo(() => {
+    return isProviderUnavailable(selectedProvider, formData.date);
+  }, [selectedProvider, formData.date]);
+
+  const selectedProviderName = selectedProvider ? (selectedProvider.Name || selectedProvider.name) : "Selected provider";
+
   const filteredAccommodations = useMemo(() => {
     if (!formData.property_id || formData.property_id === "none") return [];
     return accommodations.filter(acc => (acc["Property ID"] || acc.property_id) === formData.property_id);
@@ -113,11 +142,18 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
                   <SelectValue placeholder="Select Provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  {providers.map(p => (
-                    <SelectItem key={p.ID || p.id} value={p.ID || p.id}>
-                      {p.Name || p.name} ({p.Category || p.category})
-                    </SelectItem>
-                  ))}
+                  {providers.map(p => {
+                    const isUnavail = isProviderUnavailable(p, formData.date);
+                    return (
+                      <SelectItem
+                        key={p.ID || p.id}
+                        value={p.ID || p.id}
+                        disabled={isUnavail}
+                      >
+                        {p.Name || p.name} ({p.Category || p.category}){isUnavail ? " - (Unavailable)" : ""}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -326,11 +362,24 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
             />
           </div>
 
+          {isCurrentProviderUnavailable && (
+            <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-3.5 text-sm flex items-start gap-2.5">
+              <span className="font-bold text-red-600 shrink-0">⚠️ Notice:</span>
+              <div>
+                <span className="font-semibold">{selectedProviderName}</span> is marked as <span className="font-bold text-red-700">unavailable</span> on <span className="font-bold text-red-700">{formData.date}</span>. Please choose another date or service provider.
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+            <Button
+              type="submit"
+              className="bg-orange-600 hover:bg-orange-700"
+              disabled={isCurrentProviderUnavailable}
+            >
               {booking ? "Update Booking" : "Save Booking"}
             </Button>
           </div>
