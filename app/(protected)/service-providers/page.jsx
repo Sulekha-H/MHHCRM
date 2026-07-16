@@ -132,7 +132,7 @@ export default function ServiceProvidersPage() {
 
   const filteredProviders = providers.filter(p => {
     const matchesSearch = (p.Name || p.name || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || (p.Category || p.category) === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || (p.Category || p.category || "").toLowerCase() === categoryFilter.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -145,7 +145,7 @@ export default function ServiceProvidersPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Service Providers</h1>
-            <p className="text-sm text-slate-600">Manage cleaners, tradesmen, gardeners, and translators</p>
+            <p className="text-sm text-slate-600">Manage handyman, plumbers, electricians, decorators, cleaners, and other service providers</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -183,10 +183,17 @@ export default function ServiceProvidersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="Handyman">Handyman</SelectItem>
+            <SelectItem value="Plumber">Plumber</SelectItem>
+            <SelectItem value="Electrician">Electrician</SelectItem>
+            <SelectItem value="Decorator">Decorator</SelectItem>
+            <SelectItem value="Gas Engineer">Gas Engineer</SelectItem>
             <SelectItem value="Cleaner">Cleaner</SelectItem>
-            <SelectItem value="Tradesman">Tradesman</SelectItem>
             <SelectItem value="Gardener">Gardener</SelectItem>
             <SelectItem value="Translator">Translator</SelectItem>
+            <SelectItem value="Rubbish Collector">Rubbish Collector</SelectItem>
+            <SelectItem value="Delivery Person">Delivery Person</SelectItem>
+            <SelectItem value="Pest Control">Pest Control</SelectItem>
             <SelectItem value="Other">Other</SelectItem>
           </SelectContent>
         </Select>
