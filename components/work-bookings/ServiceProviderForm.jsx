@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X, Calendar } from "lucide-react";
+import { eachDayOfInterval, parseISO, format, isBefore, isAfter } from "date-fns";
 
 const CATEGORIES = [
   "Handyman",
@@ -36,7 +37,8 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
     unavailable_dates: []
   });
 
-  const [newDate, setNewDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
     if (provider) {
@@ -77,17 +79,42 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
     }
   };
 
-  const handleAddDate = () => {
-    if (!newDate) return;
-    if (formData.unavailable_dates.includes(newDate)) {
-      alert("This date is already added.");
-      return;
+  const handleAddDateRange = () => {
+    if (!startDate) return;
+
+    let targetDates = [];
+    if (endDate) {
+      const start = parseISO(startDate);
+      const end = parseISO(endDate);
+
+      if (isAfter(start, end)) {
+        alert("Start Date must be before or equal to End Date.");
+        return;
+      }
+
+      try {
+        const interval = eachDayOfInterval({ start, end });
+        targetDates = interval.map(date => format(date, "yyyy-MM-dd"));
+      } catch (err) {
+        alert("Invalid date range entered.");
+        return;
+      }
+    } else {
+      targetDates = [startDate];
     }
-    setFormData(prev => ({
-      ...prev,
-      unavailable_dates: [...prev.unavailable_dates, newDate].sort()
-    }));
-    setNewDate("");
+
+    setFormData(prev => {
+      const existing = prev.unavailable_dates || [];
+      // Combine and filter unique dates
+      const combined = [...new Set([...existing, ...targetDates])].sort();
+      return {
+        ...prev,
+        unavailable_dates: combined
+      };
+    });
+
+    setStartDate("");
+    setEndDate("");
   };
 
   const handleRemoveDate = (dateToRemove) => {
@@ -227,23 +254,37 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
           <div className="space-y-3 pt-4 border-t border-slate-100">
             <Label className="font-semibold text-slate-800 flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-slate-500" />
-              Unavailable Dates
+              Unavailable Dates Range
             </Label>
-            <div className="flex gap-2 max-w-sm">
-              <Input
-                type="date"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                className="flex-1"
-              />
+            <div className="flex flex-col sm:flex-row gap-3 items-end max-w-xl">
+              <div className="flex-1 space-y-1 w-full">
+                <Label htmlFor="start_date" className="text-xs text-slate-500">Start Date</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex-1 space-y-1 w-full">
+                <Label htmlFor="end_date" className="text-xs text-slate-500">End Date</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
               <Button
                 type="button"
-                onClick={handleAddDate}
+                onClick={handleAddDateRange}
                 variant="secondary"
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium shrink-0 flex items-center gap-1"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium shrink-0 flex items-center gap-1 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
-                Add
+                Add Range
               </Button>
             </div>
 
