@@ -70,7 +70,8 @@ export default function ServiceProvidersPage() {
         "Category": formData.category,
         "Contact Number": formData.contact_number,
         "Email": formData.email,
-        "Default Hourly Rate": formData.default_hourly_rate || 0,
+        "Default Hourly Rate": formData.default_hourly_rate || "",
+        "Default Day Rate": formData.default_day_rate || "",
         "Notes": formData.notes,
         "Unavailable Dates": formData.unavailable_dates || [],
         "Updated Date": new Date().toISOString()

@@ -87,10 +87,16 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
   useEffect(() => {
     const hours = parseFloat(formData.duration_hours || 0);
     const minutes = parseFloat(formData.duration_minutes || 0);
-    const rate = parseFloat(formData.hourly_rate || 0);
+
+    // Clean and parse rate if it is stored as a string with a £ prefix or non-numeric characters
+    let rawRate = formData.hourly_rate;
+    if (typeof rawRate === 'string') {
+      rawRate = rawRate.replace(/[£,\s]/g, "");
+    }
+    const rate = parseFloat(rawRate || 0);
 
     const totalHours = hours + (minutes / 60);
-    const totalPay = (totalHours * rate).toFixed(2);
+    const totalPay = isNaN(rate) ? "0.00" : (totalHours * rate).toFixed(2);
 
     setFormData(prev => ({ ...prev, total_pay: totalPay }));
   }, [formData.duration_hours, formData.duration_minutes, formData.hourly_rate]);
@@ -98,11 +104,22 @@ export default function WorkBookingForm({ booking, providers, properties, accomm
   // Set default hourly rate when provider changes
   const handleProviderChange = (val) => {
     const provider = providers.find(p => (p.ID || p.id) === val);
-    setFormData(prev => ({
-      ...prev,
-      service_provider_id: val,
-      hourly_rate: provider ? (provider["Default Hourly Rate"] || provider.default_hourly_rate || 0) : prev.hourly_rate
-    }));
+
+    setFormData(prev => {
+      let defaultHourly = provider ? (provider["Default Hourly Rate"] || provider.default_hourly_rate || "0") : prev.hourly_rate;
+
+      // Clean up any prepended currency symbols so the numeric field in Work Booking Form doesn't choke on text
+      if (typeof defaultHourly === 'string') {
+        defaultHourly = defaultHourly.replace(/[£,\s]/g, "");
+      }
+      const parsedRate = parseFloat(defaultHourly);
+
+      return {
+        ...prev,
+        service_provider_id: val,
+        hourly_rate: isNaN(parsedRate) ? 0 : parsedRate
+      };
+    });
   };
 
   const handleChange = (e) => {

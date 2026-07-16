@@ -101,11 +101,25 @@ export default function ServiceProviderList({ providers, onEdit, onDelete, canEd
                 )}
               </div>
 
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Hourly Rate:</span>
+              <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-500">Hourly Rate:</span>
                   <span className="font-semibold text-slate-900">
-                    £{parseFloat(provider["Default Hourly Rate"] || provider.default_hourly_rate || 0).toFixed(2)}
+                    {(() => {
+                      const rate = provider["Default Hourly Rate"] || provider.default_hourly_rate;
+                      if (!rate) return "£0.00";
+                      return rate.toString().startsWith("£") ? rate : `£${rate}`;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-500">Day Rate:</span>
+                  <span className="font-semibold text-slate-900">
+                    {(() => {
+                      const rate = provider["Default Day Rate"] || provider.default_day_rate;
+                      if (!rate) return "N/A";
+                      return rate.toString().startsWith("£") ? rate : `£${rate}`;
+                    })()}
                   </span>
                 </div>
               </div>
