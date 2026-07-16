@@ -6,8 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X, Calendar } from "lucide-react";
+
+const CATEGORIES = [
+  "Handyman",
+  "Plumber",
+  "Electrician",
+  "Decorator",
+  "Gas Engineer",
+  "Cleaner",
+  "Gardener",
+  "Translator",
+  "Rubbish Collector",
+  "Delivery Person",
+  "Pest Control",
+  "Other"
+];
 
 export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -53,8 +68,13 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSelectChange = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const handleCheckboxChange = (cat, checked) => {
+    if (checked) {
+      setFormData(prev => ({ ...prev, category: cat }));
+    } else {
+      // If the user unchecks the currently active one, clear it (validation will prevent submission if required)
+      setFormData(prev => ({ ...prev, category: "" }));
+    }
   };
 
   const handleAddDate = () => {
@@ -79,6 +99,10 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.category) {
+      alert("Please select at least one category.");
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -95,81 +119,99 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Full Name"
-                required
-              />
+          <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Full Name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contact_number">Contact Number</Label>
+                <Input
+                  id="contact_number"
+                  name="contact_number"
+                  value={formData.contact_number}
+                  onChange={handleChange}
+                  placeholder="Phone Number"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(val) => handleSelectChange("category", val)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cleaner">Cleaner</SelectItem>
-                  <SelectItem value="Tradesman">Tradesman</SelectItem>
-                  <SelectItem value="Gardener">Gardener</SelectItem>
-                  <SelectItem value="Translator">Translator</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <div className="space-y-3 p-4 border border-slate-200 rounded-lg bg-slate-50/50">
+              <div className="flex justify-between items-center">
+                <Label className="font-semibold text-slate-800">Category (Select One) <span className="text-red-500">*</span></Label>
+                {!formData.category && (
+                  <span className="text-xs text-red-500 font-medium">Please select a category</span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {CATEGORIES.map((cat) => {
+                  const isChecked = formData.category?.toLowerCase() === cat.toLowerCase();
+                  return (
+                    <label
+                      key={cat}
+                      className={`flex items-center gap-2 p-2.5 rounded-md border text-sm cursor-pointer transition-all select-none hover:bg-slate-100 ${
+                        isChecked
+                          ? "bg-blue-50 border-blue-300 text-blue-900 font-medium shadow-sm"
+                          : "bg-white border-slate-200 text-slate-700"
+                      }`}
+                    >
+                      <Checkbox
+                        id={`cat-${cat}`}
+                        checked={isChecked}
+                        onCheckedChange={(checked) => handleCheckboxChange(cat, checked)}
+                      />
+                      <span>{cat}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contact_number">Contact Number</Label>
-              <Input
-                id="contact_number"
-                name="contact_number"
-                value={formData.contact_number}
-                onChange={handleChange}
-                placeholder="Phone Number"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Email Address"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="default_hourly_rate">Default Hourly Rate (£)</Label>
-              <Input
-                id="default_hourly_rate"
-                name="default_hourly_rate"
-                type="text"
-                value={formData.default_hourly_rate}
-                onChange={handleChange}
-                placeholder="e.g. 15.00 or Variable"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="default_day_rate">Default Day Rate (£)</Label>
-              <Input
-                id="default_day_rate"
-                name="default_day_rate"
-                type="text"
-                value={formData.default_day_rate}
-                onChange={handleChange}
-                placeholder="e.g. 120.00 or N/A"
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email Address"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="default_hourly_rate">Default Hourly Rate (£)</Label>
+                <Input
+                  id="default_hourly_rate"
+                  name="default_hourly_rate"
+                  type="text"
+                  value={formData.default_hourly_rate}
+                  onChange={handleChange}
+                  placeholder="e.g. 15.00 or Variable"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="default_day_rate">Default Day Rate (£)</Label>
+                <Input
+                  id="default_day_rate"
+                  name="default_day_rate"
+                  type="text"
+                  value={formData.default_day_rate}
+                  onChange={handleChange}
+                  placeholder="e.g. 120.00 or N/A"
+                />
+              </div>
             </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
@@ -232,7 +274,7 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+            <Button type="submit" className="bg-orange-600 hover:bg-orange-700" disabled={!formData.category}>
               {provider ? "Update Provider" : "Save Provider"}
             </Button>
           </div>
