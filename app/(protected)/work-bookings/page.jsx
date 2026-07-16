@@ -84,6 +84,24 @@ export default function WorkBookingsPage() {
 
   const handleBookingSubmit = async (formData) => {
     try {
+      // Validate that provider is not unavailable on selected date
+      const provider = providers.find(p => (p.ID || p.id) === formData.service_provider_id);
+      if (provider) {
+        let unavail = provider["Unavailable Dates"] || provider.unavailable_dates || [];
+        if (typeof unavail === 'string') {
+          try {
+            unavail = JSON.parse(unavail);
+          } catch (e) {
+            unavail = unavail.split(',').map(d => d.trim()).filter(Boolean);
+          }
+        }
+        const targetDate = formData.date.split('T')[0];
+        if (Array.isArray(unavail) && unavail.some(d => d.split('T')[0] === targetDate)) {
+          alert(`Error: ${provider.Name || "Selected provider"} is marked as unavailable on ${formData.date}.`);
+          return;
+        }
+      }
+
       const data = {
         "Service Provider ID": formData.service_provider_id,
         "Property ID": formData.property_id,

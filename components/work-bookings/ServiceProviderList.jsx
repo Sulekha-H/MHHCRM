@@ -15,6 +15,24 @@ export default function ServiceProviderList({ providers, onEdit, onDelete, canEd
     );
   }
 
+  const getUnavailableDates = (provider) => {
+    let unavail = provider["Unavailable Dates"] || provider.unavailable_dates || [];
+    if (typeof unavail === 'string') {
+      try {
+        unavail = JSON.parse(unavail);
+      } catch (e) {
+        unavail = unavail.split(',').map(d => d.trim()).filter(Boolean);
+      }
+    }
+    return Array.isArray(unavail) ? unavail : [];
+  };
+
+  const formatDateString = (ds) => {
+    if (!ds) return "";
+    const [year, month, day] = ds.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   const getCategoryColor = (category) => {
     switch (category?.toLowerCase()) {
       case 'cleaner': return 'bg-blue-100 text-blue-800 border-blue-200';
@@ -63,6 +81,26 @@ export default function ServiceProviderList({ providers, onEdit, onDelete, canEd
                 <Mail className="w-4 h-4" />
                 <span className="truncate">{provider.Email || provider.email || "No email"}</span>
               </div>
+
+              {/* Unavailable Dates List */}
+              <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+                <span className="text-xs font-semibold text-slate-500 block">Unavailable Dates:</span>
+                {getUnavailableDates(provider).length > 0 ? (
+                  <div className="flex flex-wrap gap-1 max-h-[80px] overflow-y-auto">
+                    {getUnavailableDates(provider).map((date) => (
+                      <span
+                        key={date}
+                        className="bg-red-50 text-red-700 border border-red-100 text-[11px] px-2 py-0.5 rounded-md font-medium"
+                      >
+                        {formatDateString(date)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-xs text-slate-400 italic">None marked</span>
+                )}
+              </div>
+
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Hourly Rate:</span>
