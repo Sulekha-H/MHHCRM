@@ -132,7 +132,15 @@ export default function ServiceProvidersPage() {
 
   const filteredProviders = providers.filter(p => {
     const matchesSearch = (p.Name || p.name || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || (p.Category || p.category || "").toLowerCase() === categoryFilter.toLowerCase();
+
+    let matchesCategory = categoryFilter === "all";
+    if (!matchesCategory) {
+      const providerCats = (p.Category || p.category || "")
+        .split(",")
+        .map(c => c.trim().toLowerCase());
+      matchesCategory = providerCats.includes(categoryFilter.toLowerCase());
+    }
+
     return matchesSearch && matchesCategory;
   });
 
