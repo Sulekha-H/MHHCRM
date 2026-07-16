@@ -16,6 +16,7 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
     contact_number: "",
     email: "",
     default_hourly_rate: "",
+    default_day_rate: "",
     notes: "",
     unavailable_dates: []
   });
@@ -40,6 +41,7 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
         contact_number: provider["Contact Number"] || provider.contact_number || "",
         email: provider.Email || provider.email || "",
         default_hourly_rate: provider["Default Hourly Rate"] || provider.default_hourly_rate || "",
+        default_day_rate: provider["Default Day Rate"] || provider.default_day_rate || "",
         notes: provider.Notes || provider.notes || "",
         unavailable_dates: unavail
       });
@@ -150,11 +152,21 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
               <Input
                 id="default_hourly_rate"
                 name="default_hourly_rate"
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.default_hourly_rate}
                 onChange={handleChange}
-                placeholder="0.00"
+                placeholder="e.g. 15.00 or Variable"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="default_day_rate">Default Day Rate (£)</Label>
+              <Input
+                id="default_day_rate"
+                name="default_day_rate"
+                type="text"
+                value={formData.default_day_rate}
+                onChange={handleChange}
+                placeholder="e.g. 120.00 or N/A"
               />
             </div>
           </div>

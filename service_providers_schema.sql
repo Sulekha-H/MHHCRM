@@ -6,7 +6,8 @@ CREATE TABLE service_providers (
     "Category" TEXT NOT NULL, -- Cleaner, Tradesman, Gardener, etc.
     "Contact Number" TEXT,
     "Email" TEXT,
-    "Default Hourly Rate" DECIMAL(10, 2) DEFAULT 0.00,
+    "Default Hourly Rate" TEXT,
+    "Default Day Rate" TEXT,
     "Notes" TEXT,
     "Unavailable Dates" JSONB DEFAULT '[]'::jsonb, -- Array of date strings: ["YYYY-MM-DD", ...]
     "Created Date" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
