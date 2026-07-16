@@ -58,14 +58,22 @@ export default function ServiceProviderList({ providers, onEdit, onDelete, canEd
           <CardContent className="p-5">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center shrink-0">
                   <User className="w-5 h-5 text-slate-600" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900">{provider.Name || provider.name}</h3>
-                  <Badge variant="outline" className={getCategoryColor(provider.Category || provider.category)}>
-                    {provider.Category || provider.category}
-                  </Badge>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {(provider.Category || provider.category || "")
+                      .split(",")
+                      .map(cat => cat.trim())
+                      .filter(Boolean)
+                      .map(cat => (
+                        <Badge key={cat} variant="outline" className={getCategoryColor(cat)}>
+                          {cat}
+                        </Badge>
+                      ))}
+                  </div>
                 </div>
               </div>
               {canEdit && (

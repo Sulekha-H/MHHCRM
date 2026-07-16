@@ -69,12 +69,17 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
   };
 
   const handleCheckboxChange = (cat, checked) => {
+    let currentCats = formData.category
+      ? formData.category.split(",").map(c => c.trim())
+      : [];
     if (checked) {
-      setFormData(prev => ({ ...prev, category: cat }));
+      if (!currentCats.some(c => c.toLowerCase() === cat.toLowerCase())) {
+        currentCats.push(cat);
+      }
     } else {
-      // If the user unchecks the currently active one, clear it (validation will prevent submission if required)
-      setFormData(prev => ({ ...prev, category: "" }));
+      currentCats = currentCats.filter(c => c.toLowerCase() !== cat.toLowerCase());
     }
+    setFormData(prev => ({ ...prev, category: currentCats.join(", ") }));
   };
 
   const handleAddDate = () => {
@@ -146,14 +151,17 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
 
             <div className="space-y-3 p-4 border border-slate-200 rounded-lg bg-slate-50/50">
               <div className="flex justify-between items-center">
-                <Label className="font-semibold text-slate-800">Category (Select One) <span className="text-red-500">*</span></Label>
+                <Label className="font-semibold text-slate-800">Categories (Select all that apply) <span className="text-red-500">*</span></Label>
                 {!formData.category && (
-                  <span className="text-xs text-red-500 font-medium">Please select a category</span>
+                  <span className="text-xs text-red-500 font-medium">Please select at least one category</span>
                 )}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {CATEGORIES.map((cat) => {
-                  const isChecked = formData.category?.toLowerCase() === cat.toLowerCase();
+                  const selectedCategories = formData.category
+                    ? formData.category.split(",").map(c => c.trim().toLowerCase())
+                    : [];
+                  const isChecked = selectedCategories.includes(cat.toLowerCase());
                   return (
                     <label
                       key={cat}
