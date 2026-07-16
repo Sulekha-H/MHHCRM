@@ -67,7 +67,7 @@ export default function SidebarNavigation() {
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home, current: pathname === "/" },
     { name: "Staff Handover", href: "/staff-handover", icon: History, current: pathname === "/staff-handover" },
-    { name: "Staff Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
+    { name: "TeamUp Calendar", href: "/calendar", icon: CalendarIcon, current: pathname === "/calendar" },
     { name: "RotaCloud", href: "/rotacloud", icon: CalendarIcon, current: pathname === "/rotacloud" },
     { name: "M365 Calendar", href: "/microsoft-calendar", icon: CalendarIcon, current: pathname === "/microsoft-calendar" },
     { name: "Standard Residents", href: "/residents", icon: Users, current: pathname === "/residents" },
@@ -136,7 +136,7 @@ export default function SidebarNavigation() {
             {navigation
               .filter(item => {
                 if (!isSCStaff) return true;
-                const allowedNames = ["Dashboard", "Staff Handover", "Staff Calendar"];
+                const allowedNames = ["Dashboard", "Staff Handover", "TeamUp Calendar"];
                 if (isSW) {
                   allowedNames.push("Standard Residents");
                 }
