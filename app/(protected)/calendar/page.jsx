@@ -9,7 +9,7 @@ export default function CalendarPage() {
     <div className="flex flex-col h-[calc(100vh-8rem)] space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Staff Calendar</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">TeamUp Calendar</h1>
           <p className="text-slate-600">Manage property visits, maintenance, and staff schedules</p>
         </div>
       </div>
