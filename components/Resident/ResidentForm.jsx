@@ -56,50 +56,61 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
   console.log("Accommodations prop received by ResidentForm:", accommodations); // Add this line here
   const [properties, setProperties] = useState([]);
     const supabase = useClerkSupabaseClient()
-  const [formData, setFormData] = useState(resident || {
-    "First Name": "",
-    "Last Name": "",
-    "Date of Birth": "",
-    "Phone Number": "",
-    "Email Address": "",
-    "Resident Type": "Standard resident",
-    "UASC Info Added": false,
-    "Accommodation Type": "Shared House",
-    "Property Address": "",
-    "Property ID": "",
-    "Accommodation ID": "",
-    "Move-in Date": "",
-    "Move-out Date": "",
-    "Support Level": "Medium",
-    "Support Worker": "",
-    "Emergency Contact Name": "",
-    "Emergency Contact Phone": "",
-    "Fluent English": false,
-    "Partial English": false,
-    "Language Spoken": "",
-    "Communication Needs": "",
-    "Medical Conditions": "",
-    "Status": "Active",
-    "Notes": "",
-    "Claim Reference Number": "",
-    "Submission Reference": "",
-    "National Insurance Number": "",
-    "Benefits": [],
-    "Room Transfers": [],
-    "Accommodation Transfers": [],
-    "Sign Up Google Drive Link": "",
-    "Photo Of Individual (Google Drive)": "",
-    "Resident Photographic ID Link (Google Drive)": "",
-    "Has No PA": false,
-    "PA/Worker Name": "",
-    "PA/Worker Contact": "",
-    "PA/Worker Email": "",
-    "PA/Worker Borough": "",
-    "PA/Worker Team": "",
-    "PA/Worker Duty Line": "",
-    "Future Address": "",
-    "Future Housing Type": "",
-    "Move-on Outcome": "",
+
+  const getInitialDateTime = () => {
+    const rawDate = resident?.["Created Date"] || resident?.created_date || resident?.Created_Date;
+    if (rawDate) {
+      return rawDate.slice(0, 16);
+    }
+    const now = new Date();
+    return now.toISOString().slice(0, 16);
+  };
+
+  const [formData, setFormData] = useState({
+    "First Name": resident?.["First Name"] || resident?.first_name || "",
+    "Last Name": resident?.["Last Name"] || resident?.last_name || "",
+    "Date of Birth": resident?.["Date of Birth"] || resident?.date_of_birth || "",
+    "Phone Number": resident?.["Phone Number"] || resident?.phone_number || "",
+    "Email Address": resident?.["Email Address"] || resident?.email_address || "",
+    "Resident Type": resident?.["Resident Type"] || resident?.resident_type || "Standard resident",
+    "UASC Info Added": resident?.["UASC Info Added"] || false,
+    "Accommodation Type": resident?.["Accommodation Type"] || resident?.accommodation_type || "Shared House",
+    "Property Address": resident?.["Property Address"] || resident?.address || "",
+    "Property ID": resident?.["Property ID"] || resident?.property_id || "",
+    "Accommodation ID": resident?.["Accommodation ID"] || resident?.accommodation_id || "",
+    "Move-in Date": resident?.["Move-in Date"] || resident?.move_in_date || "",
+    "Move-out Date": resident?.["Move-out Date"] || resident?.move_out_date || "",
+    "Support Level": resident?.["Support Level"] || resident?.support_level || "Medium",
+    "Support Worker": resident?.["Support Worker"] || resident?.support_worker || "",
+    "Emergency Contact Name": resident?.["Emergency Contact Name"] || resident?.emergency_contact_name || "",
+    "Emergency Contact Phone": resident?.["Emergency Contact Phone"] || resident?.emergency_contact_phone || "",
+    "Fluent English": resident?.["Fluent English"] !== undefined ? resident?.["Fluent English"] : false,
+    "Partial English": resident?.["Partial English"] !== undefined ? resident?.["Partial English"] : false,
+    "Language Spoken": resident?.["Language Spoken"] || resident?.language_spoken || "",
+    "Communication Needs": resident?.["Communication Needs"] || resident?.communication_needs || "",
+    "Medical Conditions": resident?.["Medical Conditions"] || resident?.medical_conditions || "",
+    "Status": resident?.["Status"] || resident?.status || "Active",
+    "Notes": resident?.["Notes"] || resident?.notes || "",
+    "Claim Reference Number": resident?.["Claim Reference Number"] || resident?.claim_reference_number || "",
+    "Submission Reference": resident?.["Submission Reference"] || resident?.submission_reference || "",
+    "National Insurance Number": resident?.["National Insurance Number"] || resident?.national_insurance_number || "",
+    "Benefits": resident?.["Benefits"] || resident?.benefits || [],
+    "Room Transfers": resident?.["Room Transfers"] || resident?.room_transfers || [],
+    "Accommodation Transfers": resident?.["Accommodation Transfers"] || resident?.accommodation_transfers || [],
+    "Sign Up Google Drive Link": resident?.["Sign Up Google Drive Link"] || resident?.google_drive_link || "",
+    "Photo Of Individual (Google Drive)": resident?.["Photo Of Individual (Google Drive)"] || resident?.photo_id_url || "",
+    "Resident Photographic ID Link (Google Drive)": resident?.["Resident Photographic ID Link (Google Drive)"] || resident?.resident_photographic_link || "",
+    "Has No PA": resident?.["Has No PA"] || resident?.has_no_pa || false,
+    "PA/Worker Name": resident?.["PA/Worker Name"] || resident?.pa_worker_name || "",
+    "PA/Worker Contact": resident?.["PA/Worker Contact"] || resident?.pa_worker_contact || "",
+    "PA/Worker Email": resident?.["PA/Worker Email"] || resident?.pa_worker_email || "",
+    "PA/Worker Borough": resident?.["PA/Worker Borough"] || resident?.pa_worker_borough || "",
+    "PA/Worker Team": resident?.["PA/Worker Team"] || resident?.pa_worker_team || "",
+    "PA/Worker Duty Line": resident?.["PA/Worker Duty Line"] || resident?.pa_worker_duty_line || "",
+    "Future Address": resident?.["Future Address"] || resident?.future_address || "",
+    "Future Housing Type": resident?.["Future Housing Type"] || resident?.future_housing_type || "",
+    "Move-on Outcome": resident?.["Move-on Outcome"] || resident?.move_on_outcome || "",
+    "Created Date": getInitialDateTime(),
   });
 
   const [documentsToUpload, setDocumentsToUpload] = useState([]);
@@ -162,6 +173,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "National Insurance Number": resident["National Insurance Number"] || resident.national_insurance_number || resident.National_Insurance_Number || "",
         "Benefits": resident["Benefits"] || resident.benefits || [],
         "Notes": resident["Notes"] || resident.notes || "",
+        "Created Date": getInitialDateTime(),
       });
       setPhotoUrlInput(resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"] || "");
       setShowGoogleDriveHelp((resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"])?.includes('drive.google.com') || false);
@@ -180,6 +192,7 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
         "Has No PA": false,
         "PA/Worker Name": "", "PA/Worker Contact": "", "PA/Worker Email": "", "PA/Worker Borough": "", "PA/Worker Team": "", "PA/Worker Duty Line": "",
         "Future Address": "", "Future Housing Type": "", "Move-on Outcome": "",
+        "Created Date": getInitialDateTime(),
       });
       setPhotoUrlInput("");
       setShowGoogleDriveHelp(false);
@@ -555,6 +568,16 @@ export default function ResidentForm_Supabase({ resident, accommodations, reside
             <div>
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Label htmlFor="created_date" className="mb-2 block">Created Date & Time *</Label>
+                  <Input
+                    id="created_date"
+                    type="datetime-local"
+                    value={formData["Created Date"]}
+                    onChange={(e) => handleChange("Created Date", e.target.value)}
+                    required
+                  />
+                </div>
                 <div>
                   <Label htmlFor="first_name" className="mb-2 block">First Name *</Label>
                   <Input

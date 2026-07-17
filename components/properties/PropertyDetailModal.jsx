@@ -81,6 +81,7 @@ export default function PropertyDetailModal({ property, accommodations, resident
   
   // FIXED: Check for "Weekly Rent" (Supabase) and "Rent Per Week" (base44)
   const rentPerWeek = property["Weekly Rent"] || property["Rent Per Week"] || property.rent_per_week;
+  const createdDate = property["Created Date"] || property.created_date || property.Created_Date;
   
   const facilities = property["Facilities"] || property.facilities;
   const accessibilityFeatures = property["Accessibility Features"] || property.accessibility_features;
@@ -246,6 +247,9 @@ export default function PropertyDetailModal({ property, accommodations, resident
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Property Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <DetailItem icon={<Calendar />} label="Created Date & Time">
+                  {createdDate ? format(new Date(createdDate), 'dd MMMM yyyy, HH:mm') : null}
+                </DetailItem>
                 <DetailItem icon={<MapPin />} label="Address">{address}</DetailItem>
                 <DetailItem icon={<Building2 />} label="Property Type">{propertyType?.replace('_', ' ')}</DetailItem>
                 <DetailItem icon={<Users />} label="Capacity">

@@ -168,6 +168,10 @@ useEffect(() => {
       };
       
       cleanDates(cleanedData);
+
+      if (cleanedData["Created Date"]) {
+        cleanedData["Created Date"] = new Date(cleanedData["Created Date"]).toISOString();
+      }
       
       // For new residents, remove ID field completely if it's empty
       if (!editingResident && (!cleanedData.ID || cleanedData.ID === '')) {
@@ -506,7 +510,7 @@ useEffect(() => {
         const insertData = {
           ...cleanedData,
           ID: newResidentId,
-          "Created Date": new Date().toISOString(),
+          "Created Date": cleanedData["Created Date"] || new Date().toISOString(),
           "Updated Date": new Date().toISOString()
         };
         
