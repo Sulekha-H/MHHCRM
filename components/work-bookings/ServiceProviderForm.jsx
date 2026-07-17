@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X, Calendar } from "lucide-react";
 import { eachDayOfInterval, parseISO, format, isBefore, isAfter } from "date-fns";
+import { groupConsecutiveDates, formatGroup } from "./ServiceProviderList";
 
 const CATEGORIES = [
   "Handyman",
@@ -122,11 +123,16 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
     setEndDate("");
   };
 
-  const handleRemoveDate = (dateToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      unavailable_dates: prev.unavailable_dates.filter(d => d !== dateToRemove)
-    }));
+  const handleRemoveGroup = (group) => {
+    setFormData(prev => {
+      const existing = prev.unavailable_dates || [];
+      const toRemoveSet = new Set(group.dates);
+      const filtered = existing.filter(d => !toRemoveSet.has(d));
+      return {
+        ...prev,
+        unavailable_dates: filtered
+      };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -136,12 +142,6 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
       return;
     }
     onSubmit(formData);
-  };
-
-  const formatDateString = (ds) => {
-    if (!ds) return "";
-    const [year, month, day] = ds.split('-');
-    return `${day}/${month}/${year}`;
   };
 
   return (
@@ -298,16 +298,17 @@ export default function ServiceProviderForm({ provider, onSubmit, onCancel }) {
 
             {formData.unavailable_dates && formData.unavailable_dates.length > 0 ? (
               <div className="flex flex-wrap gap-2 mt-2 pt-1">
-                {formData.unavailable_dates.map((date) => (
+                {groupConsecutiveDates(formData.unavailable_dates).map((group) => (
                   <span
-                    key={date}
+                    key={group.start + '-' + group.end}
                     className="inline-flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-1 rounded-full font-medium"
                   >
-                    {formatDateString(date)}
+                    {formatGroup(group)}
                     <button
                       type="button"
-                      onClick={() => handleRemoveDate(date)}
-                      className="text-red-400 hover:text-red-600 transition-colors focus:outline-none"
+                      onClick={() => handleRemoveGroup(group)}
+                      className="text-red-400 hover:text-red-600 transition-colors focus:outline-none cursor-pointer"
+                      title="Remove range"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
