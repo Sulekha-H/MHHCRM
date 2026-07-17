@@ -49,7 +49,7 @@ export default function Settings() {
         console.log("🔄 Checking access for Clerk user:", user.primaryEmailAddress?.emailAddress);
 
         // Match Clerk user with Supabase users table if needed for other data
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError } = await client
           .from('users')
           .select('*')
           .eq('Email', user.primaryEmailAddress?.emailAddress)
