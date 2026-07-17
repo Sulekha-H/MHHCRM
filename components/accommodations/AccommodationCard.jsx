@@ -68,6 +68,7 @@ export default function AccommodationCard({
   const googleDriveLink = accommodation["Google Drive Link"] || accommodation.google_drive_link;
   const previewUrl = convertToDirectImageUrl(googleDriveLink);
   const createdDate = accommodation["Created Date"] || accommodation.created_date || accommodation.Created_Date;
+  const updatedDate = accommodation["Updated Date"] || accommodation.updated_date || accommodation.Updated_Date;
   
   // IMPROVED: Get ALL active residents in this accommodation, not just the one in currentResidentId
   let activeResidentsList = [];
@@ -237,6 +238,14 @@ export default function AccommodationCard({
               <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <span className="truncate">
                 Created: {format(new Date(createdDate), 'dd/MM/yyyy HH:mm')}
+              </span>
+            </div>
+          )}
+          {updatedDate && createdDate && new Date(updatedDate).getTime() !== new Date(createdDate).getTime() && (
+            <div className="flex items-center gap-2 text-sm text-slate-600 mt-1">
+              <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <span className="truncate">
+                Updated: {format(new Date(updatedDate), 'dd/MM/yyyy HH:mm')}
               </span>
             </div>
           )}

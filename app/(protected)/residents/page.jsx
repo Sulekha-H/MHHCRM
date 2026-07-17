@@ -202,6 +202,7 @@ useEffect(() => {
       let savedResident;
 
       if (editingResident) {
+        cleanedData["Updated Date"] = new Date().toISOString();
         const originalResident = residents.find(r => r.ID === editingResident.ID);
         const originalAccommodationId = originalResident?.["Accommodation ID"];
         const newAccommodationId = residentData["Accommodation ID"];
@@ -511,7 +512,8 @@ useEffect(() => {
           ...cleanedData,
           ID: newResidentId,
           "Created Date": cleanedData["Created Date"] || new Date().toISOString(),
-          "Updated Date": new Date().toISOString()
+          "Updated Date": new Date().toISOString(),
+          "Created By": user?.primaryEmailAddress?.emailAddress || "Unknown"
         };
         
         console.log("✅ Inserting new resident with ID:", newResidentId);
