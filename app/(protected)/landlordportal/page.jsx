@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Plus, Search, HandCoins, CheckCircle, PlusCircle, Download, X } from "lucide-react";
+import { Plus, Search, HandCoins, CheckCircle, PlusCircle, Download, X, ShieldAlert } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -15,6 +15,7 @@ import BenefitLogForm_Supabase from "@/components/Benefits/BenefitLogForm";
 import BenefitLogDetailModal from "@/components/Benefits/BenefitLogDetailModal";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
 import { format, startOfWeek, addDays, addWeeks, isBefore, isAfter, isSameWeek } from "date-fns";
+import { isAdmin } from "@/lib/permissions";
 
 // Helper function to normalize Supabase data to snake_case for the modal/form
 const normalizeLogData = (log) => {
@@ -56,7 +57,7 @@ const normalizeLogData = (log) => {
 
 export default function LandlordPortalSupabase() {
   const { user } = useUser();
-  const supabase = useClerkSupabaseClient()
+  const supabase = useClerkSupabaseClient();
   const client = useClerkSupabaseClient();
   const [logs, setLogs] = useState([]);
   const [residents, setResidents] = useState([]);
@@ -71,6 +72,7 @@ export default function LandlordPortalSupabase() {
   const [users, setUsers] = useState([]);
 
   const loadData = useCallback(async () => {
+    if (!isAdmin(user)) return;
     setLoading(true);
     try {
       const userEmail = user?.primaryEmailAddress?.emailAddress;
@@ -484,6 +486,29 @@ export default function LandlordPortalSupabase() {
   const hasFollowUpNeeded = useCallback((log) => {
     return log["Follow Up Action"] && !log["Follow Up Completed"];
   }, []);
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-2"></div>
+        <p className="text-slate-600">Verifying access...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin(user)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-10 h-10 text-red-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Access Denied</h1>
+        <p className="text-slate-600 max-w-md">
+          You do not have permission to view the Landlord Portal. This page is restricted to administrators only.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">

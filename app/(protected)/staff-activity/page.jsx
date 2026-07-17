@@ -26,6 +26,7 @@ import { Search, History, Filter, Download, User as UserIcon, Calendar as Calend
 import { format } from "date-fns";
 import { ACTIONS, ENTITIES, logActivity } from "@/lib/activityUtils";
 import { cn } from "@/lib/utils";
+import { isAdmin } from "@/lib/permissions";
 
 export default function StaffActivityPage() {
   const { user } = useUser();
@@ -40,13 +41,7 @@ export default function StaffActivityPage() {
   const [uniqueUsers, setUniqueUsers] = useState([]);
 
   const isAuthorized = useCallback(() => {
-    if (!user) return false;
-    const authorizedEmails = [
-      'sulekha@myhopehousing.org.uk',
-      'amaani@myhopehousing.org.uk'
-    ].map(email => email.toLowerCase());
-    const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase();
-    return authorizedEmails.includes(userEmail);
+    return isAdmin(user);
   }, [user]);
 
   const [error, setError] = useState(null);
