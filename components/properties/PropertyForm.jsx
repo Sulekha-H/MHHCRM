@@ -9,8 +9,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, Building2, Zap, Plus, Edit, Trash2 } from "lucide-react";
 import UtilityForm from "@/components/utilities/UtilityForm";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
+import { useUser } from "@clerk/nextjs";
 
 export default function PropertyForm({ property, onSubmit, onCancel }) {
+  const { user } = useUser();
   const supabase = useClerkSupabaseClient();
   const [propertyUtilities, setPropertyUtilities] = useState([]);
   const [showUtilityForm, setShowUtilityForm] = useState(false);
@@ -199,6 +201,9 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
     if (property) {
       // Include ID when editing
       supabaseData.ID = property.ID || property.id;
+    } else {
+      // Set Created By on insert
+      supabaseData["Created By"] = user?.primaryEmailAddress?.emailAddress || "Unknown";
     }
 
     onSubmit(supabaseData);

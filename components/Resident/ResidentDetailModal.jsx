@@ -88,6 +88,8 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const notes = resident["Notes"] || resident.Notes || resident.notes;
   const hasNoPa = resident["Has No PA"] || resident.has_no_pa || false;
   const createdDate = resident["Created Date"] || resident.created_date || resident.Created_Date;
+  const createdBy = resident["Created By"] || resident.created_by || resident.Created_By;
+  const updatedDate = resident["Updated Date"] || resident.updated_date || resident.Updated_Date;
   const paWorkerName = resident["PA/Worker Name"] || resident.Pa_Worker_Name || resident.pa_worker_name;
   const paWorkerContact = resident["PA/Worker Contact"] || resident.Pa_Worker_Contact || resident.pa_worker_contact;
   const paWorkerEmail = resident["PA/Worker Email"] || resident.Pa_Worker_Email || resident.pa_worker_email;
@@ -166,8 +168,18 @@ export default function ResidentDetailModal({ resident, accommodations, properti
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Entry Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DetailItem icon={<Calendar />} label="Created Date & Time">
-                  {createdDate ? format(new Date(createdDate), 'dd MMMM yyyy, HH:mm') : null}
+                  {createdDate ? format(new Date(createdDate), 'dd/MM/yyyy HH:mm') : null}
                 </DetailItem>
+                {createdBy && (
+                  <DetailItem icon={<User />} label="Created By">
+                    {createdBy}
+                  </DetailItem>
+                )}
+                {updatedDate && createdDate && new Date(updatedDate).getTime() !== new Date(createdDate).getTime() && (
+                  <DetailItem icon={<Calendar />} label="Last Updated">
+                    {format(new Date(updatedDate), 'dd/MM/yyyy HH:mm')}
+                  </DetailItem>
+                )}
                 <DetailItem icon={<User />} label="Date of Birth">{dateOfBirth ? format(new Date(dateOfBirth), 'dd MMMM yyyy') : null}</DetailItem>
                 <DetailItem icon={<Phone />} label="Phone Number">{phoneNumber}</DetailItem>
                 <DetailItem icon={<Mail />} label="Email Address">{emailAddress}</DetailItem>
