@@ -11,6 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, Save, Home } from "lucide-react";
 
 export default function AccommodationForm({ accommodation, properties, residents, onSubmit, onCancel }) {
+  const getInitialDateTime = () => {
+    const rawDate = accommodation?.["Created Date"] || accommodation?.created_date || accommodation?.Created_Date;
+    if (rawDate) {
+      return rawDate.slice(0, 16);
+    }
+    const now = new Date();
+    return now.toISOString().slice(0, 16);
+  };
+
   const [formData, setFormData] = useState(accommodation ? {
     property_id: accommodation["Property ID"] || accommodation.Property_Id || accommodation.property_id || "",
     room_number: accommodation["Room Number"] || accommodation.Room_Number || accommodation.room_number || "",
@@ -33,7 +42,8 @@ export default function AccommodationForm({ accommodation, properties, residents
     ensuite_image_link: accommodation["En-suite Image Link"] || accommodation.ensuite_image_link || "",
     alt_angle_image_link: accommodation["Alternative Angle Link"] || accommodation.alt_angle_image_link || "",
     notes: accommodation["Notes"] || accommodation.Notes || accommodation.notes || "",
-    images: accommodation["Images"] || accommodation.Images || accommodation.images || []
+    images: accommodation["Images"] || accommodation.Images || accommodation.images || [],
+    created_date: getInitialDateTime()
   } : {
     property_id: "",
     room_number: "",
@@ -56,7 +66,8 @@ export default function AccommodationForm({ accommodation, properties, residents
     ensuite_image_link: "",
     alt_angle_image_link: "",
     notes: "",
-    images: []
+    images: [],
+    created_date: getInitialDateTime()
   });
 
   const amenityOptions = [
@@ -129,12 +140,12 @@ export default function AccommodationForm({ accommodation, properties, residents
       "Alternative Angle Link": formData.alt_angle_image_link || null,
       "Notes": formData.notes || null,
       "Images": formData.images,
-      "Updated Date": new Date().toISOString()
+      "Updated Date": new Date().toISOString(),
+      "Created Date": formData.created_date ? new Date(formData.created_date).toISOString() : new Date().toISOString()
     };
 
     if (!accommodation) {
       supabaseData.ID = crypto.randomUUID();
-      supabaseData["Created Date"] = new Date().toISOString();
     } else {
       supabaseData.ID = accommodation.ID || accommodation.id;
     }
@@ -184,6 +195,16 @@ export default function AccommodationForm({ accommodation, properties, residents
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-200">Location</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="created_date">Created Date & Time *</Label>
+                <Input
+                  id="created_date"
+                  type="datetime-local"
+                  value={formData.created_date}
+                  onChange={(e) => handleChange("created_date", e.target.value)}
+                  required
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="property_id">Property *</Label>
                 <Select value={formData.property_id} onValueChange={(value) => handleChange("property_id", value)}>

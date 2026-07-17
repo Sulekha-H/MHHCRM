@@ -87,6 +87,7 @@ export default function ResidentDetailModal({ resident, accommodations, properti
   const medicalConditions = resident["Medical Conditions"] || resident.Medical_Conditions || resident.medical_conditions;
   const notes = resident["Notes"] || resident.Notes || resident.notes;
   const hasNoPa = resident["Has No PA"] || resident.has_no_pa || false;
+  const createdDate = resident["Created Date"] || resident.created_date || resident.Created_Date;
   const paWorkerName = resident["PA/Worker Name"] || resident.Pa_Worker_Name || resident.pa_worker_name;
   const paWorkerContact = resident["PA/Worker Contact"] || resident.Pa_Worker_Contact || resident.pa_worker_contact;
   const paWorkerEmail = resident["PA/Worker Email"] || resident.Pa_Worker_Email || resident.pa_worker_email;
@@ -164,6 +165,9 @@ export default function ResidentDetailModal({ resident, accommodations, properti
               {/* Main Details Grid */}
               <h3 className="text-xl font-semibold text-slate-800 mb-4">Entry Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <DetailItem icon={<Calendar />} label="Created Date & Time">
+                  {createdDate ? format(new Date(createdDate), 'dd MMMM yyyy, HH:mm') : null}
+                </DetailItem>
                 <DetailItem icon={<User />} label="Date of Birth">{dateOfBirth ? format(new Date(dateOfBirth), 'dd MMMM yyyy') : null}</DetailItem>
                 <DetailItem icon={<Phone />} label="Phone Number">{phoneNumber}</DetailItem>
                 <DetailItem icon={<Mail />} label="Email Address">{emailAddress}</DetailItem>

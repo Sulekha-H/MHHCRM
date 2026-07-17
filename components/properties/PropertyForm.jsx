@@ -17,32 +17,42 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
   const [editingUtility, setEditingUtility] = useState(null);
   const [loadingUtilities, setLoadingUtilities] = useState(false);
 
-  const [formData, setFormData] = useState(property || {
-    name: "",
-    address: "",
+  const getInitialDateTime = () => {
+    const rawDate = property?.["Created Date"] || property?.created_date || property?.Created_Date;
+    if (rawDate) {
+      return rawDate.slice(0, 16);
+    }
+    const now = new Date();
+    return now.toISOString().slice(0, 16);
+  };
+
+  const [formData, setFormData] = useState({
+    name: property?.Name || property?.name || "",
+    address: property?.Address || property?.address || "",
     property_type: "shared",
-    total_capacity: 1,
-    current_occupancy: 0,
-    property_manager: "",
-    support_worker: "none",
+    total_capacity: property?.["Total Capacity"] || property?.total_capacity || 1,
+    current_occupancy: property?.["Current Occupancy"] || property?.current_occupancy || 0,
+    property_manager: property?.["Property Manager"] || property?.property_manager || "",
+    support_worker: property?.["Support Worker"] || property?.support_worker || "none",
     maintenance_status: "good",
-    rent_per_week: 0,
-    service_charge_per_month: 0,
-    facilities: [],
-    accessibility_features: "",
-    last_inspection_date: "",
-    next_inspection_due: "",
-    contact_phone: "",
-    emergency_contact: "",
-    google_drive_link: "",
-    bathroom_image_link: "",
-    communal_area_image_link: "",
-    kitchen_image_link: "",
-    garden_image_link: "",
-    living_room_image_link: "",
-    exterior_image_link: "",
-    notes: "",
-    status: "active"
+    rent_per_week: property?.["Weekly Rent"] || property?.rent_per_week || 0,
+    service_charge_per_month: property?.["Monthly Service Charge"] || property?.service_charge_per_month || 0,
+    facilities: property?.Facilities || property?.facilities || [],
+    accessibility_features: property?.["Accessibility Features"] || property?.accessibility_features || "",
+    last_inspection_date: property?.["Last Inspection Date"] || property?.last_inspection_date || "",
+    next_inspection_due: property?.["Next Inspection Due"] || property?.next_inspection_due || "",
+    contact_phone: property?.["Contact Phone"] || property?.contact_phone || "",
+    emergency_contact: property?.["Emergency Contact"] || property?.emergency_contact || "",
+    google_drive_link: property?.["Google Drive Link"] || property?.google_drive_link || "",
+    bathroom_image_link: property?.["Bathroom Image Link"] || property?.bathroom_image_link || "",
+    communal_area_image_link: property?.["Communal Area Image Link"] || property?.communal_area_image_link || "",
+    kitchen_image_link: property?.["Kitchen Image Link"] || property?.kitchen_image_link || "",
+    garden_image_link: property?.["Garden Image Link"] || property?.garden_image_link || "",
+    living_room_image_link: property?.["Living Room Image Link"] || property?.living_room_image_link || "",
+    exterior_image_link: property?.["Exterior Image Link"] || property?.exterior_image_link || "",
+    notes: property?.Notes || property?.notes || "",
+    status: "active",
+    created_date: getInitialDateTime()
   });
 
   const facilityOptions = [
@@ -123,7 +133,8 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
         living_room_image_link: property["Living Room Image Link"] || property.living_room_image_link || "",
         exterior_image_link: property["Exterior Image Link"] || property.exterior_image_link || "",
         notes: property.Notes || property.notes || "",
-        status: statusReverseMap[property.Status] || property.status || "active"
+        status: statusReverseMap[property.Status] || property.status || "active",
+        created_date: (property["Created Date"] || property.created_date || property.Created_Date) ? (property["Created Date"] || property.created_date || property.Created_Date).slice(0, 16) : getInitialDateTime()
       });
     }
   }, [property]);
@@ -181,15 +192,13 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
       "Exterior Image Link": formData.exterior_image_link || null,
       Status: statusMap[formData.status] || 'Active',
       Notes: formData.notes || null,
-      "Updated Date": new Date().toISOString()
+      "Updated Date": new Date().toISOString(),
+      "Created Date": formData.created_date ? new Date(formData.created_date).toISOString() : new Date().toISOString()
     };
 
     if (property) {
       // Include ID when editing
       supabaseData.ID = property.ID || property.id;
-    } else {
-      // Add Created Date for new properties
-      supabaseData["Created Date"] = new Date().toISOString();
     }
 
     onSubmit(supabaseData);
@@ -263,6 +272,16 @@ export default function PropertyForm({ property, onSubmit, onCancel }) {
           <div>
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label htmlFor="created_date" className="mb-2 block">Created Date & Time *</Label>
+                <Input
+                  id="created_date"
+                  type="datetime-local"
+                  value={formData.created_date}
+                  onChange={(e) => handleChange("created_date", e.target.value)}
+                  required
+                />
+              </div>
               <div>
                 <Label htmlFor="name" className="mb-2 block">Property Name *</Label>
                 <Input

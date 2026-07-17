@@ -108,6 +108,7 @@ export default function PropertyCard({ property, accommodations, residents, onEd
   
   const facilities = property["Facilities"] || property.facilities;
   const nextInspectionDue = property["Next Inspection Due"] || property.Next_Inspection_Due || property.next_inspection_due;
+  const createdDate = property["Created Date"] || property.created_date || property.Created_Date;
   const contactPhone = property["Contact Phone"] || property.Contact_Phone || property.contact_phone;
   const accessibilityFeatures = property["Accessibility Features"] || property.Accessibility_Features || property.accessibility_features;
   const googleDriveLink = property["Google Drive Link"] || property.google_drive_link;
@@ -261,6 +262,18 @@ export default function PropertyCard({ property, accommodations, residents, onEd
                   +{facilities.length - 4} more
                 </Badge>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Created Date */}
+        {createdDate && (
+          <div className="pt-3 border-t">
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+              <span className="text-slate-600 truncate">
+                Created: {format(new Date(createdDate), 'dd/MM/yyyy HH:mm')}
+              </span>
             </div>
           </div>
         )}

@@ -103,6 +103,7 @@ export default function AccommodationDetailModal({
   const ensuiteImageLink = accommodation["En-suite Image Link"] || accommodation.ensuite_image_link;
   const altAngleImageLink = accommodation["Alternative Angle Link"] || accommodation.alt_angle_image_link;
   const notes = accommodation["Notes"] || accommodation.notes;
+  const createdDate = accommodation["Created Date"] || accommodation.created_date || accommodation.Created_Date;
   const accommodationId = accommodation.ID || accommodation.id;
   const previewUrl = convertToDirectImageUrl(googleDriveLink);
 
@@ -225,6 +226,9 @@ export default function AccommodationDetailModal({
 
             <h3 className="text-xl font-semibold text-slate-800 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DetailItem icon={<Calendar />} label="Created Date & Time">
+                {createdDate ? format(new Date(createdDate), 'dd MMMM yyyy, HH:mm') : null}
+              </DetailItem>
               <DetailItem icon={<Building2 />} label="Property">{propertyName}</DetailItem>
               <DetailItem icon={<Home />} label="Accommodation Type">{accommodationType?.replace(/_/g, ' ')}</DetailItem>
               <DetailItem icon={<Home />} label="Floor & Size">

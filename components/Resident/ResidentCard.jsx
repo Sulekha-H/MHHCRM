@@ -49,6 +49,7 @@ export default function ResidentCard({ resident, onEdit, onViewDetails, onDelete
   const emergencyContactPhone = resident["Emergency Contact Phone"] || resident.Emergency_Contact_Phone || resident.emergency_contact_phone;
   const medicalConditions = resident["Medical Conditions"] || resident.Medical_Conditions || resident.medical_conditions;
   const photoIdUrl = resident["Photo Of Individual (Google Drive)"] || resident["Photo ID URL"] || resident.Photo_Id_Url || resident.photo_id_url;
+  const createdDate = resident["Created Date"] || resident.created_date || resident.Created_Date;
   const accommodationId = resident["Accommodation ID"] || resident.Accommodation_Id || resident.accommodation_id;
 
   const accommodation = accommodations?.find(a => (a["ID"] || a.Id || a.id) === accommodationId);
@@ -182,6 +183,14 @@ export default function ResidentCard({ resident, onEdit, onViewDetails, onDelete
                 <Calendar className="w-4 h-4 text-slate-400" />
                 <span className="text-slate-600">
                   Moved in {format(new Date(moveInDate), 'MMM yyyy')}
+                </span>
+              </div>
+            )}
+            {createdDate && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-slate-400" />
+                <span className="text-slate-600">
+                  Created: {format(new Date(createdDate), 'dd/MM/yyyy HH:mm')}
                 </span>
               </div>
             )}
