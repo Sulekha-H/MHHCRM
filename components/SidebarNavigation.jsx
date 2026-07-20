@@ -117,7 +117,6 @@ export default function SidebarNavigation() {
     { name: "Staff Activity", href: "/staff-activity", icon: History, current: pathname === "/staff-activity" },
     { name: "Custom Sections", href: "/customsections", icon: Settings, current: pathname === "/customsections" },
     { name: "Landlord Portal", href: "/landlordportal", icon: Settings, current: pathname === "/landlordportal" },
-    { name: "Settings", href: "/settings", icon: Settings, current: pathname === "/settings" },
     { name: "Deleted Entries", href: "/deletedentries", icon: Trash2, current: pathname === "/deletedentries" }
   ];
 
