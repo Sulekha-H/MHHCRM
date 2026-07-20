@@ -50,6 +50,7 @@ export default function DeletedEntries() {
   const [deletedPropertyPurchases, setDeletedPropertyPurchases] = useState([]);
   const [deletedServiceProviders, setDeletedServiceProviders] = useState([]);
   const [deletedWorkBookings, setDeletedWorkBookings] = useState([]);
+  const [deletedStaffHandovers, setDeletedStaffHandovers] = useState([]);
   const [properties, setProperties] = useState([]);
   const [serviceProviders, setServiceProviders] = useState([]);
   const [users, setUsers] = useState([]);
@@ -173,6 +174,53 @@ export default function DeletedEntries() {
         }
       }
 
+      // Load soft-deleted individual entries from staff_handover table
+      try {
+        const { data: handoverData, error: handoverError } = await supabase
+          .from('staff_handover')
+          .select('*');
+
+        if (handoverError) throw handoverError;
+
+        const deletedHandovers = [];
+        (handoverData || []).forEach(h => {
+          const contentStr = h.Content || h.content || "";
+          if (contentStr.startsWith('---JSON_ENTRIES:')) {
+            const match = contentStr.match(/^---JSON_ENTRIES:([\s\S]*?)---/);
+            if (match) {
+              try {
+                const entries = JSON.parse(match[1]);
+                if (Array.isArray(entries)) {
+                  entries.forEach(entry => {
+                    if (entry.deleted) {
+                      deletedHandovers.push({
+                        id: `${h.ID || h.id}_${entry.id || entry.ID}`,
+                        handover_id: h.ID || h.id,
+                        user_email: h.User_Email || h.user_email || h["User Email"],
+                        handover_date: h.Handover_Date || h.handover_date || h["Handover Date"],
+                        sender: entry.sender || entry.logged_by || h.user_email,
+                        description: entry.content || entry.Description || "",
+                        deleted_date: entry.deleted_date,
+                        deleted_by: entry.deleted_by,
+                        type: entry.type,
+                        recipients: entry.recipients || [],
+                        raw_entry: entry,
+                        raw_handover: h
+                      });
+                    }
+                  });
+                }
+              } catch (e) {
+                console.error("Failed to parse deleted handover JSON", e);
+              }
+            }
+          }
+        });
+        setDeletedStaffHandovers(deletedHandovers);
+      } catch (err) {
+        console.error("Error loading deleted staff handovers:", err);
+      }
+
       // Load deleted HB, UC, PIP and WCA logs (both Standard and Allocated)
       try {
         const [hbResponse, ucResponse, pipResponse, wcaResponse, allocatedHbResponse, allocatedUcResponse, allocatedPipResponse, allocatedWcaResponse] = await Promise.all([
@@ -291,16 +339,55 @@ export default function DeletedEntries() {
           actualTable = 'work_bookings';
         }
 
-        const { error } = await supabase
-          .from(actualTable)
-          .update({
-            '"Deleted"': false,
-            '"Deleted Date"': null,
-            '"Deleted By"': null
-          })
-          .eq('"ID"', restoreItem.item.id);
+        if (restoreItem.tableName === 'staff_handover') {
+          const handoverId = restoreItem.item.handover_id;
+          const entryId = restoreItem.item.raw_entry.id || restoreItem.item.raw_entry.ID;
 
-        if (error) throw error;
+          const { data: hData, error: hFetchError } = await supabase
+            .from('staff_handover')
+            .select('*')
+            .eq('"ID"', handoverId)
+            .single();
+
+          if (hFetchError) throw hFetchError;
+
+          const contentStr = hData.Content || hData.content || "";
+          if (contentStr.startsWith('---JSON_ENTRIES:')) {
+            const match = contentStr.match(/^---JSON_ENTRIES:([\s\S]*?)---/);
+            if (match) {
+              const entries = JSON.parse(match[1]);
+              const updatedEntries = entries.map(e => {
+                if ((e.id || e.ID) === entryId) {
+                  const restored = { ...e };
+                  delete restored.deleted;
+                  delete restored.deleted_date;
+                  delete restored.deleted_by;
+                  return restored;
+                }
+                return e;
+              });
+
+              const combinedContent = `---JSON_ENTRIES:${JSON.stringify(updatedEntries)}---`;
+              const { error: updateError } = await supabase
+                .from('staff_handover')
+                .update({ "Content": combinedContent })
+                .eq('"ID"', handoverId);
+
+              if (updateError) throw updateError;
+            }
+          }
+        } else {
+          const { error } = await supabase
+            .from(actualTable)
+            .update({
+              '"Deleted"': false,
+              '"Deleted Date"': null,
+              '"Deleted By"': null
+            })
+            .eq('"ID"', restoreItem.item.id);
+
+          if (error) throw error;
+        }
 
         // Log activity
         logActivity(supabase, {
@@ -472,12 +559,51 @@ export default function DeletedEntries() {
           }
         }
 
-        const { error } = await supabase
-          .from(actualTable)
-          .delete()
-          .eq('"ID"', permanentDeleteItem.item.id);
+        if (permanentDeleteItem.tableName === 'staff_handover') {
+          const handoverId = permanentDeleteItem.item.handover_id;
+          const entryId = permanentDeleteItem.item.raw_entry.id || permanentDeleteItem.item.raw_entry.ID;
 
-        if (error) throw error;
+          const { data: hData, error: hFetchError } = await supabase
+            .from('staff_handover')
+            .select('*')
+            .eq('"ID"', handoverId)
+            .single();
+
+          if (hFetchError) throw hFetchError;
+
+          const contentStr = hData.Content || hData.content || "";
+          if (contentStr.startsWith('---JSON_ENTRIES:')) {
+            const match = contentStr.match(/^---JSON_ENTRIES:([\s\S]*?)---/);
+            if (match) {
+              const entries = JSON.parse(match[1]);
+              const remainingEntries = entries.filter(e => (e.id || e.ID) !== entryId);
+
+              if (remainingEntries.length > 0) {
+                const combinedContent = `---JSON_ENTRIES:${JSON.stringify(remainingEntries)}---`;
+                const { error: updateError } = await supabase
+                  .from('staff_handover')
+                  .update({ "Content": combinedContent })
+                  .eq('"ID"', handoverId);
+
+                if (updateError) throw updateError;
+              } else {
+                const { error: deleteError } = await supabase
+                  .from('staff_handover')
+                  .delete()
+                  .eq('"ID"', handoverId);
+
+                if (deleteError) throw deleteError;
+              }
+            }
+          }
+        } else {
+          const { error } = await supabase
+            .from(actualTable)
+            .delete()
+            .eq('"ID"', permanentDeleteItem.item.id);
+
+          if (error) throw error;
+        }
 
         await loadAllDeletedData();
         setPermanentDeleteItem(null);
@@ -624,6 +750,7 @@ export default function DeletedEntries() {
       { data: deletedPropertyPurchases, name: 'Property Purchases', baseFileName: 'property_purchases.csv' },
       { data: deletedServiceProviders, name: 'Service Providers', baseFileName: 'service_providers.csv' },
       { data: deletedWorkBookings, name: 'Work Bookings', baseFileName: 'work_bookings.csv' },
+      { data: deletedStaffHandovers, name: 'Staff Handovers', baseFileName: 'staff_handovers.csv' },
     ];
 
     const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
@@ -663,7 +790,7 @@ export default function DeletedEntries() {
             {item.is_allocated && <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">Allocated</Badge>}
           </div>
           <h3 className="font-semibold text-slate-900 text-base leading-tight break-words">
-            {tableName === 'work_bookings' ? `Booking: ${getServiceProviderName(item.service_provider_id)}` : (item.title || item.name || item.item_name || item.section_name || (item.first_name && item.last_name ? `${item.first_name} ${item.last_name}` : null) || item.room_number || item.product_name || item.policy_name || item.appliance_name || item.landlord_name || item.certificate_name || item.company_name || (item.property_name && item.week_ending_date ? `${item.property_name} - ${format(new Date(item.week_ending_date), 'PP')}` : null) || `${entityLabel} #${item.id}`)}
+            {tableName === 'work_bookings' ? `Booking: ${getServiceProviderName(item.service_provider_id)}` : (tableName === 'staff_handover' ? `Staff Handover Entry` : (item.title || item.name || item.item_name || item.section_name || (item.first_name && item.last_name ? `${item.first_name} ${item.last_name}` : null) || item.room_number || item.product_name || item.policy_name || item.appliance_name || item.landlord_name || item.certificate_name || item.company_name || (item.property_name && item.week_ending_date ? `${item.property_name} - ${format(new Date(item.week_ending_date), 'PP')}` : null) || `${entityLabel} #${item.id}`))}
           </h3>
         </div>
       </CardHeader>
@@ -774,6 +901,21 @@ export default function DeletedEntries() {
             {item.payment_status && <p>Payment Status: {item.payment_status}</p>}
           </div>
         )}
+
+        {tableName === 'staff_handover' && (
+          <div className="text-sm text-slate-600 space-y-1">
+            {item.handover_date && <p>Handover Date: {formatDateSafe(item.handover_date)}</p>}
+            {item.sender && <p className="break-words">Created By: {item.sender}</p>}
+            {item.type && (
+              <p>
+                Type:{" "}
+                <Badge variant="outline" className="text-[10px] py-0 px-1 inline-flex">
+                  {item.type === 'OFFICE' ? 'Office Only' : item.type === 'SW_OFFICE' ? 'SW + Office' : 'Specific Staff'}
+                </Badge>
+              </p>
+            )}
+          </div>
+        )}
         
         <div className="space-y-2 pt-2 border-t">
           {item.deleted_date && (
@@ -830,7 +972,8 @@ export default function DeletedEntries() {
     deletedAppliances.length + deletedWeeklySWDocs.length + deletedCompliance.length + deletedPropertyOnboarding.length + 
     deletedLandlordEnquiries.length + deletedCustomSections.length + deletedCustomSectionData.length + deletedLandlordPortal.length +
     deletedUtilities.length + deletedComplianceChecks.length +
-    deletedPropertyPurchases.length + deletedServiceProviders.length + deletedWorkBookings.length;
+    deletedPropertyPurchases.length + deletedServiceProviders.length + deletedWorkBookings.length +
+    deletedStaffHandovers.length;
 
   return (
     <div className="space-y-6 p-6">
@@ -953,6 +1096,9 @@ export default function DeletedEntries() {
             </TabsTrigger>
             <TabsTrigger value="work_bookings" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Work Bookings ({deletedWorkBookings.length})
+            </TabsTrigger>
+            <TabsTrigger value="staff_handover" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Staff Handovers ({deletedStaffHandovers.length})
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1329,6 +1475,19 @@ export default function DeletedEntries() {
             <Card>
               <CardContent className="p-12 text-center">
                 <p className="text-slate-500">No deleted work bookings found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="staff_handover" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedStaffHandovers).map(item => renderDeletedItem(item, 'staff_handover', 'Staff Handover'))}
+          </div>
+          {filterItems(deletedStaffHandovers).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted staff handover entries found.</p>
               </CardContent>
             </Card>
           )}
