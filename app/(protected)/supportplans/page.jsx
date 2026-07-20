@@ -103,21 +103,24 @@ export default function SupportPlans_Supabase() {
   useEffect(() => {
     if (!loading && activeTab === 'support_notes' && properties.length > 0) {
       const timer = setTimeout(() => {
-        const container = scrollContainerRef.current;
-        if (container) {
-          const currentWeekEl = container.querySelector('[data-current-week="true"]');
-          if (currentWeekEl) {
-            const containerRect = container.getBoundingClientRect();
-            const elementRect = currentWeekEl.getBoundingClientRect();
+        const root = scrollContainerRef.current;
+        if (root) {
+          const currentWeekEls = root.querySelectorAll('[data-current-week="true"]');
+          currentWeekEls.forEach(currentWeekEl => {
+            const container = currentWeekEl.closest('[data-slot="table-container"]');
+            if (container) {
+              const containerRect = container.getBoundingClientRect();
+              const elementRect = currentWeekEl.getBoundingClientRect();
 
-            const relativeLeft = elementRect.left - containerRect.left;
-            const targetScroll = container.scrollLeft + relativeLeft - (containerRect.width / 2) + (elementRect.width / 2);
+              const relativeLeft = elementRect.left - containerRect.left;
+              const targetScroll = container.scrollLeft + relativeLeft - (containerRect.width / 2) + (elementRect.width / 2);
 
-            container.scrollTo({
-              left: targetScroll,
-              behavior: 'auto'
-            });
-          }
+              container.scrollTo({
+                left: targetScroll,
+                behavior: 'auto'
+              });
+            }
+          });
         }
       }, 100);
       return () => clearTimeout(timer);
@@ -725,7 +728,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="space-y-6">
+    <div ref={scrollContainerRef} className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Support Plans & Notes</h1>
@@ -908,7 +911,7 @@ useEffect(() => {
               </CardTitle>
               <p className="text-slate-600">Track weekly support notes for residents, organised by property.</p>
             </CardHeader>
-            <CardContent ref={scrollContainerRef} className="space-y-8 overflow-x-auto">
+            <CardContent className="space-y-8 overflow-x-auto">
               {loading && <p>Loading weekly notes...</p>}
               {!loading && properties.length === 0 && (
                 <div className="text-center py-8">
