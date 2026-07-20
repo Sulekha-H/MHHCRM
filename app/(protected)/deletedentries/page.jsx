@@ -47,7 +47,31 @@ export default function DeletedEntries() {
   const [deletedUtilities, setDeletedUtilities] = useState([]);
   const [deletedAllocatedResidents, setDeletedAllocatedResidents] = useState([]);
   const [deletedComplianceChecks, setDeletedComplianceChecks] = useState([]);
+  const [deletedPropertyPurchases, setDeletedPropertyPurchases] = useState([]);
+  const [deletedServiceProviders, setDeletedServiceProviders] = useState([]);
+  const [deletedWorkBookings, setDeletedWorkBookings] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [serviceProviders, setServiceProviders] = useState([]);
   const [users, setUsers] = useState([]);
+
+  const getPropertyName = (propertyId) => {
+    const prop = properties.find(p => (p.ID || p.id) === propertyId);
+    return prop?.Name || prop?.name || prop?.Address || prop?.address || "Unknown Property";
+  };
+
+  const getServiceProviderName = (providerId) => {
+    const provider = serviceProviders.find(p => (p.ID || p.id) === providerId);
+    return provider?.Name || provider?.name || "Unknown Provider";
+  };
+
+  const formatDateSafe = (dateString, formatStr = 'PP') => {
+    if (!dateString) return "N/A";
+    try {
+      return format(new Date(dateString), formatStr);
+    } catch (e) {
+      return dateString;
+    }
+  };
 
   const normalizeData = (data) => {
     if (!data) return null;
@@ -73,6 +97,19 @@ export default function DeletedEntries() {
   const loadAllDeletedData = async () => {
     try {
       setDeletedSupportPlans([]);
+
+      // Load properties and service providers lists for name resolution
+      try {
+        const [propsRes, providersRes] = await Promise.all([
+          supabase.from('properties').select('ID, Name, Address'),
+          supabase.from('service_providers').select('ID, Name')
+        ]);
+        if (propsRes.data) setProperties(propsRes.data);
+        if (providersRes.data) setServiceProviders(providersRes.data);
+      } catch (err) {
+        console.error("Error loading properties or service providers list:", err);
+      }
+
       const tables = [
         { name: 'residents', setter: setDeletedResidents },
         { name: 'allocated_residents', setter: setDeletedAllocatedResidents },
@@ -101,6 +138,9 @@ export default function DeletedEntries() {
         { name: 'landlord_portal', setter: setDeletedLandlordPortal },
         { name: 'Utilities', setter: setDeletedUtilities },
         { name: 'compliance_checks', setter: setDeletedComplianceChecks },
+        { name: 'property_purchases', setter: setDeletedPropertyPurchases },
+        { name: 'service_providers', setter: setDeletedServiceProviders },
+        { name: 'work_bookings', setter: setDeletedWorkBookings },
       ];
 
       for (const table of tables) {
@@ -243,6 +283,12 @@ export default function DeletedEntries() {
           actualTable = restoreItem.item.source_table;
         } else if (restoreItem.tableName === 'compliance_checks') {
           actualTable = 'compliance_checks';
+        } else if (restoreItem.tableName === 'property_purchases') {
+          actualTable = 'property_purchases';
+        } else if (restoreItem.tableName === 'service_providers') {
+          actualTable = 'service_providers';
+        } else if (restoreItem.tableName === 'work_bookings') {
+          actualTable = 'work_bookings';
         }
 
         const { error } = await supabase
@@ -314,6 +360,26 @@ export default function DeletedEntries() {
           actualTable = permanentDeleteItem.item.source_table;
         } else if (permanentDeleteItem.tableName === 'compliance_checks') {
           actualTable = 'compliance_checks';
+        } else if (permanentDeleteItem.tableName === 'property_purchases') {
+          actualTable = 'property_purchases';
+        } else if (permanentDeleteItem.tableName === 'service_providers') {
+          actualTable = 'service_providers';
+        } else if (permanentDeleteItem.tableName === 'work_bookings') {
+          actualTable = 'work_bookings';
+        }
+
+        if (actualTable === 'service_providers') {
+          const providerId = permanentDeleteItem.item.id;
+          console.log(`🧹 Starting cascade permanent deletion for service provider ID: ${providerId}`);
+          try {
+            const { error: wbError } = await supabase
+              .from('work_bookings')
+              .delete()
+              .eq('Service Provider ID', providerId);
+            if (wbError) console.error("Error deleting work bookings for provider:", wbError);
+          } catch (e) {
+            console.error("Exception deleting work bookings for provider:", e);
+          }
         }
 
         if (actualTable === 'properties') {
@@ -555,6 +621,9 @@ export default function DeletedEntries() {
       { data: deletedUtilities, name: 'Utilities', baseFileName: 'utilities.csv' },
       { data: deletedAllocatedResidents, name: 'Allocated Residents', baseFileName: 'allocated_residents.csv' },
       { data: deletedComplianceChecks, name: 'Compliance Checks', baseFileName: 'compliance_checks.csv' },
+      { data: deletedPropertyPurchases, name: 'Property Purchases', baseFileName: 'property_purchases.csv' },
+      { data: deletedServiceProviders, name: 'Service Providers', baseFileName: 'service_providers.csv' },
+      { data: deletedWorkBookings, name: 'Work Bookings', baseFileName: 'work_bookings.csv' },
     ];
 
     const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm-ss');
@@ -594,13 +663,15 @@ export default function DeletedEntries() {
             {item.is_allocated && <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">Allocated</Badge>}
           </div>
           <h3 className="font-semibold text-slate-900 text-base leading-tight break-words">
-            {item.title || item.name || item.section_name || (item.first_name && item.last_name ? `${item.first_name} ${item.last_name}` : null) || item.room_number || item.product_name || item.policy_name || item.appliance_name || item.landlord_name || item.certificate_name || item.company_name || (item.property_name && item.week_ending_date ? `${item.property_name} - ${format(new Date(item.week_ending_date), 'PP')}` : null) || `${entityLabel} #${item.id}`}
+            {tableName === 'work_bookings' ? `Booking: ${getServiceProviderName(item.service_provider_id)}` : (item.title || item.name || item.item_name || item.section_name || (item.first_name && item.last_name ? `${item.first_name} ${item.last_name}` : null) || item.room_number || item.product_name || item.policy_name || item.appliance_name || item.landlord_name || item.certificate_name || item.company_name || (item.property_name && item.week_ending_date ? `${item.property_name} - ${format(new Date(item.week_ending_date), 'PP')}` : null) || `${entityLabel} #${item.id}`)}
           </h3>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {item.description && (
-          <p className="text-sm text-slate-700 line-clamp-3 break-words">{item.description}</p>
+        {(item.description || item.notes || item.description_of_work) && (
+          <p className="text-sm text-slate-700 line-clamp-3 break-words">
+            {item.description || item.notes || item.description_of_work}
+          </p>
         )}
         
         {(tableName === 'residents' || tableName === 'allocated_residents') && (
@@ -665,6 +736,44 @@ export default function DeletedEntries() {
             {item.account_number && <p>Account: {item.account_number}</p>}
           </div>
         )}
+
+        {tableName === 'property_purchases' && (
+          <div className="text-sm text-slate-600 space-y-1">
+            {item.cost !== undefined && <p>Cost: £{parseFloat(item.cost || 0).toFixed(2)}</p>}
+            {item.property_id && <p className="break-words">Property: {getPropertyName(item.property_id)}</p>}
+            {item.supplier && <p>Supplier: {item.supplier}</p>}
+            {item.category && <p>Category: {item.category}</p>}
+            {item.status && <p>Status: {item.status}</p>}
+            {item.purchase_date && <p>Purchase Date: {formatDateSafe(item.purchase_date)}</p>}
+          </div>
+        )}
+
+        {tableName === 'service_providers' && (
+          <div className="text-sm text-slate-600 space-y-1">
+            {item.category && (
+              <div className="flex flex-wrap gap-1 my-1 items-center">
+                <span className="text-slate-600 mr-1">Categories:</span>
+                {item.category.split(',').map((cat) => (
+                  <Badge key={cat.trim()} variant="secondary" className="text-[10px] py-0 px-1">
+                    {cat.trim()}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {item.contact_number && <p>Phone: {item.contact_number}</p>}
+            {item.email && <p className="break-words">Email: {item.email}</p>}
+          </div>
+        )}
+
+        {tableName === 'work_bookings' && (
+          <div className="text-sm text-slate-600 space-y-1">
+            {item.date && <p>Date: {formatDateSafe(item.date)}</p>}
+            {item.property_id && <p className="break-words">Property: {getPropertyName(item.property_id)}</p>}
+            {item.area && <p>Area: {item.area}</p>}
+            {item.total_pay !== undefined && <p>Total Pay: £{parseFloat(item.total_pay || 0).toFixed(2)}</p>}
+            {item.payment_status && <p>Payment Status: {item.payment_status}</p>}
+          </div>
+        )}
         
         <div className="space-y-2 pt-2 border-t">
           {item.deleted_date && (
@@ -720,7 +829,8 @@ export default function DeletedEntries() {
     deletedReferrals.length + deletedDocuments.length + deletedWarranties.length + deletedInsurances.length + 
     deletedAppliances.length + deletedWeeklySWDocs.length + deletedCompliance.length + deletedPropertyOnboarding.length + 
     deletedLandlordEnquiries.length + deletedCustomSections.length + deletedCustomSectionData.length + deletedLandlordPortal.length +
-    deletedUtilities.length + deletedComplianceChecks.length;
+    deletedUtilities.length + deletedComplianceChecks.length +
+    deletedPropertyPurchases.length + deletedServiceProviders.length + deletedWorkBookings.length;
 
   return (
     <div className="space-y-6 p-6">
@@ -834,6 +944,15 @@ export default function DeletedEntries() {
             </TabsTrigger>
             <TabsTrigger value="compliance_checks" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Compliance Checks ({deletedComplianceChecks.length})
+            </TabsTrigger>
+            <TabsTrigger value="property_purchases" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Property Purchases ({deletedPropertyPurchases.length})
+            </TabsTrigger>
+            <TabsTrigger value="service_providers" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Service Providers ({deletedServiceProviders.length})
+            </TabsTrigger>
+            <TabsTrigger value="work_bookings" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Work Bookings ({deletedWorkBookings.length})
             </TabsTrigger>
           </TabsList>
         </div>
@@ -1171,6 +1290,45 @@ export default function DeletedEntries() {
             <Card>
               <CardContent className="p-12 text-center">
                 <p className="text-slate-500">No deleted compliance checks found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="property_purchases" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedPropertyPurchases).map(item => renderDeletedItem(item, 'property_purchases', 'Property Purchase'))}
+          </div>
+          {filterItems(deletedPropertyPurchases).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted property purchases found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="service_providers" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedServiceProviders).map(item => renderDeletedItem(item, 'service_providers', 'Service Provider'))}
+          </div>
+          {filterItems(deletedServiceProviders).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted service providers found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="work_bookings" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedWorkBookings).map(item => renderDeletedItem(item, 'work_bookings', 'Work Booking'))}
+          </div>
+          {filterItems(deletedWorkBookings).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted work bookings found.</p>
               </CardContent>
             </Card>
           )}
