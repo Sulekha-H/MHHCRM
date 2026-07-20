@@ -31,7 +31,6 @@ const pathToTitle = {
   "/custom-sections": "Custom Sections",
   "/landlordportal": "Landlord Portal",
   "/landlord-portal": "Landlord Portal",
-  "/settings": "Settings",
   "/deletedentries": "Deleted Entries",
   "/deleted-entries": "Deleted Entries",
   "/personalnotes": "Personal Notes",
