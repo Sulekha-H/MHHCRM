@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@clerk/nextjs";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,32 @@ export default function SupportPlans_Supabase() {
   const [viewingPlan, setViewingPlan] = useState(null);
   const [planToDelete, setPlanToDelete] = useState(null);
   const [quarterlyReviews, setQuarterlyReviews] = useState([]);
+
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!loading && activeTab === 'support_notes' && properties.length > 0) {
+      const timer = setTimeout(() => {
+        const container = scrollContainerRef.current;
+        if (container) {
+          const currentWeekEl = container.querySelector('[data-current-week="true"]');
+          if (currentWeekEl) {
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = currentWeekEl.getBoundingClientRect();
+
+            const relativeLeft = elementRect.left - containerRect.left;
+            const targetScroll = container.scrollLeft + relativeLeft - (containerRect.width / 2) + (elementRect.width / 2);
+
+            container.scrollTo({
+              left: targetScroll,
+              behavior: 'auto'
+            });
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, activeTab, properties.length]);
 
   useEffect(() => {
   if (!supabase) return;
@@ -882,7 +908,7 @@ useEffect(() => {
               </CardTitle>
               <p className="text-slate-600">Track weekly support notes for residents, organised by property.</p>
             </CardHeader>
-            <CardContent className="space-y-8 overflow-x-auto">
+            <CardContent ref={scrollContainerRef} className="space-y-8 overflow-x-auto">
               {loading && <p>Loading weekly notes...</p>}
               {!loading && properties.length === 0 && (
                 <div className="text-center py-8">
@@ -947,6 +973,7 @@ useEffect(() => {
                               return (
                                 <TableHead
                                   key={date.toISOString()}
+                                  data-current-week={isCurrentWeek ? "true" : undefined}
                                   className={`text-center ${isCurrentWeek ? 'bg-red-600 text-white font-bold' : ''}`}
                                 >
                                   W/C {format(date, 'dd/MM/yy')}
