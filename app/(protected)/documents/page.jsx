@@ -158,7 +158,7 @@ export default function DocumentsSupabase() {
       setAppliances(activeAppliances);
       setResidents(residentsData || []);
       setProperties(propertiesData || []);
-      setAccommodations(accommodationsData || []);
+      setAccommodations((accommodationsData || []).filter(a => !a.Deleted && !a["Deleted"]));
       setUsers(usersData || []);
 
       console.log('✅ Data loaded successfully');

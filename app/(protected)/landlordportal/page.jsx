@@ -99,6 +99,7 @@ export default function LandlordPortalSupabase() {
         supabase
           .from('landlord_portal')
           .select('*')
+          .or('Deleted.is.null,Deleted.eq.false')
           .order('"Log Date"', { ascending: false }),
         supabase.from('residents').select('*')
       ]);
@@ -131,7 +132,10 @@ export default function LandlordPortalSupabase() {
   }, [loadData]);
 
   const filterLogs = useCallback(() => {
-    let filtered = logs;
+    let filtered = logs.filter(log => {
+      const isDeleted = log.Deleted || log.deleted || false;
+      return !isDeleted;
+    });
 
     if (searchTerm) {
       filtered = filtered.filter(log =>
@@ -254,10 +258,13 @@ export default function LandlordPortalSupabase() {
     if (logToDelete) {
       try {
         const logId = logToDelete.ID || logToDelete.id;
-        // Permanent delete - table has constraint on Deleted column
         const { error } = await supabase
           .from('landlord_portal')
-          .delete()
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || "Unknown"
+          })
           .eq('ID', logId);
         
         if (error) throw error;
@@ -268,10 +275,10 @@ export default function LandlordPortalSupabase() {
           actionType: ACTIONS.DELETE,
           entityType: ENTITIES.BENEFIT,
           entityId: logId,
-          description: `Permanently deleted landlord portal entry for ${format(new Date(logToDelete["Log Date"] || logToDelete.log_date), 'dd/MM/yyyy')}`
+          description: `Soft deleted landlord portal entry for ${format(new Date(logToDelete["Log Date"] || logToDelete.log_date), 'dd/MM/yyyy')}`
         });
 
-        console.log(`✅ Landlord portal entry ${logId} permanently deleted.`);
+        console.log(`✅ Landlord portal entry ${logId} soft deleted.`);
         setLogToDelete(null);
         setViewingLog(null);
         loadData();

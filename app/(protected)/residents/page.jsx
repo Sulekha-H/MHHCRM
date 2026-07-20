@@ -101,7 +101,7 @@ useEffect(() => {
       console.log("✅ Loaded residents:", activeResidents.length);
       console.log("✅ Loaded allocated residents:", activeAllocated.length);
 
-      const accommodationsData = accommodationsRes.data || [];
+      const accommodationsData = (accommodationsRes.data || []).filter(a => !a.Deleted && !a["Deleted"]);
       const propertiesDataRaw = propertiesRes.data || [];
 
       const propertiesData = (propertiesDataRaw || []).sort((a, b) => {
