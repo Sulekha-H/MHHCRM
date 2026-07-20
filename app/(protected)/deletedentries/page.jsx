@@ -316,6 +316,96 @@ export default function DeletedEntries() {
           actualTable = 'compliance_checks';
         }
 
+        if (actualTable === 'properties') {
+          const propertyId = permanentDeleteItem.item.id;
+          const propertyName = permanentDeleteItem.item.name || permanentDeleteItem.item.Name || "";
+          console.log(`🧹 Starting cascade permanent deletion for property ID: ${propertyId}, Name: ${propertyName}`);
+
+          // 1. Dissociate Residents
+          try {
+            const { error: resError } = await supabase
+              .from('residents')
+              .update({ 'Property ID': null, 'Accommodation ID': null })
+              .eq('Property ID', propertyId);
+            if (resError) console.error("Error dissociating residents:", resError);
+          } catch (e) {
+            console.error("Exception dissociating residents:", e);
+          }
+
+          try {
+            const { error: allocResError } = await supabase
+              .from('allocated_residents')
+              .update({ 'Property ID': null, 'Accommodation ID': null })
+              .eq('Property ID', propertyId);
+            if (allocResError) console.error("Error dissociating allocated residents:", allocResError);
+          } catch (e) {
+            console.error("Exception dissociating allocated residents:", e);
+          }
+
+          // 2. Delete Dependent Tables using "Property ID"
+          const tablesToDeleteFrom = [
+            'compliance_logs',
+            'compliance_checks',
+            'Utilities',
+            'weekly_sw_doc_logs',
+            'repairs',
+            'work_bookings',
+            'property_purchases',
+            'appliances',
+            'warranties',
+            'insurances',
+            'cash_logs'
+          ];
+
+          for (const table of tablesToDeleteFrom) {
+            try {
+              const { error: delError } = await supabase
+                .from(table)
+                .delete()
+                .eq('Property ID', propertyId);
+              if (delError) {
+                console.error(`Error deleting from ${table} for property ${propertyId}:`, delError);
+              } else {
+                console.log(`Successfully cleared ${table} records for property ${propertyId}`);
+              }
+            } catch (e) {
+              console.error(`Exception deleting from ${table} for property ${propertyId}:`, e);
+            }
+          }
+
+          // 3. Delete room assignments using "Property Name" if name is available
+          if (propertyName) {
+            try {
+              const { error: roomAssignError } = await supabase
+                .from('room_assignments')
+                .delete()
+                .eq('Property Name', propertyName);
+              if (roomAssignError) {
+                console.error(`Error deleting room assignments for property ${propertyName}:`, roomAssignError);
+              } else {
+                console.log(`Successfully cleared room assignments for property ${propertyName}`);
+              }
+            } catch (e) {
+              console.error(`Exception deleting room assignments for property ${propertyName}:`, e);
+            }
+          }
+
+          // 4. Delete Accommodations for this property
+          try {
+            const { error: accError } = await supabase
+              .from('accommodations')
+              .delete()
+              .eq('Property ID', propertyId);
+            if (accError) {
+              console.error(`Error deleting accommodations for property ${propertyId}:`, accError);
+            } else {
+              console.log(`Successfully cleared accommodations for property ${propertyId}`);
+            }
+          } catch (e) {
+            console.error(`Exception deleting accommodations for property ${propertyId}:`, e);
+          }
+        }
+
         const { error } = await supabase
           .from(actualTable)
           .delete()
