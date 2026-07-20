@@ -25,6 +25,10 @@ export default function DeletedEntries() {
   const [deletedProperties, setDeletedProperties] = useState([]);
   const [deletedAccommodations, setDeletedAccommodations] = useState([]);
   const [deletedBenefits, setDeletedBenefits] = useState([]);
+  const [deletedHB, setDeletedHB] = useState([]);
+  const [deletedUC, setDeletedUC] = useState([]);
+  const [deletedPIP, setDeletedPIP] = useState([]);
+  const [deletedWCA, setDeletedWCA] = useState([]);
   const [deletedIncidents, setDeletedIncidents] = useState([]);
   const [deletedTasks, setDeletedTasks] = useState([]);
   const [deletedRepairs, setDeletedRepairs] = useState([]);
@@ -256,9 +260,17 @@ export default function DeletedEntries() {
         ].filter(log => log.benefit_type !== 'landlord_portal');
 
         setDeletedBenefits(allBenefitLogs);
+        setDeletedHB([...hbLogs, ...allocatedHbLogs].filter(log => log.benefit_type !== 'landlord_portal'));
+        setDeletedUC([...ucLogs, ...allocatedUcLogs].filter(log => log.benefit_type !== 'landlord_portal'));
+        setDeletedPIP([...pipLogs, ...allocatedPipLogs].filter(log => log.benefit_type !== 'landlord_portal'));
+        setDeletedWCA([...wcaLogs, ...allocatedWcaLogs].filter(log => log.benefit_type !== 'landlord_portal'));
       } catch (err) {
         console.error('Error loading benefit logs:', err);
         setDeletedBenefits([]);
+        setDeletedHB([]);
+        setDeletedUC([]);
+        setDeletedPIP([]);
+        setDeletedWCA([]);
       }
 
       // Load deleted referrals from both organisation_referrals and self_referrals tables
@@ -724,7 +736,10 @@ export default function DeletedEntries() {
       { data: deletedResidents, name: 'Residents', baseFileName: 'residents.csv' },
       { data: deletedProperties, name: 'Properties', baseFileName: 'properties.csv' },
       { data: deletedAccommodations, name: 'Accommodations', baseFileName: 'accommodations.csv' },
-      { data: deletedBenefits, name: 'Benefits', baseFileName: 'benefits.csv' },
+      { data: deletedHB, name: 'Housing Benefit Logs', baseFileName: 'housing_benefit_logs.csv' },
+      { data: deletedUC, name: 'Universal Credit Logs', baseFileName: 'universal_credit_logs.csv' },
+      { data: deletedPIP, name: 'PIP Logs', baseFileName: 'pip_logs.csv' },
+      { data: deletedWCA, name: 'WCA Logs', baseFileName: 'wca_logs.csv' },
       { data: deletedIncidents, name: 'Incidents', baseFileName: 'incidents.csv' },
       { data: deletedTasks, name: 'Tasks', baseFileName: 'tasks.csv' },
       { data: deletedRepairs, name: 'Repairs', baseFileName: 'repairs.csv' },
@@ -966,7 +981,7 @@ export default function DeletedEntries() {
   }
 
   const totalDeletedCount = deletedResidents.length + deletedAllocatedResidents.length + deletedProperties.length + deletedAccommodations.length +
-    deletedBenefits.length + deletedIncidents.length + deletedTasks.length + deletedRepairs.length + 
+    deletedHB.length + deletedUC.length + deletedPIP.length + deletedWCA.length + deletedIncidents.length + deletedTasks.length + deletedRepairs.length +
     deletedSupportPlans.length + deletedOfficeLogs.length + deletedServiceCharges.length + deletedCashLogs.length + 
     deletedReferrals.length + deletedDocuments.length + deletedWarranties.length + deletedInsurances.length + 
     deletedAppliances.length + deletedWeeklySWDocs.length + deletedCompliance.length + deletedPropertyOnboarding.length + 
@@ -1022,8 +1037,17 @@ export default function DeletedEntries() {
             <TabsTrigger value="accommodations" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Accommodations ({deletedAccommodations.length})
             </TabsTrigger>
-            <TabsTrigger value="benefits" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
-              Benefits ({deletedBenefits.length})
+            <TabsTrigger value="hb" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Housing Benefit ({deletedHB.length})
+            </TabsTrigger>
+            <TabsTrigger value="uc" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Universal Credit ({deletedUC.length})
+            </TabsTrigger>
+            <TabsTrigger value="pip" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              PIP ({deletedPIP.length})
+            </TabsTrigger>
+            <TabsTrigger value="wca" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              WCA ({deletedWCA.length})
             </TabsTrigger>
             <TabsTrigger value="incidents" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Incidents ({deletedIncidents.length})
@@ -1155,14 +1179,53 @@ export default function DeletedEntries() {
           )}
         </TabsContent>
 
-        <TabsContent value="benefits" className="mt-6">
+        <TabsContent value="hb" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-            {filterItems(deletedBenefits).map(item => renderDeletedItem(item, 'benefit_logs', 'Benefit Log'))}
+            {filterItems(deletedHB).map(item => renderDeletedItem(item, 'benefit_logs', 'Housing Benefit Log'))}
           </div>
-          {filterItems(deletedBenefits).length === 0 && (
+          {filterItems(deletedHB).length === 0 && (
             <Card>
               <CardContent className="p-12 text-center">
-                <p className="text-slate-500">No deleted benefit logs found.</p>
+                <p className="text-slate-500">No deleted Housing Benefit logs found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="uc" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedUC).map(item => renderDeletedItem(item, 'benefit_logs', 'Universal Credit Log'))}
+          </div>
+          {filterItems(deletedUC).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted Universal Credit logs found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="pip" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedPIP).map(item => renderDeletedItem(item, 'benefit_logs', 'PIP Log'))}
+          </div>
+          {filterItems(deletedPIP).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted PIP logs found.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="wca" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {filterItems(deletedWCA).map(item => renderDeletedItem(item, 'benefit_logs', 'WCA Log'))}
+          </div>
+          {filterItems(deletedWCA).length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-slate-500">No deleted WCA logs found.</p>
               </CardContent>
             </Card>
           )}
