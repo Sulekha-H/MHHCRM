@@ -1,7 +1,7 @@
 "use client"
 
 import { useUser } from "@clerk/nextjs";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,32 @@ export default function WeeklySWDocs() {
     const [formContext, setFormContext] = useState({ documentName: '', weekDate: null });
     const [viewingLog, setViewingLog] = useState(null);
     const [logToDelete, setLogToDelete] = useState(null);
+
+    const scrollContainerRef = useRef(null);
+
+    useEffect(() => {
+        if (!loading && properties.length > 0) {
+            const timer = setTimeout(() => {
+                const container = scrollContainerRef.current;
+                if (container) {
+                    const currentWeekEl = container.querySelector('[data-current-week="true"]');
+                    if (currentWeekEl) {
+                        const containerRect = container.getBoundingClientRect();
+                        const elementRect = currentWeekEl.getBoundingClientRect();
+
+                        const relativeLeft = elementRect.left - containerRect.left;
+                        const targetScroll = container.scrollLeft + relativeLeft - (containerRect.width / 2) + (elementRect.width / 2);
+
+                        container.scrollTo({
+                            left: targetScroll,
+                            behavior: 'auto'
+                        });
+                    }
+                }
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [loading, properties.length]);
 
 // First, define loadData at the top of your component
 const loadData = async () => {
@@ -621,7 +647,7 @@ useEffect(() => {
                         </CardTitle>
                         <p className="text-slate-600">Click on any cell to log or update a document check for that week and property.</p>
                     </CardHeader>
-                    <CardContent className="space-y-8 overflow-x-auto">
+                    <CardContent ref={scrollContainerRef} className="space-y-8 overflow-x-auto">
                         {properties.sort((a, b) => {
                             const order = ['Geraldine', 'Springfield', 'Little Green Lanes', 'Apt 94', 'Apartment 108'];
                             const indexA = order.findIndex(name => a.Name?.toLowerCase().includes(name.toLowerCase()));
@@ -641,6 +667,7 @@ useEffect(() => {
                                                 return (
                                                     <TableHead
                                                         key={date.toISOString()}
+                                                        data-current-week={isCurrentWeek ? "true" : undefined}
                                                         className={`text-center min-w-[100px] ${isCurrentWeek ? 'bg-red-600 text-white font-bold' : ''}`}
                                                     >
                                                         W/C {format(date, 'dd/MM/yy')}
