@@ -346,6 +346,7 @@ export default function StaffHandoverPage() {
 
       if (h.entries && Array.isArray(h.entries)) {
           h.entries.forEach(entry => {
+              if (entry.deleted) return;
               let isRecipient = false;
               if (entry.type === 'OFFICE') {
                 isRecipient = STAFF_GROUPS.OFFICE.members.includes(staffEmailPrefix);
@@ -978,6 +979,7 @@ export default function StaffHandoverPage() {
                     {selectedCell.handover.user_id === user?.id ? "Existing Entries" : "Handover Notes"}
                 </h4>
                 {selectedCell.handover.entries?.map((entry, idx) => {
+                    if (entry.deleted) return null;
                     const staffEmailPrefix = getEmailUsername(selectedCell.user.email || selectedCell.user.Email).toLowerCase();
                     const staffId = (selectedCell.user.id || selectedCell.user.ID || "").toString();
 
@@ -1023,34 +1025,35 @@ export default function StaffHandoverPage() {
                                         className="h-6 w-6 ml-auto text-red-500 hover:bg-red-50 transition-colors"
                                         onClick={async () => {
                                             if (!confirm("Are you sure you want to delete this entry?")) return;
-                                            const remainingEntries = selectedCell.handover.entries.filter(e => (e.id || e.ID) !== (entry.id || entry.ID));
+                                            const updatedEntries = selectedCell.handover.entries.map(e => {
+                                                if ((e.id || e.ID) === (entry.id || entry.ID)) {
+                                                    return {
+                                                        ...e,
+                                                        deleted: true,
+                                                        deleted_date: new Date().toISOString(),
+                                                        deleted_by: user?.primaryEmailAddress?.emailAddress || "unknown_user"
+                                                    };
+                                                }
+                                                return e;
+                                            });
 
                                             try {
-                                                const combinedContent = remainingEntries.length > 0 ?
-                                                    `---JSON_ENTRIES:${JSON.stringify(remainingEntries)}---` : "";
+                                                const combinedContent = `---JSON_ENTRIES:${JSON.stringify(updatedEntries)}---`;
 
-                                                if (remainingEntries.length > 0) {
-                                                    await supabase
-                                                        .from('staff_handover')
-                                                        .update({ "Content": combinedContent })
-                                                        .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
-                                                } else {
-                                                    await supabase
-                                                        .from('staff_handover')
-                                                        .delete()
-                                                        .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
-                                                    setIsDialogOpen(false);
-                                                }
+                                                await supabase
+                                                    .from('staff_handover')
+                                                    .update({ "Content": combinedContent })
+                                                    .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
+
                                                 await fetchHandovers();
                                                 // Refresh local state if possible
-                                                if (remainingEntries.length > 0) {
-                                                    setSelectedCell(prev => ({
-                                                        ...prev,
-                                                        handover: { ...prev.handover, entries: remainingEntries, content: combinedContent }
-                                                    }));
-                                                }
+                                                setSelectedCell(prev => ({
+                                                    ...prev,
+                                                    handover: { ...prev.handover, entries: updatedEntries, content: combinedContent }
+                                                }));
                                             } catch (err) {
                                                 console.error("Delete failed", err);
+                                                alert("Delete failed: " + err.message);
                                             }
                                         }}
                                     >

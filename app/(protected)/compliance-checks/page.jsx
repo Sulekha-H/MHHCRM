@@ -156,7 +156,7 @@ export default function ComplianceChecksPage() {
       const finalData = { ...supabaseData, "Checks": updatedChecks };
 
       if (editingLog) {
-        const { error } = await supabase.from('compliance_checks').update(finalData).eq('"ID"', editingLog.ID);
+        const { error } = await supabase.from('compliance_checks').update(finalData).eq('ID', editingLog.ID || editingLog.id);
         if (error) throw error;
 
         // Log activity
@@ -165,7 +165,7 @@ export default function ComplianceChecksPage() {
           userEmail: user.primaryEmailAddress?.emailAddress,
           actionType: ACTIONS.UPDATE,
           entityType: ENTITIES.COMPLIANCE,
-          entityId: editingLog.ID,
+          entityId: editingLog.ID || editingLog.id,
           description: `Updated weekly compliance check for ${finalData["Property Name"]}`
         });
       } else {
@@ -199,7 +199,7 @@ export default function ComplianceChecksPage() {
           Deleted: true,
           "Deleted Date": new Date().toISOString(),
           "Deleted By": user?.primaryEmailAddress?.emailAddress
-        }).eq('"ID"', log.ID);
+        }).eq('ID', log.ID || log.id);
         if (error) throw error;
 
         // Log activity
@@ -208,13 +208,14 @@ export default function ComplianceChecksPage() {
           userEmail: user.primaryEmailAddress?.emailAddress,
           actionType: ACTIONS.DELETE,
           entityType: ENTITIES.COMPLIANCE,
-          entityId: log.ID,
+          entityId: log.ID || log.id,
           description: `Soft deleted weekly compliance check for ${log["Property Name"]}`
         });
 
         loadData();
       } catch (error) {
         console.error("Error deleting log:", error);
+        alert("Error deleting log: " + error.message);
       }
     }
   };
