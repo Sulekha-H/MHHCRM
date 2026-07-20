@@ -143,7 +143,10 @@ export default function PropertyOnboardingSupabase() {
   }, [user]);
 
   const filterCases = useCallback(() => {
-    let filtered = onboardingCases;
+    let filtered = onboardingCases.filter(case_ => {
+      const isDeleted = case_.deleted || case_.Deleted || false;
+      return !isDeleted;
+    });
 
     if (activeTab !== "all") {
       filtered = filtered.filter(case_ => case_.onboarding_status === activeTab);
@@ -176,6 +179,7 @@ export default function PropertyOnboardingSupabase() {
         const { data, error } = await supabase
           .from('property_onboarding')
           .select('*')
+          .or('Deleted.is.null,Deleted.eq.false')
           .order('Application Date', { ascending: false });
         
         if (error) throw error;
@@ -399,7 +403,11 @@ export default function PropertyOnboardingSupabase() {
       try {
         const { error } = await supabase
           .from('property_onboarding')
-          .delete()
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || "Unknown"
+          })
           .eq('ID', caseToDelete.id);
         
         if (error) throw error;
@@ -410,10 +418,10 @@ export default function PropertyOnboardingSupabase() {
           actionType: ACTIONS.DELETE,
           entityType: ENTITIES.PROPERTY,
           entityId: caseToDelete.id,
-          description: `Permanently deleted property onboarding case for ${caseToDelete.landlord_name} (${caseToDelete.property_address})`
+          description: `Soft deleted property onboarding case for ${caseToDelete.landlord_name} (${caseToDelete.property_address})`
         });
 
-        console.log(`Property onboarding case ${caseToDelete.id} deleted successfully.`);
+        console.log(`Property onboarding case ${caseToDelete.id} soft deleted successfully.`);
         setCaseToDelete(null);
         setViewingCase(null);
         await loadData();

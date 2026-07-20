@@ -661,7 +661,11 @@ try {
       try {
         const { error } = await supabase
           .from('service_charges')
-          .delete()
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || "Unknown"
+          })
           .eq('"ID"', charge.id);
         
         if (error) throw error;
@@ -673,7 +677,7 @@ try {
           actionType: ACTIONS.DELETE,
           entityType: ENTITIES.SERVICE_CHARGE,
           entityId: charge.id,
-          description: `Deleted service charge for ${getResidentName(chargeResidentId)}`
+          description: `Soft deleted service charge for ${getResidentName(chargeResidentId)}`
         });
         
         setViewingCharge(null);

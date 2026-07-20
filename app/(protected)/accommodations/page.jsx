@@ -233,7 +233,14 @@ import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
     
     if (window.confirm(message)) {
       try {
-        const { error } = await supabase.from('accommodations').delete().eq('"ID"', accommodation.ID);
+        const { error } = await supabase
+          .from('accommodations')
+          .update({
+            "Deleted": true,
+            "Deleted Date": new Date().toISOString(),
+            "Deleted By": user?.primaryEmailAddress?.emailAddress || "Unknown"
+          })
+          .eq('"ID"', accommodation.ID);
         if (error) throw error;
         console.log(`Accommodation ${accommodation.ID} deleted successfully.`);
 
@@ -244,7 +251,7 @@ import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
           actionType: ACTIONS.DELETE,
           entityType: ENTITIES.ACCOMMODATION,
           entityId: accommodation.ID,
-          description: `Deleted accommodation: ${accommodation["Room Number"]} at ${propertyName}`
+          description: `Soft deleted accommodation: ${accommodation["Room Number"]} at ${propertyName}`
         });
         setViewingAccommodation(null);
         await loadData();

@@ -347,16 +347,20 @@ useEffect(() => {
   const handleDelete = async (log) => {
   const logTitle = log["Title"] || log.title;
 
-  if (window.confirm(`Are you sure you want to permanently delete "${logTitle}"? This cannot be undone.`)) {
+  if (window.confirm(`Are you sure you want to delete "${logTitle}"?`)) {
     try {
       const { error } = await supabase
         .from('office_logs')
-        .delete()
+        .update({
+          "Deleted": true,
+          "Deleted Date": new Date().toISOString(),
+          "Deleted By": user?.primaryEmailAddress?.emailAddress || "Unknown"
+        })
         .eq('ID', log["ID"] || log.id);
 
       if (error) throw error;
 
-      console.log(`Office log ${log["ID"] || log.id} deleted permanently.`);
+      console.log(`Office log ${log["ID"] || log.id} soft deleted.`);
 
       // Log activity
       logActivity(supabase, {
