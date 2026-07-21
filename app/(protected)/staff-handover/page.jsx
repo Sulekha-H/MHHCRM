@@ -406,7 +406,7 @@ export default function StaffHandoverPage() {
                 });
               }
 
-              if (isCreator || isRecipient) {
+              if (isRecipient) {
                   results.push({
                       ...h,
                       entry: entry,
