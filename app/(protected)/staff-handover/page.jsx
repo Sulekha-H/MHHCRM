@@ -306,6 +306,52 @@ export default function StaffHandoverPage() {
     });
   }, [users, user]);
 
+  const getEntryBackgroundStyle = useCallback((entry) => {
+    if (!entry) return { backgroundColor: '#94a3b8' };
+
+    if (entry.type === 'OFFICE') {
+      return { backgroundColor: STAFF_GROUPS.OFFICE.color };
+    }
+    if (entry.type === 'SW_OFFICE') {
+      return { backgroundColor: STAFF_GROUPS.SW_OFFICE.color };
+    }
+
+    if (entry.type === 'SPECIFIC') {
+      const recipients = entry.recipients || [];
+      if (recipients.length === 0) {
+        return { backgroundColor: '#94a3b8' };
+      }
+
+      const colors = recipients.map(rid => {
+        const staff = findStaffByAny(rid, null);
+        if (staff) {
+          const email = staff.email || staff.Email || "";
+          const prefix = getEmailUsername(email).toLowerCase();
+          return STAFF_COLORS[prefix] || '#94a3b8';
+        }
+        return '#94a3b8';
+      });
+
+      if (colors.length === 1) {
+        return { backgroundColor: colors[0] };
+      }
+
+      // Generate hard stops for linear-gradient representing recipients in order
+      const segments = [];
+      const segmentWidth = 100 / colors.length;
+      colors.forEach((color, idx) => {
+        const start = (idx * segmentWidth).toFixed(1);
+        const end = ((idx + 1) * segmentWidth).toFixed(1);
+        segments.push(`${color} ${start}%`);
+        segments.push(`${color} ${end}%`);
+      });
+
+      return { background: `linear-gradient(90deg, ${segments.join(', ')})` };
+    }
+
+    return { backgroundColor: '#94a3b8' };
+  }, [findStaffByAny]);
+
   const isCurrentUser = useCallback((staffMember) => {
     if (!user) return false;
 
@@ -731,18 +777,8 @@ export default function StaffHandoverPage() {
                                         const h = cellItem;
                                         const entry = cellItem.entry;
                                         const isCreator = cellItem.isCreator;
-                                let cellColor = 'white';
                                 let textColor = 'slate-900';
-
-                                        if (entry.type === 'OFFICE') {
-                                    cellColor = STAFF_GROUPS.OFFICE.color;
-                                    textColor = 'white';
-                                        } else if (entry.type === 'SW_OFFICE') {
-                                    cellColor = STAFF_GROUPS.SW_OFFICE.color;
-                                    textColor = 'white';
-                                } else {
-                                            // SPECIFIC staff: get the color of the row it's in
-                                    cellColor = STAFF_COLORS[staffEmailPrefix] || '#94a3b8';
+                                if (entry.type === 'OFFICE' || entry.type === 'SW_OFFICE' || entry.type === 'SPECIFIC') {
                                     textColor = 'white';
                                 }
 
@@ -750,7 +786,7 @@ export default function StaffHandoverPage() {
                                     <div
                                                 key={`${h.id || h.ID}-${idx}`}
                                                 className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col border-b last:border-b-0 border-white/20 group/cell"
-                                        style={{ backgroundColor: cellColor, color: textColor }}
+                                        style={{ ...getEntryBackgroundStyle(entry), color: textColor }}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleCellClick(staffMember, date, h);
@@ -1164,11 +1200,7 @@ export default function StaffHandoverPage() {
               <>
                   <div
                       className="p-6 text-white"
-                      style={{
-                          backgroundColor: previewData.entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.color :
-                                         previewData.entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.color :
-                                         STAFF_COLORS[getEmailUsername(previewData.staffMember.email || previewData.staffMember.Email).toLowerCase()] || '#94a3b8'
-                      }}
+                      style={getEntryBackgroundStyle(previewData.entry)}
                   >
                       <div className="flex justify-between items-start mb-4">
                           <div>
