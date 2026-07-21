@@ -662,6 +662,23 @@ export default function StaffHandoverPage() {
     return "Unknown Staff";
   };
 
+  const getRecipientLabel = (entry) => {
+    if (!entry) return "To: Unknown";
+    if (entry.type === 'OFFICE') {
+      return "To: Office Only";
+    }
+    if (entry.type === 'SW_OFFICE') {
+      return "To: SW + Office";
+    }
+    if (entry.type === 'SPECIFIC') {
+      const recipients = entry.recipients || [];
+      if (recipients.length === 0) return "To: Unknown";
+      const names = recipients.map(rid => getStaffNameById(rid));
+      return `To: ${names.join(', ')}`;
+    }
+    return "To: Unknown";
+  };
+
   if (loading && !handovers.length) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -799,7 +816,7 @@ export default function StaffHandoverPage() {
                                               </div>
                                           ) : (
                                               <div className="text-[9px] font-black uppercase opacity-80">
-                                                  My Entry
+                                                  {getRecipientLabel(entry)}
                                               </div>
                                           )}
                                           <div className="flex items-center gap-1 ml-auto">
