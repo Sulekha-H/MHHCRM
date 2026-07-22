@@ -63,10 +63,10 @@ const STAFF_GROUPS = {
 const TEAMSUP_COLORS = {
   "amaani": "#B388EB",
   "burton": "#42A5F5",
-  "francesca": "#4B6F44", // SW -> Bogey Green
-  "hasib": "#4B6F44",      // SW -> Bogey Green
-  "jessica": "#4B6F44",    // SW -> Bogey Green
-  "jess": "#4B6F44",       // SW -> Bogey Green
+  "francesca": "#F4B41A", // Mustard Yellow
+  "hasib": "#1E88E5",      // Dark Blue
+  "jessica": "#E67E22",    // Orange
+  "jess": "#E67E22",       // Orange
   "leticia": "#E91E63",
   "sulekha": "#26A69A",
 };
@@ -74,10 +74,10 @@ const TEAMSUP_COLORS = {
 const STAFF_COLORS = {
   "amaani": "#B388EB",
   "burton": "#42A5F5",
-  "francesca": "#4B6F44", // SW -> Bogey Green
-  "hasib": "#4B6F44",      // SW -> Bogey Green
-  "jessica": "#4B6F44",    // SW -> Bogey Green
-  "jess": "#4B6F44",       // SW -> Bogey Green
+  "francesca": "#F4B41A", // Mustard Yellow
+  "hasib": "#1E88E5",      // Dark Blue
+  "jessica": "#E67E22",    // Orange
+  "jess": "#E67E22",       // Orange
   "leticia": "#E91E63",
   "sulekha": "#26A69A",
   "office": "#673AB7",     // Deep Purple for group blocks
@@ -322,6 +322,28 @@ export default function StaffHandoverPage() {
         return { backgroundColor: '#94a3b8' };
       }
 
+      const prefixes = recipients.map(rid => {
+        const staff = findStaffByAny(rid, null);
+        if (staff) {
+          const email = staff.email || staff.Email || "";
+          let prefix = getEmailUsername(email).toLowerCase();
+          if (prefix === 'jess') prefix = 'jessica';
+          return prefix;
+        }
+        return null;
+      }).filter(Boolean);
+
+      const uniquePrefixes = Array.from(new Set(prefixes));
+      const isExactlyAllSupportWorkers =
+        uniquePrefixes.length === 3 &&
+        uniquePrefixes.includes("hasib") &&
+        uniquePrefixes.includes("francesca") &&
+        uniquePrefixes.includes("jessica");
+
+      if (isExactlyAllSupportWorkers) {
+        return { backgroundColor: "#4B6F44" }; // Bogey Green
+      }
+
       const colors = recipients.map(rid => {
         const staff = findStaffByAny(rid, null);
         if (staff) {
@@ -336,17 +358,17 @@ export default function StaffHandoverPage() {
         return { backgroundColor: colors[0] };
       }
 
-      // Generate hard stops for linear-gradient representing recipients in order
-      const segments = [];
-      const segmentWidth = 100 / colors.length;
+      // Generate repeating diagonal stripes to create a "brushed against each other" effect
+      const stripeWidth = 15; // px
+      const stops = [];
       colors.forEach((color, idx) => {
-        const start = (idx * segmentWidth).toFixed(1);
-        const end = ((idx + 1) * segmentWidth).toFixed(1);
-        segments.push(`${color} ${start}%`);
-        segments.push(`${color} ${end}%`);
+        const start = idx * stripeWidth;
+        const end = (idx + 1) * stripeWidth;
+        stops.push(`${color} ${start}px`);
+        stops.push(`${color} ${end}px`);
       });
 
-      return { background: `linear-gradient(90deg, ${segments.join(', ')})` };
+      return { background: `repeating-linear-gradient(135deg, ${stops.join(', ')})` };
     }
 
     return { backgroundColor: '#94a3b8' };
