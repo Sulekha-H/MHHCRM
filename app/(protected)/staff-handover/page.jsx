@@ -780,14 +780,14 @@ export default function StaffHandoverPage() {
         </div>
       </div>
 
-      <Card className="border-0 shadow-sm overflow-hidden">
+      <Card className="border-0 shadow-sm overflow-hidden max-w-[1300px] mx-auto w-full">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="table-fixed w-full min-w-[1180px]">
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="w-[240px] font-bold text-slate-700">Staff Member</TableHead>
+                <TableHead className="w-[180px] min-w-[180px] max-w-[180px] font-bold text-slate-700">Staff Member</TableHead>
                 {weekDates.map((date, i) => (
-                  <TableHead key={i} className="min-w-[200px] font-bold text-slate-700">
+                  <TableHead key={i} className="w-[200px] min-w-[200px] max-w-[200px] font-bold text-slate-700">
                     <div className="flex flex-col">
                       <span>{DAYS_OF_WEEK[i]}</span>
                       <span className="text-xs font-normal text-slate-500">{format(date, 'MMM d')}</span>
@@ -804,7 +804,7 @@ export default function StaffHandoverPage() {
 
                 return (
                 <TableRow key={staffMember.id || staffMember.ID} className="hover:bg-slate-50/50 transition-colors">
-                  <TableCell className={`font-semibold text-slate-900 sticky left-0 z-10 border-r min-w-[220px] ${
+                  <TableCell className={`font-semibold text-slate-900 sticky left-0 z-10 border-r w-[180px] min-w-[180px] max-w-[180px] ${
                     isMe ? 'bg-purple-50 ring-1 ring-inset ring-purple-200' : 'bg-white'
                   }`}>
                     <div className="flex flex-col gap-2">
@@ -834,10 +834,10 @@ export default function StaffHandoverPage() {
                     return (
                       <TableCell
                         key={i}
-                        className={`p-0 h-32 align-top border-r last:border-r-0 ${canEditRow ? 'cursor-pointer hover:opacity-90 transition-all group' : ''} ${isMe ? 'bg-purple-50/20' : ''}`}
+                        className={`p-0 h-32 align-top border-r last:border-r-0 w-[200px] min-w-[200px] max-w-[200px] ${canEditRow ? 'cursor-pointer hover:opacity-90 transition-all group' : ''} ${isMe ? 'bg-purple-50/20' : ''}`}
                         onClick={() => handleCellClick(staffMember, date)}
                       >
-                        <div className="h-full flex flex-col overflow-y-auto max-h-32 scrollbar-hide">
+                        <div className={`h-full flex flex-col overflow-y-auto max-h-32 scrollbar-hide ${handoversInCell.length > 0 ? 'p-1.5 gap-1.5' : ''}`}>
                           {handoversInCell.length > 0 ? (
                                     handoversInCell.map((cellItem, idx) => {
                                         const h = cellItem;
@@ -851,7 +851,7 @@ export default function StaffHandoverPage() {
                                 return (
                                     <div
                                                 key={`${h.id || h.ID}-${idx}`}
-                                                className="p-2 flex-1 min-h-[64px] text-xs transition-all flex flex-col border-b last:border-b-0 border-white/20 group/cell"
+                                                className="p-2 rounded-md shadow-sm border border-black/5 hover:shadow-md hover:scale-[1.01] active:scale-95 transition-all flex flex-col group/cell cursor-pointer"
                                         style={{ ...getEntryBackgroundStyle(entry), color: textColor }}
                                         onClick={(e) => {
                                             e.stopPropagation();
