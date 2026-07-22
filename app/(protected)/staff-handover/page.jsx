@@ -176,6 +176,8 @@ export default function StaffHandoverPage() {
   const [previewData, setPreviewData] = useState(null); // { entry, handover, date, staffMember }
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState({}); // mapping entry.id -> boolean
+  const [editingEntryId, setEditingEntryId] = useState(null); // id of the entry being edited inline
+  const [editingContent, setEditingContent] = useState(""); // text draft of the entry being edited
 
 
   const fetchUsers = useCallback(async () => {
@@ -1157,51 +1159,136 @@ export default function StaffHandoverPage() {
                                     </div>
                                 )}
                                 {isMine && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 ml-auto text-red-500 hover:bg-red-50 transition-colors"
-                                        onClick={async () => {
-                                            if (!confirm("Are you sure you want to delete this entry?")) return;
-                                            const updatedEntries = selectedCell.handover.entries.map(e => {
-                                                if ((e.id || e.ID) === (entry.id || entry.ID)) {
-                                                    return {
-                                                        ...e,
-                                                        deleted: true,
-                                                        deleted_date: new Date().toISOString(),
-                                                        deleted_by: user?.primaryEmailAddress?.emailAddress || "unknown_user"
-                                                    };
+                                    <div className="ml-auto flex items-center gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-purple-600 hover:bg-purple-50 transition-colors"
+                                            onClick={() => {
+                                                setEditingEntryId(entry.id || idx);
+                                                setEditingContent(entry.content);
+                                            }}
+                                            title="Edit Entry"
+                                        >
+                                            <Edit2 className="w-3 h-3" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-red-500 hover:bg-red-50 transition-colors"
+                                            onClick={async () => {
+                                                if (!confirm("Are you sure you want to delete this entry?")) return;
+                                                const updatedEntries = selectedCell.handover.entries.map(e => {
+                                                    if ((e.id || e.ID) === (entry.id || entry.ID)) {
+                                                        return {
+                                                            ...e,
+                                                            deleted: true,
+                                                            deleted_date: new Date().toISOString(),
+                                                            deleted_by: user?.primaryEmailAddress?.emailAddress || "unknown_user"
+                                                        };
+                                                    }
+                                                    return e;
+                                                    });
+
+                                                try {
+                                                    const combinedContent = `---JSON_ENTRIES:${JSON.stringify(updatedEntries)}---`;
+
+                                                    await supabase
+                                                        .from('staff_handover')
+                                                        .update({ "Content": combinedContent })
+                                                        .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
+
+                                                    await fetchHandovers();
+                                                    // Refresh local state if possible
+                                                    setSelectedCell(prev => ({
+                                                        ...prev,
+                                                        handover: { ...prev.handover, entries: updatedEntries, content: combinedContent }
+                                                    }));
+                                                } catch (err) {
+                                                    console.error("Delete failed", err);
+                                                    alert("Delete failed: " + err.message);
                                                 }
-                                                return e;
-                                            });
-
-                                            try {
-                                                const combinedContent = `---JSON_ENTRIES:${JSON.stringify(updatedEntries)}---`;
-
-                                                await supabase
-                                                    .from('staff_handover')
-                                                    .update({ "Content": combinedContent })
-                                                    .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
-
-                                                await fetchHandovers();
-                                                // Refresh local state if possible
-                                                setSelectedCell(prev => ({
-                                                    ...prev,
-                                                    handover: { ...prev.handover, entries: updatedEntries, content: combinedContent }
-                                                }));
-                                            } catch (err) {
-                                                console.error("Delete failed", err);
-                                                alert("Delete failed: " + err.message);
-                                            }
-                                        }}
-                                    >
-                                        <Trash2 className="w-3 h-3" />
-                                    </Button>
+                                            }}
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
-                            <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
-                                {isLongText && !isExpanded ? `${entry.content.slice(0, 120)}...` : entry.content}
-                            </p>
+                            {editingEntryId === (entry.id || idx) ? (
+                                <div className="space-y-2 mt-2">
+                                    <Textarea
+                                        className="text-xs min-h-[80px]"
+                                        value={editingContent}
+                                        onChange={(e) => setEditingContent(e.target.value)}
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 text-xs"
+                                            onClick={() => {
+                                                setEditingEntryId(null);
+                                                setEditingContent("");
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="h-7 text-xs bg-purple-600 hover:bg-purple-700"
+                                            onClick={async () => {
+                                                if (!editingContent.trim()) return;
+                                                const updatedEntries = selectedCell.handover.entries.map(e => {
+                                                    if ((e.id || e.ID) === (entry.id || entry.ID)) {
+                                                        return {
+                                                            ...e,
+                                                            content: editingContent,
+                                                            updated_at: new Date().toISOString()
+                                                        };
+                                                    }
+                                                    return e;
+                                                });
+
+                                                try {
+                                                    const combinedContent = `---JSON_ENTRIES:${JSON.stringify(updatedEntries)}---`;
+
+                                                    await supabase
+                                                        .from('staff_handover')
+                                                        .update({ "Content": combinedContent })
+                                                        .eq('"ID"', selectedCell.handover.id || selectedCell.handover.ID);
+
+                                                    // Log activity
+                                                    await logActivity(supabase, {
+                                                      userName: user?.fullName || "Unknown",
+                                                      userEmail: user?.primaryEmailAddress?.emailAddress,
+                                                      actionType: ACTIONS.UPDATE,
+                                                      entityType: ENTITIES.STAFF_HANDOVER,
+                                                      description: `Handover entry ${entry.id || entry.ID || idx} updated by creator.`
+                                                    });
+
+                                                    await fetchHandovers();
+                                                    setSelectedCell(prev => ({
+                                                        ...prev,
+                                                        handover: { ...prev.handover, entries: updatedEntries, content: combinedContent }
+                                                    }));
+                                                    setEditingEntryId(null);
+                                                    setEditingContent("");
+                                                } catch (err) {
+                                                    console.error("Update failed", err);
+                                                    alert("Update failed: " + err.message);
+                                                }
+                                            }}
+                                        >
+                                            Save
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                    {isLongText && !isExpanded ? `${entry.content.slice(0, 120)}...` : entry.content}
+                                </p>
+                            )}
                             {isLongText && (
                               <button
                                 type="button"
