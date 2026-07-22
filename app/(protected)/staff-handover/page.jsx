@@ -175,6 +175,7 @@ export default function StaffHandoverPage() {
   const [isFetchingComments, setIsFetchingComments] = useState(false);
   const [previewData, setPreviewData] = useState(null); // { entry, handover, date, staffMember }
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [expandedEntries, setExpandedEntries] = useState({}); // mapping entry.id -> boolean
 
 
   const fetchUsers = useCallback(async () => {
@@ -501,6 +502,7 @@ export default function StaffHandoverPage() {
     setQueuedEntries([]);
     setComments([]);
     setNewComment("");
+    setExpandedEntries({}); // Reset expanded states
     setIsDialogOpen(true);
 
     if (existing) {
@@ -750,6 +752,29 @@ export default function StaffHandoverPage() {
             <Plus className="w-4 h-4 mr-2" />
             Add Today's Handover
           </Button>
+        </div>
+      </div>
+
+      {/* Colour Scheme Legend */}
+      <div className="bg-white p-4 rounded-lg border shadow-sm flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-3">
+        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex-shrink-0">Staff Colours:</span>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {users.map((staff) => {
+            const isMe = isCurrentUser(staff);
+            const email = staff.email || staff.Email || "";
+            const prefix = getEmailUsername(email).toLowerCase();
+            const color = TEAMSUP_COLORS[prefix] || "#94a3b8";
+            const name = staff.full_name || staff['Full Name'] || prefix.charAt(0).toUpperCase() + prefix.slice(1);
+
+            return (
+              <div key={staff.id || staff.ID} className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full border border-slate-200 shadow-sm flex-shrink-0" style={{ backgroundColor: color }} />
+                <span className={`text-sm ${isMe ? 'font-bold text-purple-700' : 'text-slate-600 font-semibold'}`}>
+                  {name} {isMe && <span className="text-xs text-purple-600 font-extrabold">(You)</span>}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -1076,11 +1101,14 @@ export default function StaffHandoverPage() {
                     // If viewing someone else's row, only show entries assigned to them
                     if (!isMine && !isRecipient) return null;
 
+                    const isLongText = entry.content && entry.content.length > 120;
+                    const isExpanded = expandedEntries[entry.id || idx];
+
                     return (
                         <div key={entry.id || idx} className="p-3 bg-white rounded-lg border shadow-sm relative group">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
                                 <Badge
-                                    className="text-[10px]"
+                                    className="text-[10px] text-white"
                                     style={{
                                         backgroundColor: entry.type === 'OFFICE' ? STAFF_GROUPS.OFFICE.color :
                                                        entry.type === 'SW_OFFICE' ? STAFF_GROUPS.SW_OFFICE.color : '#64748b'
@@ -1088,10 +1116,45 @@ export default function StaffHandoverPage() {
                                 >
                                     {entry.type === 'OFFICE' ? 'Office' : entry.type === 'SW_OFFICE' ? 'SW + Office' : 'Specific'}
                                 </Badge>
-                                {entry.type === 'SPECIFIC' && (
-                                    <span className="text-[10px] text-slate-500 italic">
-                                        Assigned to {entry.recipients?.length} staff
-                                    </span>
+                                {entry.type === 'OFFICE' && (
+                                    <Badge
+                                        className="text-[10px] bg-purple-50 text-[#673AB7] border border-purple-200"
+                                    >
+                                        To: Office Only
+                                    </Badge>
+                                )}
+                                {entry.type === 'SW_OFFICE' && (
+                                    <Badge
+                                        className="text-[10px] bg-green-50 text-[#4B6F44] border border-green-200"
+                                    >
+                                        To: SW + Office
+                                    </Badge>
+                                )}
+                                {entry.type === 'SPECIFIC' && entry.recipients && entry.recipients.length > 0 && (
+                                    <div className="flex flex-wrap items-center gap-1">
+                                        <span className="text-[10px] font-bold text-slate-500 mr-1">To:</span>
+                                        {entry.recipients.map(rid => {
+                                            const staff = findStaffByAny(rid);
+                                            const email = staff?.email || staff?.Email || "";
+                                            const prefix = getEmailUsername(email).toLowerCase();
+                                            const color = TEAMSUP_COLORS[prefix] || "#94a3b8";
+                                            const name = getStaffNameById(rid);
+                                            return (
+                                                <Badge
+                                                    key={rid}
+                                                    className="text-[10px] font-bold"
+                                                    style={{
+                                                        backgroundColor: `${color}15`,
+                                                        color: color,
+                                                        borderColor: `${color}40`,
+                                                        borderWidth: '1px'
+                                                    }}
+                                                >
+                                                    {name}
+                                                </Badge>
+                                            );
+                                        })}
+                                    </div>
                                 )}
                                 {isMine && (
                                     <Button
@@ -1136,7 +1199,23 @@ export default function StaffHandoverPage() {
                                     </Button>
                                 )}
                             </div>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{entry.content}</p>
+                            <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                {isLongText && !isExpanded ? `${entry.content.slice(0, 120)}...` : entry.content}
+                            </p>
+                            {isLongText && (
+                              <button
+                                type="button"
+                                className="text-xs font-bold text-purple-600 hover:text-purple-800 hover:underline mt-2 inline-block transition-colors"
+                                onClick={() => {
+                                  setExpandedEntries(prev => ({
+                                    ...prev,
+                                    [entry.id || idx]: !prev[entry.id || idx]
+                                  }));
+                                }}
+                              >
+                                {isExpanded ? 'Show less' : 'Read more'}
+                              </button>
+                            )}
                         </div>
                     );
                 })}
