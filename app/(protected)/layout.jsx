@@ -4,7 +4,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import IdleTimer from "@/components/IdleTimer";
-import { isRestrictedStaff, isSupportWorker } from "@/lib/permissions";
+import { isRestrictedStaff, isSupportWorker, isAdmin } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert } from "lucide-react";
 
@@ -22,10 +22,10 @@ export default function ProtectedLayout({ children }) {
 
   const isSCStaff = isRestrictedStaff(user);
   const isSW = isSupportWorker(user);
+  const isUserAdmin = isAdmin(user);
 
   const allowedPaths = [
     "/dashboard",
-    "/servicecharges",
     "/staff-handover",
     "/calendar",
     "/api/rotacloud",
@@ -34,6 +34,10 @@ export default function ProtectedLayout({ children }) {
     "/api/createProfile",
     "/api/invite"
   ];
+
+  if (isUserAdmin) {
+    allowedPaths.push("/servicecharges");
+  }
 
   if (isSW) {
     allowedPaths.push(
@@ -44,10 +48,9 @@ export default function ProtectedLayout({ children }) {
     );
   }
 
-  // Basic guard for SC staff
-  const isAccessDenied = isSCStaff &&
-    !allowedPaths.some(path => pathname.startsWith(path)) &&
-    pathname !== "/";
+  // Basic guard: restricted staff can't access non-allowed paths; non-admins cannot access /servicecharges
+  const isAccessDenied = (isSCStaff && !allowedPaths.some(path => pathname.startsWith(path)) && pathname !== "/") ||
+    (!isUserAdmin && pathname.startsWith("/servicecharges"));
 
   if (!isLoaded || !userId) {
     return (
