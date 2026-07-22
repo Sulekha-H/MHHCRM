@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useClerkSupabaseClient } from "@/lib/supabaseClient";
 import { logActivity, ACTIONS } from "@/lib/activityUtils";
-import { isRestrictedStaff } from "@/lib/permissions";
+import { isRestrictedStaff, isAdmin } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -844,20 +844,8 @@ export default function Dashboard() {
         // 9. Referrals - Filtered by Creator
         addDeadlines(allReferrals, 'Assessment Date', 'Applicant Name', 'Referral', 'Status', 'accepted', ['Created By']); // accepted as a proxy for completed
 
-        // 10. Service Charges - Visible to specific staff members
-        const SERVICE_CHARGE_VISIBLE_EMAILS = [
-          'leticia@myhopehousing.org.uk',
-          'amaani@myhopehousing.org.uk',
-          'hasib@myhopehousing.org.uk',
-          'jessica@myhopehousing.org.uk',
-          'francesca@myhopehousing.org.uk'
-        ].map(email => email.toLowerCase());
-
-        const SERVICE_CHARGE_VISIBLE_PREFIXES = ['leticia', 'amaani', 'hasib', 'jessica', 'jess', 'francesca'];
-
-        const isServiceChargeDeadlineVisible =
-          (currentUserEmail && SERVICE_CHARGE_VISIBLE_EMAILS.includes(currentUserEmail)) ||
-          (currentUserPrefix && SERVICE_CHARGE_VISIBLE_PREFIXES.includes(currentUserPrefix));
+        // 10. Service Charges - Visible to admins only
+        const isServiceChargeDeadlineVisible = isAdmin(user);
 
         if (isServiceChargeDeadlineVisible) {
           serviceCharges.forEach(charge => {
@@ -1376,59 +1364,61 @@ export default function Dashboard() {
           )}
 
           {/* Row 2 - Card 4: Service Charge Reminders */}
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2 text-green-700">
-                  <PoundSterling className="w-5 h-5" />
-                  Service Charges
-                </CardTitle>
-                <a href={createPageUrl("ServiceCharges")}>
-                  <Button variant="ghost" size="sm" className="text-green-700 hover:text-green-800">
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </a>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingReminders ? (
-                <Skeleton className="h-24 w-full" />
-              ) : (
-                <>
-                  <div className="text-center mb-4">
-                    <div className="text-4xl font-bold text-green-600">{serviceChargeSummary.overdue}</div>
-                    <div className="text-sm text-green-700">Overdue Payments</div>
-                  </div>
-                  {serviceChargeSummary.overdueItems.length > 0 ? (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {serviceChargeSummary.overdueItems.map(item => (
-                        <div key={item.resident?.ID} className="p-2 bg-white rounded text-sm border border-green-100">
-                          <div className="font-medium text-gray-900">
-                            {item.resident?.["First Name"]} {item.resident?.["Last Name"]}
-                          </div>
-                          <div className="flex items-center justify-between mt-1">
-                            <span className="text-xs text-gray-600">
-                              {item.count} overdue payment{item.count !== 1 ? 's' : ''}
-                            </span>
-                            <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
-                              Overdue
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-green-700 text-center py-4">All up to date ✅</p>
-                  )}
+          {isAdmin(user) && (
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2 text-green-700">
+                    <PoundSterling className="w-5 h-5" />
+                    Service Charges
+                  </CardTitle>
                   <a href={createPageUrl("ServiceCharges")}>
-                    <Button variant="link" className="w-full mt-3 text-green-700 hover:text-green-800">
-                      View All Service Charges <ArrowRight className="w-4 h-4 ml-1" />
+                    <Button variant="ghost" size="sm" className="text-green-700 hover:text-green-800">
+                      <ArrowRight className="w-4 h-4" />
                     </Button>
                   </a>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loadingReminders ? (
+                  <Skeleton className="h-24 w-full" />
+                ) : (
+                  <>
+                    <div className="text-center mb-4">
+                      <div className="text-4xl font-bold text-green-600">{serviceChargeSummary.overdue}</div>
+                      <div className="text-sm text-green-700">Overdue Payments</div>
+                    </div>
+                    {serviceChargeSummary.overdueItems.length > 0 ? (
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {serviceChargeSummary.overdueItems.map(item => (
+                          <div key={item.resident?.ID} className="p-2 bg-white rounded text-sm border border-green-100">
+                            <div className="font-medium text-gray-900">
+                              {item.resident?.["First Name"]} {item.resident?.["Last Name"]}
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs text-gray-600">
+                                {item.count} overdue payment{item.count !== 1 ? 's' : ''}
+                              </span>
+                              <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                Overdue
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-green-700 text-center py-4">All up to date ✅</p>
+                    )}
+                    <a href={createPageUrl("ServiceCharges")}>
+                      <Button variant="link" className="w-full mt-3 text-green-700 hover:text-green-800">
+                        View All Service Charges <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </a>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
 
           {/* Row 2 - Card 5: Repairs Reminders */}

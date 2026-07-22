@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Receipt, AlertCircle, Download, PoundSterling, HelpCircle, PlusCircle } from "lucide-react";
+import { Plus, Search, Receipt, AlertCircle, Download, PoundSterling, HelpCircle, PlusCircle, ShieldAlert } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -20,7 +20,7 @@ import CashLogCard from "@/components/service-charges/CashLogCard";
 import ServiceChargeDetailModal from "@/components/service-charges/ServiceChargeDetailModal";
 import CashLogDetailModal from "@/components/service-charges/CashLogDetailModal";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
-import { isRestrictedStaff } from "@/lib/permissions";
+import { isRestrictedStaff, isAdmin } from "@/lib/permissions";
 import {
   Table,
   TableBody,
@@ -31,8 +31,30 @@ import {
 } from "@/components/ui/table";
 
 export default function ServiceChargesSupabase() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const isSCStaff = isRestrictedStaff(user);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isLoaded && !isAdmin(user)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-10 h-10 text-red-600" />
+        </div>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Access Denied</h1>
+        <p className="text-slate-600 max-w-md">
+          You do not have permission to view the Service Charges page. This page is restricted to administrators only.
+        </p>
+      </div>
+    );
+  }
   const supabase = useClerkSupabaseClient()
   const [serviceCharges, setServiceCharges] = useState([]);
   const [cashLogs, setCashLogs] = useState([]);

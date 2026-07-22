@@ -226,27 +226,39 @@ export default function SidebarNavigation() {
       )}
 
 
-      <SidebarGroup className="p-1.5">
-        <SidebarGroupLabel className={groupLabelClass}>
-          Compliance & Documents
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu className="gap-0.5">
-            {complianceNav
-              .filter(item => !isSCStaff || item.name === "Service Charges")
-              .map((item) => (
-              <SidebarMenuItem key={item.name}>
-                <SidebarMenuButton asChild isActive={item.current}>
-                  <Link href={item.href} className={linkClass}>
-                    <item.icon className={iconClass} />
-                    {item.name}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
+      {complianceNav.filter(item => {
+        if (item.name === "Service Charges") {
+          return isAdmin(user);
+        }
+        return !isSCStaff;
+      }).length > 0 && (
+        <SidebarGroup className="p-1.5">
+          <SidebarGroupLabel className={groupLabelClass}>
+            Compliance & Documents
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
+              {complianceNav
+                .filter(item => {
+                  if (item.name === "Service Charges") {
+                    return isAdmin(user);
+                  }
+                  return !isSCStaff;
+                })
+                .map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarMenuButton asChild isActive={item.current}>
+                    <Link href={item.href} className={linkClass}>
+                      <item.icon className={iconClass} />
+                      {item.name}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
 
       {!isSCStaff && hasPropertyLandlordAccess(user) && (
         <SidebarGroup className="p-1.5">
