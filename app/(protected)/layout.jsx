@@ -4,7 +4,7 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import IdleTimer from "@/components/IdleTimer";
-import { isRestrictedStaff, isSupportWorker, isAdmin } from "@/lib/permissions";
+import { isRestrictedStaff, isSupportWorker, isAdmin, isJess } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert } from "lucide-react";
 
@@ -45,6 +45,13 @@ export default function ProtectedLayout({ children }) {
       "/allocated-residents",
       "/supportplans",
       "/allocated-support-plans"
+    );
+  }
+
+  if (isJess(user)) {
+    allowedPaths.push(
+      "/work-bookings",
+      "/compliance-checks"
     );
   }
 
