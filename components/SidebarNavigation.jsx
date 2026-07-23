@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { isAdmin, isOfficeStaff, isRestrictedStaff, isSupportWorker } from "@/lib/permissions";
+import { isAdmin, isOfficeStaff, isRestrictedStaff, isSupportWorker, isJess } from "@/lib/permissions";
 import {
   Home,
   Calendar as CalendarIcon,
@@ -155,23 +155,30 @@ export default function SidebarNavigation() {
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {!isSCStaff && (
+      {(!isSCStaff || isJess(user)) && (
         <SidebarGroup className="p-1.5">
           <SidebarGroupLabel className={groupLabelClass}>
             Operations
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
-              {operationsNav.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton asChild isActive={item.current}>
-                    <Link href={item.href} className={linkClass}>
-                      <item.icon className={iconClass} />
-                      {item.name}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {operationsNav
+                .filter(item => {
+                  if (isJess(user)) {
+                    return item.name === "Work Bookings";
+                  }
+                  return true;
+                })
+                .map((item) => (
+                  <SidebarMenuItem key={item.name}>
+                    <SidebarMenuButton asChild isActive={item.current}>
+                      <Link href={item.href} className={linkClass}>
+                        <item.icon className={iconClass} />
+                        {item.name}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -230,6 +237,9 @@ export default function SidebarNavigation() {
         if (item.name === "Service Charges") {
           return isAdmin(user);
         }
+        if (isJess(user)) {
+          return item.name === "Compliance Checks";
+        }
         return !isSCStaff;
       }).length > 0 && (
         <SidebarGroup className="p-1.5">
@@ -242,6 +252,9 @@ export default function SidebarNavigation() {
                 .filter(item => {
                   if (item.name === "Service Charges") {
                     return isAdmin(user);
+                  }
+                  if (isJess(user)) {
+                    return item.name === "Compliance Checks";
                   }
                   return !isSCStaff;
                 })
