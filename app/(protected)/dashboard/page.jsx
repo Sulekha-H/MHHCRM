@@ -981,13 +981,16 @@ export default function Dashboard() {
           });
         }
 
+        // Filter deadlines based on user access level (restricted staff see no deadlines as they have no page access)
+        const filteredDeadlines = isSCStaff ? [] : allDeadlines;
+
         // Categorize and Sort
-        const next7Days = allDeadlines.filter(d => {
+        const next7Days = filteredDeadlines.filter(d => {
           const target = new Date(d.date);
           target.setHours(23, 59, 59, 999);
           return target >= now && d.date <= sevenDaysFromNow;
         }).sort((a, b) => a.date - b.date);
-        const next14Days = allDeadlines.filter(d => d.date > sevenDaysFromNow && d.date <= fourteenDaysFromNow).sort((a, b) => a.date - b.date);
+        const next14Days = filteredDeadlines.filter(d => d.date > sevenDaysFromNow && d.date <= fourteenDaysFromNow).sort((a, b) => a.date - b.date);
 
         setUpcomingDeadlines({ next7Days, next14Days });
 
