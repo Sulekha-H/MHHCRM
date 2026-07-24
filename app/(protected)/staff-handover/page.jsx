@@ -64,7 +64,7 @@ const TEAMSUP_COLORS = {
   "amaani": "#B388EB",
   "burton": "#42A5F5",
   "francesca": "#F4B41A", // Mustard Yellow
-  "hasib": "#1E88E5",      // Dark Blue
+  "hasib": "#1A365D",      // Rich Dark Navy Blue
   "jessica": "#E67E22",    // Orange
   "jess": "#E67E22",       // Orange
   "leticia": "#E91E63",
@@ -75,7 +75,7 @@ const STAFF_COLORS = {
   "amaani": "#B388EB",
   "burton": "#42A5F5",
   "francesca": "#F4B41A", // Mustard Yellow
-  "hasib": "#1E88E5",      // Dark Blue
+  "hasib": "#1A365D",      // Rich Dark Navy Blue
   "jessica": "#E67E22",    // Orange
   "jess": "#E67E22",       // Orange
   "leticia": "#E91E63",
@@ -834,10 +834,10 @@ export default function StaffHandoverPage() {
                     return (
                       <TableCell
                         key={i}
-                        className={`p-0 h-32 align-top border-r last:border-r-0 w-[200px] min-w-[200px] max-w-[200px] ${canEditRow ? 'cursor-pointer hover:opacity-90 transition-all group' : ''} ${isMe ? 'bg-purple-50/20' : ''}`}
+                        className={`p-0 align-top border-r last:border-r-0 w-[200px] min-w-[200px] max-w-[200px] ${canEditRow ? 'cursor-pointer hover:opacity-90 transition-all group' : ''} ${isMe ? 'bg-purple-50/20' : ''}`}
                         onClick={() => handleCellClick(staffMember, date)}
                       >
-                        <div className={`h-full flex flex-col overflow-y-auto max-h-32 scrollbar-hide ${handoversInCell.length > 0 ? 'p-1.5 gap-1.5' : ''}`}>
+                        <div className={`min-h-[128px] flex flex-col ${handoversInCell.length > 0 ? 'p-1.5 gap-1.5' : ''}`}>
                           {handoversInCell.length > 0 ? (
                                     handoversInCell.map((cellItem, idx) => {
                                         const h = cellItem;
