@@ -22,7 +22,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
-import { isOfficeStaff } from "@/lib/permissions";
+import { isOfficeStaff, isJess } from "@/lib/permissions";
 
 import WorkBookingForm from "@/components/work-bookings/WorkBookingForm";
 import WorkBookingList from "@/components/work-bookings/WorkBookingList";
@@ -44,7 +44,7 @@ export default function WorkBookingsPage() {
   const [propertyFilter, setPropertyFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
 
-  const canEdit = isOfficeStaff(user);
+  const canEdit = isOfficeStaff(user) || isJess(user);
 
   const fetchData = useCallback(async () => {
     if (!supabase) return;
