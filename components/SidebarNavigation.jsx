@@ -165,7 +165,7 @@ export default function SidebarNavigation() {
               {operationsNav
                 .filter(item => {
                   if (isJess(user)) {
-                    return item.name === "Work Bookings";
+                    return item.name === "Work Bookings" || item.name === "Service Providers";
                   }
                   return true;
                 })
