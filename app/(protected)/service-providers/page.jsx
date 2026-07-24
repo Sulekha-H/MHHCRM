@@ -21,7 +21,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { logActivity, ACTIONS, ENTITIES } from "@/lib/activityUtils";
-import { isOfficeStaff } from "@/lib/permissions";
+import { isOfficeStaff, isJess } from "@/lib/permissions";
 
 import ServiceProviderForm from "@/components/work-bookings/ServiceProviderForm";
 import ServiceProviderList from "@/components/work-bookings/ServiceProviderList";
@@ -38,7 +38,7 @@ export default function ServiceProvidersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const canEdit = isOfficeStaff(user);
+  const canEdit = isOfficeStaff(user) || isJess(user);
 
   const fetchData = useCallback(async () => {
     if (!supabase) return;
